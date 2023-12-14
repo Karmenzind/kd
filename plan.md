@@ -1,8 +1,6 @@
 # plan
 
 ## wip
-- 本地离线文件 + 初始化
-- 变更缓存策略
 - 测试win/mac的DB初始化情况
 
 ## short-term
