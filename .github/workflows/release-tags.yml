@@ -4,13 +4,15 @@
 name: release-tags
 
 on:
+  # push:
+  #   branches: [ "main" ]
+  # pull_request:
+  #   branches: [ "main" ]
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    tags:
+      - '*'
 
 jobs:
-
   release:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
