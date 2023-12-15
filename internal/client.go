@@ -53,13 +53,17 @@ func Query(query string, noCache bool) (r *model.Result, err error) {
 		return
 	}
 
+    var inNotFound bool
 	line, err := cache.CheckNotFound(r.Query)
 	if err != nil {
 		zap.S().Warnf("[cache] check not found error: %s", err)
 	} else if line > 0 {
-		r.Found = false
-		zap.S().Debugf("`%s` is in not-found-list", r.Query)
-		return
+        if !noCache {
+            r.Found = false
+            zap.S().Debugf("`%s` is in not-found-list", r.Query)
+            return
+        }
+        inNotFound = true
 	}
     r.Initialize()
 
@@ -76,6 +80,9 @@ func Query(query string, noCache bool) (r *model.Result, err error) {
 
 	if <-daemonRunning {
 		err = QueryDaemon(r)
+        if err == nil && r.Found && inNotFound {
+            go cache.RemoveNotFound(r.Query)
+        }
 	} else {
 		d.EchoFatal("守护进程未启动，请手动执行`kd --daemon`")
 	}
