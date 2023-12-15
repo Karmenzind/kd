@@ -112,6 +112,10 @@ func (r *Result) PrettyFormat(onlyEN bool) string {
 	// TODO wth is de morgan's law
 	if !(onlyEN && r.IsEN) {
 		for _, para := range r.Paraphrase {
+            if para == "" {
+                // FIXME (k): <2023-12-15> 从收集步骤规避
+                continue
+            }
 			if normalSentence.MatchString(para) {
 				s = append(s, d.Para(para))
 			} else {

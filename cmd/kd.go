@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
 	"runtime"
 	"strings"
 	"syscall"
@@ -166,6 +167,10 @@ func main() {
 	config.InitConfig()
 	cfg := config.Cfg
 	d.ApplyConfig(cfg.EnableEmoji)
+    if u, _ := user.Current(); u.Username == "root" {
+        d.EchoWrong("不支持Root用户")
+        os.Exit(1)
+    }
 	if cfg.Logging.Enable {
 		l, err := logger.InitLogger(&cfg.Logging)
 		if err != nil {
