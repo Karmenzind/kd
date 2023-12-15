@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
 	"runtime"
 	"strings"
 	"syscall"
@@ -28,7 +29,8 @@ func showPrompt() {
 		d.EchoFatal(err.Error())
 	}
 	fmt.Printf(`%[1]s <text>	查单词、词组
-%[1]s -h    	查看详细帮助`, exename)
+%[1]s -h    	查看详细帮助
+`, exename)
 }
 
 var um = map[string]string{
@@ -166,6 +168,10 @@ func main() {
 	config.InitConfig()
 	cfg := config.Cfg
 	d.ApplyConfig(cfg.EnableEmoji)
+    if u, _ := user.Current(); u.Username == "root" {
+        d.EchoWrong("不支持Root用户")
+        os.Exit(1)
+    }
 	if cfg.Logging.Enable {
 		l, err := logger.InitLogger(&cfg.Logging)
 		if err != nil {
@@ -249,7 +255,7 @@ func main() {
 						}
 					} else {
 						if r.Prompt != "" {
-							fmt.Println(r.Prompt)
+							d.EchoWrong(r.Prompt)
 						} else {
 							fmt.Println("Not found", d.Yellow(":("))
 						}

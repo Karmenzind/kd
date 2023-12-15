@@ -68,15 +68,22 @@ func FetchOnline(r *model.Result) (err error) {
 	trans := doc.Find("div", "class", "trans-container")
 	if trans.Error == nil {
 		// XXX 此处可以输出warning
+        var para string
 		if r.IsEN {
 			for _, v := range trans.FindAll("li") {
-				r.Paraphrase = append(r.Paraphrase, str.Simplify(v.Text()))
-				zap.S().Debugf("Got para: %s\n", str.Simplify(v.Text()))
+                para = str.Simplify(v.Text())
+                if para != "" {
+                    r.Paraphrase = append(r.Paraphrase, para)
+                    zap.S().Debugf("Got para: %s\n", para)
+                }
 			}
 		} else {
 			for _, wg := range trans.FindAll("p", "class", "wordGroup") {
-				r.Paraphrase = append(r.Paraphrase, str.Simplify(wg.FullText()))
-				zap.S().Debugf("Got para: %s\n", str.Simplify(wg.FullText()))
+                para = str.Simplify(wg.FullText())
+                if para != "" {
+                    r.Paraphrase = append(r.Paraphrase, para)
+                    zap.S().Debugf("Got para: %s\n", para)
+                }
 			}
 		}
 	} else {
