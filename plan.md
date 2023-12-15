@@ -35,8 +35,6 @@
 
 # BUG
 
-后又查到，remove from notfound
-
 ## Risk
 - 实际文件名 不改的时候的process_name
 

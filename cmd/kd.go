@@ -29,7 +29,8 @@ func showPrompt() {
 		d.EchoFatal(err.Error())
 	}
 	fmt.Printf(`%[1]s <text>	查单词、词组
-%[1]s -h    	查看详细帮助`, exename)
+%[1]s -h    	查看详细帮助
+`, exename)
 }
 
 var um = map[string]string{
@@ -254,7 +255,7 @@ func main() {
 						}
 					} else {
 						if r.Prompt != "" {
-							fmt.Println(r.Prompt)
+							d.EchoWrong(r.Prompt)
 						} else {
 							fmt.Println("Not found", d.Yellow(":("))
 						}
