@@ -1,5 +1,7 @@
 **当前状态** 初版本测试中，Archlinux已经无障碍使用
 
+-----
+
 :stars: a crystal clear command-line dictionary, written in Go, supported Linux/Win/Mac**
 
 **Go语言实现的简洁好用的命令行词典，跨平台、易于安装、持续维护更新**
@@ -32,9 +34,12 @@
 
     > 理论上可兼容[所有平台/架构](https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63)，但我只有Linux/Win可测试，欢迎使用其他平台的朋友试用反馈
 
-- 支持查单词、词组（ :eyes: 句子翻译功能也快写好了）
+- 支持查单词、词组（ :eyes: 长句翻译功能也快写好了）
 - 极速响应，超低延迟
-- 本地词库（10w单词），可离线使用
+- 本地词库（10W热词），可离线使用
+
+    > 运行时后台会自动下载数据库
+
 - 灵活的配置项，支持修改代理、配色等
 - 其他小功能：
     - 多次查询相同词汇会出现提醒并加入生词本
@@ -135,6 +140,9 @@ http_proxy = ""
 
 # 输出内容前自动清空终端，适合强迫症
 clear_screen = false
+
+# 是否开启频率提醒：本月第X次查询xxx
+freq_alert = true
 
 # （开发中）安装了emoji字体的可以输出一些emoji字符，just for fun
 enable_emoji = true

@@ -168,10 +168,10 @@ func main() {
 	config.InitConfig()
 	cfg := config.Cfg
 	d.ApplyConfig(cfg.EnableEmoji)
-    if u, _ := user.Current(); u.Username == "root" {
-        d.EchoWrong("不支持Root用户")
-        os.Exit(1)
-    }
+	if u, _ := user.Current(); u.Username == "root" {
+		d.EchoWrong("不支持Root用户")
+		os.Exit(1)
+	}
 	if cfg.Logging.Enable {
 		l, err := logger.InitLogger(&cfg.Logging)
 		if err != nil {
@@ -244,8 +244,10 @@ func main() {
 				qstr := strings.Join(cCtx.Args().Slice(), " ")
 
 				r, err := internal.Query(qstr, cCtx.Bool("nocache"))
-				if h := <-r.History; h > 3 {
-					d.EchoWarn(fmt.Sprintf("本月第%d次查询`%s`", h, r.Query))
+				if cfg.FreqAlert {
+					if h := <-r.History; h > 3 {
+						d.EchoWarn(fmt.Sprintf("本月第%d次查询`%s`", h, r.Query))
+					}
 				}
 				if err == nil {
 					if r.Found {
