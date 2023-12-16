@@ -34,6 +34,7 @@ type Config struct {
 	Theme        string `default:"temp" toml:"theme"`
 	HTTPProxy    string `toml:"http_proxy"`
 	ClearScreen  bool   `toml:"clear_screen" default:"false"`
+	FreqAlert    bool   `toml:"freq_alert" default:"true"`
 
 	Logging LoggerConfig `toml:"logging"`
 
