@@ -153,7 +153,8 @@ enable_emoji = true
   enable = false
   # 默认值：Linux/MacOS为/tmp/kd_<username>.log，windows为%TMPDIR%/kd_<username>.log
   path = ""
-  level = "DEBUG"
+  # 日志级别，支持：DEBUG/INFO/WARN/PANIC/FATAL
+  level = "WARN"
   stderr = false
 ```
 

@@ -7,7 +7,9 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
+	"github.com/Karmenzind/kd/pkg/str"
 	"github.com/jinzhu/configor"
 )
 
@@ -16,7 +18,7 @@ var CONFIG_PATH string
 type LoggerConfig struct {
 	Enable bool   `default:"true" toml:"enable"`
 	Path   string `toml:"path"`
-	Level  string `default:"warning" toml:"level"`
+	Level  string `default:"warn" toml:"level"`
 	Stderr bool   `default:"false" toml:"stderr"`
 }
 
@@ -46,9 +48,18 @@ func (c *Config) CheckAndApply() (err error) {
 	if c.HTTPProxy != "" {
 		proxyUrl, err := url.Parse(c.HTTPProxy)
 		if err != nil {
-			return fmt.Errorf("代理地址格式不合法")
+			return fmt.Errorf("[http_proxy] 代理地址格式不合法")
 		}
 		http.DefaultTransport = &http.Transport{Proxy: http.ProxyURL(proxyUrl)}
+	}
+	if c.Logging.Level != "" {
+		c.Logging.Level = strings.ToLower(c.Logging.Level)
+		if c.Logging.Level == "warning" {
+			c.Logging.Level = "warn"
+		} else if !str.InSlice(c.Logging.Level, []string{"debug", "info", "panic", "fatal"}) {
+			return fmt.Errorf("[logging.level] 不支持的日志等级：%s", c.Logging.Level)
+
+		}
 	}
 	return
 }
@@ -95,7 +106,8 @@ func InitConfig() error {
 
 	err = Cfg.CheckAndApply()
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+        os.Exit(1)
 	}
 	return err
 }
