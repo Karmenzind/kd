@@ -36,16 +36,22 @@ jobs:
     # - name: version
     #   run: echo "::set-output name=version::$(go run cmd/kd.go --version | awk '{print $3}')"
     #   id: version
+    - name: "Build Changelog"
+      id: build_changelog
+      uses: mikepenz/release-changelog-builder-action@{latest-release}
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
-    - name: Generate Changelog
-      run: echo "由changelog生成" > ${{ github.workspace }}-CHANGELOG.txt
+    # - name: Generate Changelog
+    #   run: echo "由changelog生成" > ${{ github.workspace }}-CHANGELOG.txt
 
     - name: Release
       uses: softprops/action-gh-release@v1
       # if: startsWith(github.ref, 'refs/tags/')
       with:
         name: test-${{ steps.version.outputs.version }}
-        body_path: ${{ github.workspace }}-CHANGELOG.txt
+        # body_path: ${{ github.workspace }}-CHANGELOG.txt
+        body: ${{steps.build_changelog.outputs.changelog}}
         fail_on_unmatched_files: true
         tag_name: v0.0.1
         prerelease: true

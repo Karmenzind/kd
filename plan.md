@@ -23,14 +23,13 @@
 - 加入词库设置，供选择词库大小
 
 ## low priority
-- source数据 枚举
+- cli替换为cobra
+- source数据 分为base-sourse & web-source
 - 刷数据，去掉音标[]
 - server增加信号处理，做一些善后处理like删除文件
-- not found结果写入硬盘，查询时候两个协程同时查两种数据
 - 检测配置保存时间变化的基础上再加上内容判断？
 - not found list记录查询时间，超时删除
 - not found和索引都加入服务端缓存，benchmark比较直接查本地和tcp通信的速度
-- cli替换为cobra
 - 自定义json mashal的encoder
 
 # BUG

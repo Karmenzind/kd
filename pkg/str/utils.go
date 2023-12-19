@@ -15,3 +15,13 @@ func Simplify(s string) string {
 	s = SPACE_OR_TABLE.ReplaceAllString(s, " ")
 	return s
 }
+
+
+func InSlice(s string, l []string) bool {
+    for i := 0; i < len(s); i++ {
+        if s == l[i] {
+            return true
+        }
+    }
+    return false
+}
