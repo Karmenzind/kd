@@ -77,7 +77,7 @@ sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd <URL> && chmod +x /usr/lo
 ```powershell
 # 下载文件放入C:\bin
 Invoke-WebRequest -uri '<URL>' -OutFile ( New-Item -Path "C:\bin\kd.exe" -Force )
-# 将C:\bin加入PATH环境变量
+# （需要管理员权限）将C:\bin加入PATH环境变量
 [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\bin", "Machine")
 ```
 

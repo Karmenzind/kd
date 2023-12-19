@@ -53,7 +53,7 @@ jobs:
         # body_path: ${{ github.workspace }}-CHANGELOG.txt
         body: ${{steps.build_changelog.outputs.changelog}}
         fail_on_unmatched_files: true
-        tag_name: v0.0.1
+        # tag_name: v0.0.1
         prerelease: true
         files: build/*
 
