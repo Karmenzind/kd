@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/user"
+	"path/filepath"
 	"strings"
 
 	"github.com/Karmenzind/kd/config"
@@ -16,9 +17,11 @@ func buildLogger(logCfg *config.LoggerConfig, options ...zap.Option) (*zap.Logge
 	if logCfg.Path == "" {
 		u, err := user.Current()
 		if err != nil {
-			f = fmt.Sprintf("%s/kd.log", os.TempDir())
+			f = filepath.Join(os.TempDir(), "kd.log")
 		} else {
-			f = fmt.Sprintf("%s/kd_%s.log", os.TempDir(), strings.ReplaceAll(u.Username, " ", "_"))
+            name := strings.ReplaceAll(u.Username, " ", "_")
+            name = strings.ReplaceAll(name, "\\", "_")
+			f = filepath.Join(os.TempDir(), fmt.Sprintf("kd_%s.log", name))
 		}
 	} else {
 		f = logCfg.Path

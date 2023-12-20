@@ -3,6 +3,8 @@
 ## wip
 - 测试win/mac的DB初始化情况
 
+- powershell命令改成当前用户范围
+
 ## short-term
 - 多source直接嵌套进列表
 - 加上变形(addtional pattern

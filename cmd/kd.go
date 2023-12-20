@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"os/user"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -44,34 +45,53 @@ var um = map[string]string{
 	"update":          "check and update kd client 更新kd的可执行文件",
 	"generate-config": "generate config sample 生成配置文件，Linux/Mac默认地址为~/.config/kd.toml，Win为~\\kd.toml",
 	"edit-config":     "edit configuration file with the default editor 用默认编辑器打开配置文件",
+	"status":          "show running status 展示运行信息",
 }
 
 func KillDaemonIfRunning() error {
 	p, err := daemon.FindServerProcess()
-	if err == nil && p == nil {
-		d.EchoOkay("未发现守护进程，无需停止")
-		return nil
+	var trySysKill bool
+	if err == nil {
+		if p == nil {
+			d.EchoOkay("未发现守护进程，无需停止")
+			return nil
+		} else if runtime.GOOS != "windows" {
+			zap.S().Infof("Found running daemon PID: %d,", p.Pid)
+			errSig := p.SendSignal(syscall.SIGINT)
+			if errSig != nil {
+				zap.S().Warnf("Failed to stop PID %d with syscall.SIGINT: %s", p.Pid, errSig)
+				trySysKill = true
+			}
+		} else {
+			trySysKill = true
+		}
+	} else {
+		zap.S().Warnf("[process] Failed to find daemon: %s", err)
+		trySysKill = true
 	}
-	if err != nil {
+	pidStr := strconv.Itoa(int(p.Pid))
+
+	if trySysKill {
 		var cmd *exec.Cmd
 		switch runtime.GOOS {
 		case "windows":
-			cmd = exec.Command("taskkill", "/im", "kd", "/T", "/F")
+			cmd = exec.Command("taskkill", "/F", "/T", "/PID", pidStr)
+			// cmd = exec.Command("taskkill", "/im", "kd", "/T", "/F")
 		case "linux":
-			cmd = exec.Command("killall", "kd")
+			cmd = exec.Command("kill", "-9", pidStr)
+			// cmd = exec.Command("killall", "kd")
 		}
-		err = cmd.Run()
+		output, err := cmd.Output()
+		zap.S().Infof("Executed '%s'. Output %s", cmd, output)
 		if err != nil {
-			zap.S().Warnf("Failed to kill daemon with system command: %s", err)
+			zap.S().Warnf("Failed to kill daemon with system command. Error: %s", output, err)
 		}
 	}
-	err = p.SendSignal(syscall.SIGINT)
-	if err != nil {
-		return err
+	if err == nil {
+		zap.S().Info("Terminated daemon process.")
+		d.EchoOkay("守护进程已经停止")
 	}
-	zap.S().Info("Terminated daemon process.")
-	d.EchoOkay("守护进程已经停止")
-	return nil
+	return err
 }
 
 //  -----------------------------------------------------------------------------
@@ -164,6 +184,16 @@ func flagEditConfig(*cli.Context, bool) error {
 	return err
 }
 
+func flagStatus(*cli.Context, bool) error {
+	di := internal.GetDaemonInfo()
+	d.EchoRun("运行和相关配置信息如下：")
+	fmt.Printf("    Daemon端口：%s\n", di.Port)
+	fmt.Printf("    Daemon PID：%d\n", di.PID)
+	fmt.Printf("    配置文件地址：%s\n", config.CONFIG_PATH)
+	fmt.Printf("    数据文件目录：%s\n", cache.CACHE_ROOT_PATH)
+	return nil
+}
+
 func main() {
 	config.InitConfig()
 	cfg := config.Cfg
@@ -213,10 +243,11 @@ func main() {
 			&cli.BoolFlag{Name: "update", DisableDefaultText: true, Action: flagUpdate, Usage: um["update"]},
 			&cli.BoolFlag{Name: "generate-config", DisableDefaultText: true, Action: flagGenerateConfig, Usage: um["generate-config"]},
 			&cli.BoolFlag{Name: "edit-config", DisableDefaultText: true, Action: flagEditConfig, Usage: um["edit-config"]},
+			&cli.BoolFlag{Name: "status", DisableDefaultText: true, Action: flagStatus, Usage: um["status"]},
 		},
 		Action: func(cCtx *cli.Context) error {
 			// 除了--text外，其他的BoolFlag都当subcommand用
-			for _, flag := range []string{"init", "server", "daemon", "stop", "update", "generate-config", "edit-config"} {
+			for _, flag := range []string{"init", "server", "daemon", "stop", "update", "generate-config", "edit-config", "status"} {
 				if cCtx.Bool(flag) {
 					return nil
 				}

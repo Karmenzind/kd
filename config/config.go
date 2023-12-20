@@ -56,7 +56,7 @@ func (c *Config) CheckAndApply() (err error) {
 		c.Logging.Level = strings.ToLower(c.Logging.Level)
 		if c.Logging.Level == "warning" {
 			c.Logging.Level = "warn"
-		} else if !str.InSlice(c.Logging.Level, []string{"debug", "info", "panic", "fatal"}) {
+		} else if !str.InSlice(c.Logging.Level, []string{"debug", "info", "warn", "panic", "fatal"}) {
 			return fmt.Errorf("[logging.level] 不支持的日志等级：%s", c.Logging.Level)
 
 		}
@@ -87,7 +87,7 @@ func parseConfig() (err error) {
 		Cfg.ModTime = fileinfo.ModTime().Unix()
 		err = configor.New(&configor.Config{ErrorOnUnmatchedKeys: false}).Load(&Cfg, p)
 	} else {
-		// 配有配置文件，部分默认值处理
+		// 没有配置文件，部分默认值处理
 		err = configor.New(&configor.Config{ErrorOnUnmatchedKeys: false}).Load(&Cfg)
 		switch runtime.GOOS {
 		case "darwin": //MacOS

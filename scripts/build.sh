@@ -20,7 +20,16 @@ do_build() {
 	local os=$1
 	local arch=$2
 	local targetfile=$3
-	GOOS=$os GOARCH=$arch go build -o ${targetfile} -ldflags="-s -w" -tags urfave_cli_no_docs cmd/kd.go
+
+    local cgo=0 cc=
+
+    if [[ $os == "windows" ]]; then
+        local cgo=1 cc=x86_64-w64-mingw32-gcc
+        # cc=i686-w64-mingw32-gcc  
+        # local buildopts=-buildmode=c-shared
+    fi
+
+	GOOS=$os GOARCH=$arch CGO_ENABLED=$cgo CC=$cc go build ${buildopts} -o ${targetfile} -ldflags="-s -w" -tags urfave_cli_no_docs cmd/kd.go
 	echo "    Finished -> ${targetfile}"
 }
 
