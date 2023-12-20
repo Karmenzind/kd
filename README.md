@@ -30,7 +30,9 @@
 
 ## 特性
 
-- 单文件运行，多平台兼容，无需安装任何依赖
+- 单文件运行，多平台兼容，无需安装任何依赖。Windows运行截图：
+
+    ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/win_terminal.png)
 
     > 理论上可兼容[所有平台/架构](https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63)，但我只有Linux/Win可测试，欢迎使用其他平台的朋友试用反馈
 

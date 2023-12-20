@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/Karmenzind/kd/internal/cache"
@@ -93,14 +94,18 @@ func updateDataZip() {
 			// 	continue
 			// }
 
-			applyTempDB(dbPath, tempDBPath)
+            err = applyTempDB(dbPath, tempDBPath)
+			if err != nil {
+				zap.S().Warnf("Failed: %s", err)
+				continue
+			}
 
 			// success
 			os.WriteFile(tsFile, []byte(fmt.Sprint(time.Now().Unix())), os.ModePerm)
 
 			ticker.Stop()
 			// TODO 以消息通知形式
-			zap.S().Infof("DB文件发生改变，进程主动退出")
+			zap.S().Info("DB文件发生改变，进程主动退出")
 			fmt.Println("DB文件发生改变，进程主动退出")
 			os.Exit(0)
 			break
@@ -158,7 +163,11 @@ func decompressDBZip(tempDBPath, zipPath string) (err error) {
 func applyTempDB(dbPath, tempDBPath string) error {
 	var err error
 	now := time.Now()
-	// cache.LiteDB.Close()
+	if runtime.GOOS == "windows" {
+		cache.LiteDB.Close()
+		zap.S().Info("Waiting for 3 sec...")
+        time.Sleep(3*time.Second)
+	}
 	backupPath := fmt.Sprintf("%s.backup.%d-%d-%d", dbPath, now.Year(), now.Month(), now.Day())
 	err = os.Rename(dbPath, backupPath)
 	if err != nil {

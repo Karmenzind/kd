@@ -12,7 +12,6 @@ require (
 	github.com/kyokomi/emoji/v2 v2.2.12
 	github.com/mattn/go-sqlite3 v1.14.18
 	github.com/shirou/gopsutil/v3 v3.23.11
-	github.com/ugorji/go/codec v1.2.12
 	github.com/urfave/cli/v2 v2.26.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/term v0.15.0

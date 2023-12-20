@@ -26,6 +26,9 @@ jobs:
       with:
         go-version: '1.21.x'
         # cache-dependency-path: go.sum
+
+    - name: Install system dependencies
+      run: sudo apt-get install -y gcc-mingw-w64-x86-64
         
     - name: Install dependencies
       run: go mod tidy
@@ -49,7 +52,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       # if: startsWith(github.ref, 'refs/tags/')
       with:
-        name: test-${{ steps.version.outputs.version }}
+        # name: test-${{ steps.version.outputs.version }}
         # body_path: ${{ github.workspace }}-CHANGELOG.txt
         body: ${{steps.build_changelog.outputs.changelog}}
         fail_on_unmatched_files: true
