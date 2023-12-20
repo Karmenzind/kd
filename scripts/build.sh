@@ -21,16 +21,29 @@ do_build() {
 	local arch=$2
 	local targetfile=$3
 
-    local cgo=0 cc=
+    local cgo=1 cc=
 
-    if [[ $os == "windows" ]]; then
-        local cgo=1 cc=x86_64-w64-mingw32-gcc
-        # cc=i686-w64-mingw32-gcc  
-        # local buildopts=-buildmode=c-shared
-    fi
+    case $os in
+        windows )
+            local cc=x86_64-w64-mingw32-gcc
+            local buildopts=-buildmode=c-shared
+            ;;
+        linux )
+            if [[ $arch == "arm64" ]]; then
+                local cc=aarch64-linux-gnu-gcc
+            fi
+            ;;
+        darwin)
+            # TODO (k): <2023-12-21> 
+            ;;
+    esac
 
 	GOOS=$os GOARCH=$arch CGO_ENABLED=$cgo CC=$cc go build ${buildopts} -o ${targetfile} -ldflags="-s -w" -tags urfave_cli_no_docs cmd/kd.go
-	echo "    Finished -> ${targetfile}"
+    if (($?==0)); then
+        echo "    Finished -> ${targetfile}"
+    else
+        echo "    Failed to build for $os $arch"
+    fi
 }
 
 if [[ $1 == "-a" ]]; then
