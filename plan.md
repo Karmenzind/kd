@@ -1,8 +1,8 @@
 # plan
 
 ## wip
-- 测试win/mac的DB初始化情况
-
+- mac编译
+- 测试mac的DB初始化情况
 - powershell命令改成当前用户范围
 
 ## short-term
