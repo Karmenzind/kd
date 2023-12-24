@@ -19,7 +19,7 @@ type CollinsItem struct {
 }
 
 type Result struct {
-    Found    bool   `json:"-"`
+	Found    bool   `json:"-"`
 	Prompt   string `json:"-"`
 	IsEN     bool   `json:"-"`
 	IsPhrase bool   `json:"-"`
@@ -112,10 +112,10 @@ func (r *Result) PrettyFormat(onlyEN bool) string {
 	// TODO wth is de morgan's law
 	if !(onlyEN && r.IsEN) {
 		for _, para := range r.Paraphrase {
-            if para == "" {
-                // FIXME (k): <2023-12-15> 从收集步骤规避
-                continue
-            }
+			if para == "" {
+				// FIXME (k): <2023-12-15> 从收集步骤规避
+				continue
+			}
 			if normalSentence.MatchString(para) {
 				s = append(s, d.Para(para))
 			} else {
@@ -155,7 +155,22 @@ func (r *Result) PrettyFormat(onlyEN bool) string {
 			} else {
 				transExpr = i.MajorTrans
 			}
-			s = append(s, fmt.Sprintf("%s. %s %s", d.Idx(idx+1), d.Addi("("+i.Additional+")"), d.CollinsPara(transExpr)))
+
+			var piece string
+			// if len(r.Collins.Items) > 1 {
+            piece = fmt.Sprintf("%s. ",  d.Idx(idx + 1))
+			// } 
+            if i.Additional != "" {
+                piece += d.Addi("("+i.Additional+")")
+            }
+            piece += d.CollinsPara(transExpr)
+            s = append(s, piece)
+
+			// if len(r.Collins.Items) == 1 {
+			// 	s = append(s, fmt.Sprintf("%s %s", d.Addi("("+i.Additional+")"), d.CollinsPara(transExpr)))
+			// } else {
+			// 	s = append(s, fmt.Sprintf("%s. %s %s", d.Idx(idx+1), d.Addi("("+i.Additional+")"), d.CollinsPara(transExpr)))
+			// }
 			for _, ePair := range i.ExampleLists {
 				var eRepr string
 				if onlyEN {
@@ -194,9 +209,9 @@ func displayExample(item []string, tab string, onlyEN bool, isEN bool) string {
 	switch tab {
 	case "bi":
 		if onlyEN {
-            r = d.EgEn(item[0])
+			r = d.EgEn(item[0])
 		} else {
-            r = fmt.Sprintf("%s %s", d.EgEn(item[0]), d.EgCh(item[1]))
+			r = fmt.Sprintf("%s %s", d.EgEn(item[0]), d.EgCh(item[1]))
 		}
 	case "au":
 		// TODO 增加来源渲染
