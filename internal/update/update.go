@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -20,6 +21,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// var LATEST_RELEASE_URL = "http://localhost:8901/"
 var LATEST_RELEASE_URL = "https://github.com/Karmenzind/kd/releases/latest/download/"
 var TAGLIST_URL = "https://api.github.com/repos/Karmenzind/kd/tags"
 
@@ -122,39 +124,73 @@ func GetNewerVersion(currentTag string) (tag string, err error) {
 }
 
 func UpdateBinary(currentTag string) (err error) {
+	_ = currentTag
 	// emoji.Println(":eyes: 不好意思更新功能没写好，请手动到release下载")
-    tmpPath := filepath.Join(cache.CACHE_ROOT_PATH, "kd.temp")
-    url := getBinaryURL()
+	tmpPath := filepath.Join(cache.CACHE_ROOT_PATH, "kd.temp")
+	url := getBinaryURL()
 
-    var exepath string
-    exepath, err = pkg.GetExecutablePath()
-    if err != nil {
-        return err
-    }
-    if strings.Contains(exepath, "go-build") {
-        fmt.Println("非binary，已忽略")
-        return nil
-    }
+	var exepath string
+	exepath, err = pkg.GetExecutablePath()
+	if err != nil {
+		return err
+	}
+	if strings.Contains(exepath, "go-build") {
+		fmt.Println("非binary，已忽略")
+		return nil
+	}
 
-    d.EchoRun(fmt.Sprintf("Start downloading: %s", url))
-    err = pkg.DownloadFile(tmpPath, url)
-    if err != nil {
-        zap.S().Errorf("Failed to download binary file: %s", err)
-    }
-    d.EchoRun("已下载完成")
-    err = os.Rename(tmpPath, exepath)
-    d.EchoRun("已成功覆盖")
-    if err != nil {
-        return err
-    }
-    if runtime.GOOS != "windows" {
-        err = pkg.AddExecutablePermission(exepath)
-        if err != nil {
-            d.EchoWrong(fmt.Sprintf("修改权限失败，请手动执行`chmod +x %s`", exepath))
-        }
-    }
+	d.EchoRun(fmt.Sprintf("Start downloading: %s", url))
+	// TODO (k): <2023-12-31> 调用curl
+	err = pkg.DownloadFile(tmpPath, url)
+	if err != nil {
+		zap.S().Errorf("Failed to download binary file: %s", err)
+	}
+	d.EchoRun("已下载完成")
+	err = moveFile(tmpPath, exepath)
+	if err != nil {
+		return
+	} else {
+		d.EchoRun("已成功覆盖")
+	}
+	if runtime.GOOS != "windows" {
+		err = pkg.AddExecutablePermission(exepath)
+		if err != nil {
+			d.EchoWrong(fmt.Sprintf("修改权限失败，请手动执行`chmod +x %s`", exepath))
+		}
+	}
 	return
 	// emoji.Println(":lightning: Now we start updating the binary")
 	// emoji.Println(":lightning: updating...")
 	// emoji.Println(":beer: DONE :)")
+}
+
+// try sudo if needed
+func moveFile(src, tgt string) (err error) {
+	err = os.Rename(src, tgt)
+	if err == nil {
+		return
+	}
+	zap.S().Infof("Permission denied. Please make sure you have write access to the destination directory.")
+	if runtime.GOOS == "windows" {
+		return fmt.Errorf("文件覆盖失败，遇到权限问题，请到release页面下载")
+	}
+
+	cmd := exec.Command("sudo", "mv", src, tgt)
+	cmd.Stdin = os.Stdin
+	d.EchoRun("覆盖文件需root权限，请输入密码")
+	err = cmd.Run()
+	// if linkErr, ok := err.(*os.LinkError); ok {
+	// 	if os.IsPermission(linkErr.Err) {
+	// 		zap.S().Infof("Permission denied. Please make sure you have write access to the destination directory.")
+	// 		if runtime.GOOS == "windows" {
+	// 			return fmt.Errorf("文件覆盖失败，遇到权限问题，请到release页面下载")
+	// 		}
+
+	// 		cmd := exec.Command("sudo", "mv", src, tgt)
+	// 		cmd.Stdin = os.Stdin
+	// 		d.EchoRun("覆盖文件需root权限，请输入密码")
+	// 		err = cmd.Run()
+	// 	}
+	// }
+	return
 }

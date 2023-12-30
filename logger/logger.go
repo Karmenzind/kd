@@ -11,6 +11,8 @@ import (
 	"go.uber.org/zap"
 )
 
+var LOG_FILE string
+
 func buildLogger(logCfg *config.LoggerConfig, options ...zap.Option) (*zap.Logger, error) {
 	cfg := zap.NewDevelopmentConfig()
 	var f string
@@ -19,8 +21,8 @@ func buildLogger(logCfg *config.LoggerConfig, options ...zap.Option) (*zap.Logge
 		if err != nil {
 			f = filepath.Join(os.TempDir(), "kd.log")
 		} else {
-            name := strings.ReplaceAll(u.Username, " ", "_")
-            name = strings.ReplaceAll(name, "\\", "_")
+			name := strings.ReplaceAll(u.Username, " ", "_")
+			name = strings.ReplaceAll(name, "\\", "_")
 			f = filepath.Join(os.TempDir(), fmt.Sprintf("kd_%s.log", name))
 		}
 	} else {
@@ -29,6 +31,7 @@ func buildLogger(logCfg *config.LoggerConfig, options ...zap.Option) (*zap.Logge
 	if _, err := os.Stat(f); err == nil {
 		os.Chmod(f, 0o666)
 	}
+    LOG_FILE = f
 
 	cfg.OutputPaths = []string{f}
 	cfg.ErrorOutputPaths = []string{f}

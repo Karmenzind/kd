@@ -72,6 +72,7 @@
 sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd <URL> && chmod +x /usr/local/bin/kd'
 ```
 
+<!-- sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_arm64 && chmod +x /usr/local/bin/kd' -->
 <!-- ArchLinux推荐通过AUR一键安装`yay -S aur/kd`，后续直接通过包管理升级 -->
 
 ### Windows
@@ -79,8 +80,9 @@ sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd <URL> && chmod +x /usr/lo
 用Powershell执行:
 
 ```powershell
-# 下载文件放入C:\bin
-Invoke-WebRequest -uri '<URL>' -OutFile ( New-Item -Path "C:\bin\kd.exe" -Force )
+# 下载文件放入C:\bin，这里是Win64位架构，其他架构需求请提交issue
+Invoke-WebRequest -uri 'https://github.com/Karmenzind/kd/releases/latest/download/kd_windows_amd64.exe' -OutFile ( New-Item -Path "C:\bin\kd.exe" -Force )
+
 # （需要管理员权限）将C:\bin加入PATH环境变量
 [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\bin", "Machine")
 ```
@@ -126,7 +128,7 @@ GLOBAL OPTIONS:
 ```toml
 # 是否使用分页器，MacOS上默认false
 paging = true
-# 分页器命令，例如：less -F / bat / more
+# 分页器命令，例如：less -F / bat / more -e
 pager_command = "less -F"
 
 # 本地最多缓存的单词条数
