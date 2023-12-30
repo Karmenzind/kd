@@ -10,60 +10,79 @@ on:
   #   branches: [ "main" ]
   push:
     tags:
-      - '*'
+      - "*"
 
 jobs:
-  release:
+  linux-part:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.21.x'
-        # cache-dependency-path: go.sum
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21.x"
 
-    - name: Install system dependencies
-      run: sudo apt-get install -y gcc-mingw-w64-x86-64 gcc-aarch64-linux-gnu
-        
-    - name: Install dependencies
-      run: go mod tidy
-      
-    - name: Build
-      run: bash scripts/build.sh -a
+      - name: Install system dependencies
+        run: sudo apt-get install -y gcc-mingw-w64-x86-64  gcc-aarch64-linux-gnu
 
-    # - name: version
-    #   run: echo "::set-output name=version::$(go run cmd/kd.go --version | awk '{print $3}')"
-    #   id: version
-    - name: "Build Changelog"
-      id: build_changelog
-      uses: mikepenz/release-changelog-builder-action@v4
-      env:
-        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      - name: Install dependencies
+        run: go mod tidy
 
-    - name: echo changelog
-      run: echo ${{steps.build_changelog.outputs.changelog}}
+      - name: Build
+        run: |
+          bash scripts/build.sh linux amd64
+          bash scripts/build.sh linux arm64
+          bash scripts/build.sh windows amd64
 
-    # - name: Generate Changelog
-    #   run: echo "由changelog生成" > ${{ github.workspace }}-CHANGELOG.txt
+      - name: "Build Changelog"
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@v4
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
-    - name: Release
-      uses: softprops/action-gh-release@v1
-      # if: startsWith(github.ref, 'refs/tags/')
-      with:
-        # name: test-${{ steps.version.outputs.version }}
-        # body_path: ${{ github.workspace }}-CHANGELOG.txt
-        body: ${{steps.build_changelog.outputs.changelog}}
-        fail_on_unmatched_files: true
-        # tag_name: v0.0.1
-        prerelease: false
-        files: build/*
+      - name: echo changelog
+        run: echo ${{steps.build_changelog.outputs.changelog}}
 
-    - name: info
-      run: echo ${{ steps.Release.outputs.url }} ${{ steps.Release.outputs.upload_url }} ${{ steps.Release.outputs.id }}
-      
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        # if: startsWith(github.ref, 'refs/tags/')
+        with:
+          body: ${{steps.build_changelog.outputs.changelog}}
+          fail_on_unmatched_files: true
+          prerelease: false
+          files: build/*
 
+      # - name: info
+      #   run: echo ${{ steps.Release.outputs.url }} ${{ steps.Release.outputs.upload_url }} ${{ steps.Release.outputs.id }}
+
+  mac-part:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21.x"
+
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Build
+        run: |
+          bash scripts/build.sh darwin arm64
+          bash scripts/build.sh darwin amd64
+
+      - name: Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          overwrite: true
+          file_glob: true
+          file: build/*

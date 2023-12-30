@@ -1,4 +1,4 @@
-# plan
+#master plan
 
 ## wip
 - mac编译
@@ -33,6 +33,12 @@
 - 自定义json mashal的encoder
 
 # BUG
+
+## Build failed
+
+mac arm64 / amd64
+
+(action) linux 386
 
 ## Risk
 - 实际文件名 不改的时候的process_name
