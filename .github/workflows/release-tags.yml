@@ -43,6 +43,8 @@ jobs:
         uses: mikepenz/release-changelog-builder-action@v4
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          commitMode: true
 
       - name: echo changelog
         run: echo ${{steps.build_changelog.outputs.changelog}}
