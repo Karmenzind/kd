@@ -4,13 +4,11 @@
 - mac编译
 - 测试mac的DB初始化情况
 - powershell命令改成当前用户范围
+- 测试windows的--update
 
 ## short-term
 - 多source直接嵌套进列表
-- 加上变形(addtional pattern
-- 处理查询时候的大小写，避免过度存储
 - 记录pid/port，先检查这两个
-- server悄悄下载单词文件就可以了
 - 预留一个接口调用，获取重要信息
 - 用代理爬词库
 - 长句查询另外缓存

@@ -19,11 +19,12 @@ type CollinsItem struct {
 }
 
 type Result struct {
-	Found    bool   `json:"-"`
-	Prompt   string `json:"-"`
-	IsEN     bool   `json:"-"`
-	IsPhrase bool   `json:"-"`
-	Query    string `json:"-"`
+	Found      bool   `json:"-"`
+	Prompt     string `json:"-"`
+	IsEN       bool   `json:"-"`
+	IsPhrase   bool   `json:"-"`
+	IsLongText bool   `json:"-"`
+	Query      string `json:"-"`
 
 	Keyword    string            `json:"k"`
 	Pronounce  map[string]string `json:"pron"`
@@ -139,9 +140,9 @@ func (r *Result) PrettyFormat(onlyEN bool) string {
 	if r.Collins.ViaRank != "" {
 		rankParts = append(rankParts, d.Rank(r.Collins.ViaRank))
 	}
-    if r.Collins.AdditionalPattern != "" {
+	if r.Collins.AdditionalPattern != "" {
 		rankParts = append(rankParts, d.Rank(r.Collins.AdditionalPattern))
-    }
+	}
 	if len(rankParts) > 0 {
 		s = append(s, strings.Join(rankParts, " "))
 	}
@@ -160,12 +161,12 @@ func (r *Result) PrettyFormat(onlyEN bool) string {
 			}
 
 			var piece string
-            piece = fmt.Sprintf("%s. ",  d.Idx(idx + 1))
-            if i.Additional != "" {
-                piece += d.Addi("("+i.Additional+")")
-            }
-            piece += d.CollinsPara(transExpr)
-            s = append(s, piece)
+			piece = fmt.Sprintf("%s. ", d.Idx(idx+1))
+			if i.Additional != "" {
+				piece += d.Addi("(" + i.Additional + ")")
+			}
+			piece += d.CollinsPara(transExpr)
+			s = append(s, piece)
 
 			for _, ePair := range i.ExampleLists {
 				var eRepr string

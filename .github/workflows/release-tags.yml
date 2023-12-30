@@ -45,6 +45,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
+    - name: echo changelog
+      run: echo ${{steps.build_changelog.outputs.changelog}}
+
     # - name: Generate Changelog
     #   run: echo "由changelog生成" > ${{ github.workspace }}-CHANGELOG.txt
 
@@ -57,7 +60,7 @@ jobs:
         body: ${{steps.build_changelog.outputs.changelog}}
         fail_on_unmatched_files: true
         # tag_name: v0.0.1
-        prerelease: true
+        prerelease: false
         files: build/*
 
     - name: info

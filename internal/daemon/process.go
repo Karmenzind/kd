@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/Karmenzind/kd/pkg"
@@ -39,7 +41,7 @@ func FindServerProcess() (*process.Process, error) {
 		return nil, err
 	}
 	for _, p := range processes {
-        // XXX err
+		// XXX err
 		n, _ := p.Name()
 		if n == "kd" || (runtime.GOOS == "windows" && n == "kd.exe") {
 			cmd, _ := p.Cmdline()
@@ -85,4 +87,50 @@ func StartDaemonProcess() error {
 		return err
 	}
 	return nil
+}
+
+func KillDaemonIfRunning() error {
+	p, err := FindServerProcess()
+	var trySysKill bool
+	if err == nil {
+		if p == nil {
+			d.EchoOkay("未发现守护进程，无需停止")
+			return nil
+		} else if runtime.GOOS != "windows" {
+			zap.S().Infof("Found running daemon PID: %d,", p.Pid)
+			errSig := p.SendSignal(syscall.SIGINT)
+			if errSig != nil {
+				zap.S().Warnf("Failed to stop PID %d with syscall.SIGINT: %s", p.Pid, errSig)
+				trySysKill = true
+			}
+		} else {
+			trySysKill = true
+		}
+	} else {
+		zap.S().Warnf("[process] Failed to find daemon: %s", err)
+		trySysKill = true
+	}
+	pidStr := strconv.Itoa(int(p.Pid))
+
+	if trySysKill {
+		var cmd *exec.Cmd
+		switch runtime.GOOS {
+		case "windows":
+			cmd = exec.Command("taskkill", "/F", "/T", "/PID", pidStr)
+			// cmd = exec.Command("taskkill", "/im", "kd", "/T", "/F")
+		case "linux":
+			cmd = exec.Command("kill", "-9", pidStr)
+			// cmd = exec.Command("killall", "kd")
+		}
+		output, err := cmd.Output()
+		zap.S().Infof("Executed '%s'. Output %s", cmd, output)
+		if err != nil {
+			zap.S().Warnf("Failed to kill daemon with system command. Error: %s", output, err)
+		}
+	}
+	if err == nil {
+		zap.S().Info("Terminated daemon process.")
+		d.EchoOkay("守护进程已经停止")
+	}
+	return err
 }

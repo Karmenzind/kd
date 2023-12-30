@@ -6,9 +6,7 @@ import (
 	"os/exec"
 	"os/user"
 	"runtime"
-	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/Karmenzind/kd/config"
 	"github.com/Karmenzind/kd/internal"
@@ -23,6 +21,8 @@ import (
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 )
+
+var VERSION = "v0.0.2"
 
 func showPrompt() {
 	exename, err := pkg.GetExecutableBasename()
@@ -46,52 +46,6 @@ var um = map[string]string{
 	"generate-config": "generate config sample 生成配置文件，Linux/Mac默认地址为~/.config/kd.toml，Win为~\\kd.toml",
 	"edit-config":     "edit configuration file with the default editor 用默认编辑器打开配置文件",
 	"status":          "show running status 展示运行信息",
-}
-
-func KillDaemonIfRunning() error {
-	p, err := daemon.FindServerProcess()
-	var trySysKill bool
-	if err == nil {
-		if p == nil {
-			d.EchoOkay("未发现守护进程，无需停止")
-			return nil
-		} else if runtime.GOOS != "windows" {
-			zap.S().Infof("Found running daemon PID: %d,", p.Pid)
-			errSig := p.SendSignal(syscall.SIGINT)
-			if errSig != nil {
-				zap.S().Warnf("Failed to stop PID %d with syscall.SIGINT: %s", p.Pid, errSig)
-				trySysKill = true
-			}
-		} else {
-			trySysKill = true
-		}
-	} else {
-		zap.S().Warnf("[process] Failed to find daemon: %s", err)
-		trySysKill = true
-	}
-	pidStr := strconv.Itoa(int(p.Pid))
-
-	if trySysKill {
-		var cmd *exec.Cmd
-		switch runtime.GOOS {
-		case "windows":
-			cmd = exec.Command("taskkill", "/F", "/T", "/PID", pidStr)
-			// cmd = exec.Command("taskkill", "/im", "kd", "/T", "/F")
-		case "linux":
-			cmd = exec.Command("kill", "-9", pidStr)
-			// cmd = exec.Command("killall", "kd")
-		}
-		output, err := cmd.Output()
-		zap.S().Infof("Executed '%s'. Output %s", cmd, output)
-		if err != nil {
-			zap.S().Warnf("Failed to kill daemon with system command. Error: %s", output, err)
-		}
-	}
-	if err == nil {
-		zap.S().Info("Terminated daemon process.")
-		d.EchoOkay("守护进程已经停止")
-	}
-	return err
 }
 
 //  -----------------------------------------------------------------------------
@@ -121,25 +75,51 @@ func flagDaemon(*cli.Context, bool) error {
 }
 
 func flagStop(*cli.Context, bool) error {
-	err := KillDaemonIfRunning()
+	err := daemon.KillDaemonIfRunning()
 	if err != nil {
 		d.EchoFatal(err.Error())
 	}
 	return nil
 }
 
-func flagUpdate(*cli.Context, bool) error {
-	if pkg.GetLinuxDistro() == "arch" {
-		d.EchoFine("您在使用ArchLinux，推荐通过AUR安装/升级，更方便省心")
+func flagUpdate(ctx *cli.Context, _ bool) (err error) {
+    if runtime.GOOS == "windows" {
+        d.EchoWrong("Windows暂不支持一键更新，请手动到release页面下载")
+    }
+	var ver string
+	// if pkg.GetLinuxDistro() == "arch" {
+	// 	d.EchoFine("您在使用ArchLinux，推荐通过AUR安装/升级，更方便省心")
+	// }
+	force := ctx.Bool("force")
+	if force {
+		d.EchoRun("强制更新")
 	}
-	if pkg.AskYN("Update kd binary file?") {
-		emoji.Println(":lightning: Let's update now")
-		update.UpdateBinary()
-	} else {
-		fmt.Println("Canceled.", d.B(d.Green(":)")))
+	doUpdate := force
+	if !doUpdate {
+		ver, err = update.GetNewerVersion(VERSION)
+		if err != nil {
+			d.EchoError(err.Error())
+			return
+		}
+		if ver != "" {
+			prompt := fmt.Sprintf("Found new version (%s). Update?", ver)
+			if pkg.AskYN(prompt) {
+				doUpdate = true
+			} else {
+				fmt.Println("Canceled.", d.B(d.Green(":)")))
+				return nil
+			}
+		} else {
+			fmt.Println("You're using the latest version.")
+			return nil
+		}
 	}
-	return nil
 
+	if doUpdate {
+		emoji.Println(":lightning: Let's update now")
+		err = update.UpdateBinary(VERSION)
+	}
+	return err
 }
 
 func flagGenerateConfig(*cli.Context, bool) error {
@@ -191,6 +171,11 @@ func flagStatus(*cli.Context, bool) error {
 	fmt.Printf("    Daemon PID：%d\n", di.PID)
 	fmt.Printf("    配置文件地址：%s\n", config.CONFIG_PATH)
 	fmt.Printf("    数据文件目录：%s\n", cache.CACHE_ROOT_PATH)
+	kdpath, err := pkg.GetExecutablePath()
+	if err == nil {
+		fmt.Printf("    Binary地址：%s\n", kdpath)
+	}
+
 	return nil
 }
 
@@ -223,7 +208,7 @@ func main() {
 	app := &cli.App{
 		Suggest:         true, // XXX
 		Name:            "kd",
-		Version:         "v0.0.1",
+		Version:         VERSION,
 		Usage:           "A crystal clean command-line dictionary.",
 		HideHelpCommand: true,
 		// EnableBashCompletion: true,
@@ -234,16 +219,17 @@ func main() {
 			&cli.BoolFlag{Name: "text", Aliases: []string{"t"}, Hidden: true, Usage: um["text"]},
 			&cli.BoolFlag{Name: "nocache", Aliases: []string{"n"}, DisableDefaultText: true, Usage: um["nocache"]},
 			&cli.StringFlag{Name: "theme", Aliases: []string{"T"}, DefaultText: "temp", Usage: um["theme"]},
+			&cli.BoolFlag{Name: "force", Aliases: []string{"f"}, DisableDefaultText: true, Hidden: true},
 
 			// BoolFlags as commands
 			&cli.BoolFlag{Name: "init", DisableDefaultText: true, Hidden: true, Usage: um["init"]},
-			&cli.BoolFlag{Name: "server", DisableDefaultText: true, Action: flagServer, Usage: um["server"]},
+			&cli.BoolFlag{Name: "server", DisableDefaultText: true, Action: flagServer, Hidden: true, Usage: um["server"]},
 			&cli.BoolFlag{Name: "daemon", DisableDefaultText: true, Action: flagDaemon, Usage: um["daemon"]},
 			&cli.BoolFlag{Name: "stop", DisableDefaultText: true, Hidden: true, Action: flagStop, Usage: um["stop"]},
 			&cli.BoolFlag{Name: "update", DisableDefaultText: true, Action: flagUpdate, Usage: um["update"]},
 			&cli.BoolFlag{Name: "generate-config", DisableDefaultText: true, Action: flagGenerateConfig, Usage: um["generate-config"]},
 			&cli.BoolFlag{Name: "edit-config", DisableDefaultText: true, Action: flagEditConfig, Usage: um["edit-config"]},
-			&cli.BoolFlag{Name: "status", DisableDefaultText: true, Action: flagStatus, Usage: um["status"]},
+			&cli.BoolFlag{Name: "status", DisableDefaultText: true, Hidden: true, Action: flagStatus, Usage: um["status"]},
 		},
 		Action: func(cCtx *cli.Context) error {
 			// 除了--text外，其他的BoolFlag都当subcommand用
@@ -274,7 +260,7 @@ func main() {
 
 				qstr := strings.Join(cCtx.Args().Slice(), " ")
 
-				r, err := internal.Query(qstr, cCtx.Bool("nocache"))
+				r, err := internal.Query(qstr, cCtx.Bool("nocache"), cCtx.Bool("text"))
 				if cfg.FreqAlert {
 					if h := <-r.History; h > 3 {
 						d.EchoWarn(fmt.Sprintf("本月第%d次查询`%s`", h, r.Query))

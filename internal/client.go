@@ -34,10 +34,10 @@ func ensureDaemon(running chan bool) {
     running <- true
 }
 
-func Query(query string, noCache bool) (r *model.Result, err error) {
+func Query(query string, noCache bool, longText bool) (r *model.Result, err error) {
 	query = strings.ToLower(strings.Trim(query, " "))
 
-	r = &model.Result{Query: query}
+    r = &model.Result{Query: query, IsLongText: longText}
 	r.History = make(chan int, 1)
 
 	daemonRunning := make(chan bool)
@@ -52,6 +52,13 @@ func Query(query string, noCache bool) (r *model.Result, err error) {
 		r.Prompt = "请输入有效查询字符或参数"
 		return
 	}
+
+
+    if longText {
+		r.Found = false
+		r.Prompt = "暂不支持长句翻译"
+		return
+    }
 
     var inNotFound bool
 	line, err := cache.CheckNotFound(r.Query)

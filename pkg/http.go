@@ -1,11 +1,13 @@
 package pkg
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -77,9 +79,9 @@ func CreateHTTPClient(timeoutsec time.Duration) *http.Client {
 
 func BuildYoudaoRequest(q string) (*http.Request, error) {
 	r, err := http.NewRequest("GET", fmt.Sprintf("http://dict.youdao.com/search?q=%s", q), nil)
-    if err != nil {
-        return r, err
-    }
+	if err != nil {
+		return r, err
+	}
 	r.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
 	// r.Header.Set("Accept-Encoding", "gzip, deflate, br")
 	r.Header.Set("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
@@ -91,30 +93,42 @@ func BuildYoudaoRequest(q string) (*http.Request, error) {
 }
 
 func DownloadFile(filepath string, url string) (err error) {
-  // Create the file
-  out, err := os.Create(filepath)
-  if err != nil  {
-    return err
-  }
-  defer out.Close()
+	var client *http.Client
+	if strings.HasPrefix(url, "https") {
+		client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
+	} else {
+		client = &http.Client{}
+	}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
 
-  // Get the data
-  resp, err := http.Get(url)
-  if err != nil {
-    return err
-  }
-  defer resp.Body.Close()
+	// Get the data
+	resp, err := client.Do(req)
+	// resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 
-  // Check server response
-  if resp.StatusCode != http.StatusOK {
-    return fmt.Errorf("bad status: %s", resp.Status)
-  }
+	// Create the file
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
 
-  // Writer the body to file
-  _, err = io.Copy(out, resp.Body)
-  if err != nil  {
-    return err
-  }
+	// Check server response
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("bad status: %s", resp.Status)
+	}
 
-  return nil
+	// Writer the body to file
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

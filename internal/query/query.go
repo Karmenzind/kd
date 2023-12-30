@@ -34,22 +34,22 @@ func FetchCached(r *model.Result) (err error) {
 
 func QueryDaemon(addr string, r *model.Result) error {
 	conn, err := net.Dial("tcp", addr)
-    if err != nil {
-        d.EchoFatal("与守护进程通信失败，请尝试执行`kd --daemon`，如果无法解决问题，请提交issue并上传日志")
-    }
+	if err != nil {
+		d.EchoFatal("与守护进程通信失败，请尝试执行`kd --daemon`，如果无法解决问题，请提交issue并上传日志")
+	}
 	fmt.Fprint(conn, r.Query)
 
 	message, _ := bufio.NewReader(conn).ReadBytes('\n')
 
-    dr := model.DaemonResponse{R: r}
+	dr := model.DaemonResponse{R: r, IsLongText: r.IsLongText}
 	err = json.Unmarshal(message, &dr)
-    r.Found = dr.Found
-    zap.S().Debugf("Message from server: %s", string(message))
-    if err != nil {
-        return fmt.Errorf("解析daemon返回结果失败: %s", err)
-    }
-    if dr.Error != "" {
-        return fmt.Errorf(dr.Error)
-    }
-    return nil
+	r.Found = dr.Found
+	zap.S().Debugf("Message from server: %s", string(message))
+	if err != nil {
+		return fmt.Errorf("解析daemon返回结果失败: %s", err)
+	}
+	if dr.Error != "" {
+		return fmt.Errorf(dr.Error)
+	}
+	return nil
 }
