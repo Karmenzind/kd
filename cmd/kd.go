@@ -171,6 +171,7 @@ func flagStatus(*cli.Context, bool) error {
 	fmt.Printf("    Daemon PID：%d\n", di.PID)
 	fmt.Printf("    配置文件地址：%s\n", config.CONFIG_PATH)
 	fmt.Printf("    数据文件目录：%s\n", cache.CACHE_ROOT_PATH)
+	fmt.Printf("    Log地址：%s\n", logger.LOG_FILE)
 	kdpath, err := pkg.GetExecutablePath()
 	if err == nil {
 		fmt.Printf("    Binary地址：%s\n", kdpath)

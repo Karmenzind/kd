@@ -49,11 +49,12 @@ func GetExecutableBasename() (string, error) {
 // pager or print
 // config > $PAGER > less -f
 // TODO 增加检测pager可用
-func OutputResult(out string, paging bool, pagerCmd string, clear bool) error {
+func OutputResult(out string, paging bool, pagerCmd string, doClear bool) error {
 	var err error
 	var logger = zap.S()
 	if paging {
 		if pagerCmd == "" {
+			// XXX (k): <2023-12-31> expandenv?
 			if sysPager := os.Getenv("PAGER"); sysPager != "" {
 				logger.Debugf("Using system pager %s", sysPager)
 				pagerCmd = sysPager
@@ -80,15 +81,17 @@ func OutputResult(out string, paging bool, pagerCmd string, clear bool) error {
 				pager = exec.Command(pagerCmd)
 			}
 			if CommandExists(program) {
-				pager.Stdin = strings.NewReader(out)
+				// pager.Stdin = strings.NewReader(out)
 				pager.Stdout = os.Stdout
-				err = pager.Run()
+				pager.Stderr = os.Stderr
+				err = Output2PagerVer2(pager, out)
+				// err = pager.Run()
 				return err
 			}
 			d.EchoWarn(fmt.Sprintf("pager command `%s` not found", program))
 		}
 	}
-	if clear {
+	if doClear {
 		_, h, err := GetTermSize()
 		if err == nil && strings.Count(out, "\n") < h {
 			ClearScreen()
@@ -96,6 +99,31 @@ func OutputResult(out string, paging bool, pagerCmd string, clear bool) error {
 	}
 	fmt.Println(out)
 	return nil
+}
+
+func Output2PagerVer1(pager *exec.Cmd, output string) (err error) {
+	pager.Stdin = strings.NewReader(output)
+	err = pager.Run()
+
+	return err
+}
+
+func Output2PagerVer2(pager *exec.Cmd, output string) (err error) {
+	pipe, err := pager.StdinPipe()
+	if err != nil {
+		return
+	}
+
+	if err = pager.Start(); err != nil {
+		return err
+	}
+
+	defer func() {
+		pipe.Close()
+		pager.Wait()
+	}()
+	fmt.Fprintln(pipe, output)
+	return err
 }
 
 func CommandExists(cmd string) bool {

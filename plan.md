@@ -1,8 +1,6 @@
 #master plan
 
 ## wip
-- mac编译
-- 测试mac的DB初始化情况
 - powershell命令改成当前用户范围
 - 测试windows的--update
 
@@ -23,6 +21,7 @@
 - 加入词库设置，供选择词库大小
 
 ## low priority
+- --update下载之后缓存，避免重复下载
 - cli替换为cobra
 - source数据 分为base-sourse & web-source
 - 刷数据，去掉音标[]
@@ -34,16 +33,13 @@
 
 # BUG
 
-## Build failed
-
-mac arm64 / amd64
-
-(action) linux 386
+provide: see also
 
 ## Risk
 - 实际文件名 不改的时候的process_name
 
-# Others
+## low priority
+- (action) linux 386
 
 ## 写入release介绍
 
@@ -56,3 +52,4 @@ mac arm64 / amd64
 如果没有你所使用的平台/架构，请提交issue反馈
 
 如果下载受阻，请前往gitee备份页面
+
