@@ -2,6 +2,7 @@ package decorate
 
 import (
 	"fmt"
+	"os"
 
 	fc "github.com/fatih/color"
 	gc "github.com/gookit/color"
@@ -56,7 +57,6 @@ var WarnBg = fc.New(fc.BgYellow, fc.FgBlack, fc.Italic, fc.Faint).SprintFunc()
 var Error = fc.New(fc.FgRed, fc.Italic).SprintFunc()
 var ErrorBg = fc.New(fc.BgRed, fc.FgBlack, fc.Italic, fc.Faint).SprintFunc()
 
-
 // Theme
 type ColorStringFunc func(a ...interface{}) string
 
@@ -75,8 +75,8 @@ func applyTheme(colorscheme string) {
 		Property = fc.New(fc.FgGreen).SprintFunc()
 		Idx = fc.New(fc.FgHiWhite).SprintFunc()
 		Addi = fc.New(fc.FgCyan, fc.Italic).SprintFunc()
-        Para = Text
-        CollinsPara = fc.New(fc.FgYellow).SprintFunc()
+		Para = Text
+		CollinsPara = fc.New(fc.FgYellow).SprintFunc()
 		Eg = fc.New(fc.FgHiWhite, fc.Faint, fc.Italic).SprintFunc()
 		EgPref = Eg
 		// EgEn = Text
@@ -92,8 +92,8 @@ func applyTheme(colorscheme string) {
 		Property = fmt.Sprint
 		Idx = fc.New(fc.FgHiWhite).SprintFunc()
 		Addi = fc.New(fc.FgGreen, fc.Italic).SprintFunc()
-        Para = Text
-        CollinsPara = fc.New(fc.FgHiWhite).SprintFunc()
+		Para = Text
+		CollinsPara = fc.New(fc.FgHiWhite).SprintFunc()
 		Eg = fc.New(fc.FgHiYellow, fc.Faint, fc.Italic).SprintFunc()
 		EgPref = Addi
 		EgEn = fc.New(fc.FgYellow, fc.Italic).SprintFunc()
@@ -102,6 +102,7 @@ func applyTheme(colorscheme string) {
 		Rank = fc.New(fc.FgRed, fc.Italic).SprintFunc()
 
 	default:
-		panic(fmt.Errorf("unknown theme: %s", colorscheme))
+		fc.New(fc.FgRed).Printf("✘ Unknown theme: %s\n", colorscheme)
+		os.Exit(1)
 	}
 }

@@ -45,3 +45,18 @@ func LoadJson(fpath string, v any) (err error) {
 	}
 	return
 }
+
+func AddExecutablePermission(filePath string) error {
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		return err
+	}
+	originalMode := fileInfo.Mode()
+	newMode := originalMode | 0111
+	if err := os.Chmod(filePath, newMode); err != nil {
+		return err
+	}
+    zap.S().Infof("Executable permission added to %s\n", filePath)
+	return nil
+}
+
