@@ -10,18 +10,17 @@ cd $PROJECT_DIR
 targetdir=${PROJECT_DIR}/build
 mkdir -p $targetdir
 
-declare -A d=(
-	["darwin"]="amd64 arm64"
-	["linux"]="amd64 arm64 386"
-	["windows"]="amd64"
-)
-
 do_build() {
 	local os=$1
 	local arch=$2
-	local targetfile=$3
 
     local cgo=1 cc=
+
+    local filename=kd_${os}_${arch}
+    [[ $os == "darwin" ]] && filename=kd_macos_${arch}
+
+    local targetfile=${targetdir}/${filename}
+    [[ $os == "windows" ]] && targetfile=${targetfile}.exe
 
     case $os in
         windows )
@@ -46,21 +45,33 @@ do_build() {
     fi
 }
 
-if [[ $1 == "-a" ]]; then
+build_all() {
+    declare -A d=(
+        ["darwin"]="amd64 arm64"
+        ["linux"]="amd64 arm64"
+        ["windows"]="amd64"
+    )
     rm -rfv $targetdir/*
 	for os in "${!d[@]}"; do
 		for arch in ${d[$os]}; do
-			filename=kd_${os}_${arch}
-            [[ $os == "darwin" ]] && filename=kd_macos_${arch}
-
-			targetfile=${targetdir}/${filename}
-			[[ $os == "windows" ]] && targetfile=${targetfile}.exe
-
 			echo ">>> Building for $os $arch..."
 			do_build $os $arch $targetfile
 		done
 	done
-else
+}
+
+
+if [[ $1 == "" ]]; then
 	echo ">>> Building for current platform..."
 	do_build '' '' ${PROJECT_DIR}/kd
 fi
+
+case $1 in
+    -a )
+        build_all
+        ;;
+    *)
+        do_build $*
+        ;;
+esac
+

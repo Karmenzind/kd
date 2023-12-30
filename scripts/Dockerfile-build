@@ -1,0 +1,18 @@
+# vim:set noet sts=0 sw=8 ts=8 ft=dockerfile:
+# test building
+FROM golang:1.21-bookworm
+RUN apt-get update -y
+RUN apt-get install -y clang
+RUN apt-get install -y gcc-mingw-w64-x86-64  gcc-aarch64-linux-gnu
+    # libc6-dev-i386 \
+    # linux-headers-generic \
+    # linux-libc-dev:amd64 \
+    # linux-libc-dev-arm64-cross 
+# RUN apt-get install -y gcc-multilib
+# RUN apt-get install -y gcc-aarch64-linux-gnu
+# RUN apt-get install -y gcc-mingw-w64-x86-64  gcc-multilib
+COPY . /app
+WORKDIR /app
+# RUN go mod tidy
+RUN bash scripts/build.sh -a
+
