@@ -177,14 +177,31 @@ func flagStatus(*cli.Context, bool) error {
 	return nil
 }
 
+func basicCheck() {
+	if runtime.GOOS != "windows" {
+		if u, _ := user.Current(); u.Username == "root" {
+			d.EchoWrong("不支持Root用户")
+			os.Exit(1)
+		}
+	}
+
+	// XXX (k): <2024-01-01>
+	// if exename, err := pkg.GetExecutableBasename(); err == nil {
+	// 	if exename != "kd" {
+	// 		d.EchoWrong("请将名字改成kd")
+	// 		os.Exit(1)
+	// 	}
+	// } else {
+	// 	d.EchoError(err.Error())
+	// }
+}
+
 func main() {
+	basicCheck()
 	config.InitConfig()
 	cfg := config.Cfg
 	d.ApplyConfig(cfg.EnableEmoji)
-	if u, _ := user.Current(); u.Username == "root" {
-		d.EchoWrong("不支持Root用户")
-		os.Exit(1)
-	}
+
 	if cfg.Logging.Enable {
 		l, err := logger.InitLogger(&cfg.Logging)
 		if err != nil {
@@ -291,5 +308,11 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		zap.S().Errorf("APP stopped: %s", err)
 		d.EchoError(err.Error())
+	}
+
+	if ltag := update.GetCachedLatestTag(); ltag != "" {
+		if update.CompareVersions(ltag, VERSION) == 1 {
+			d.EchoWeakNotice(fmt.Sprintf("发现新版本%s，请执行`kd --update`更新", ltag))
+		}
 	}
 }
