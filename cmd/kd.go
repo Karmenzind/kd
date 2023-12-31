@@ -22,7 +22,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var VERSION = "v0.0.2"
+var VERSION = "v0.0.3"
 
 func showPrompt() {
 	exename, err := pkg.GetExecutableBasename()
