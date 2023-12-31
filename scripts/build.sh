@@ -30,7 +30,7 @@ do_build() {
 	case $os in
 	windows)
 		local cc=x86_64-w64-mingw32-gcc
-		local buildopts=-buildmode=c-shared
+		# local buildopts=-buildmode=c-shared
 		;;
 	linux)
 		if [[ $arch == "arm64" ]]; then
@@ -42,7 +42,10 @@ do_build() {
 		;;
 	esac
 
+    set -x
 	GOOS=$os GOARCH=$arch CGO_ENABLED=$cgo CC=$cc go build ${buildopts} -o ${targetfile} -ldflags="-s -w" -tags urfave_cli_no_docs cmd/kd.go
+    set +x
+
 	if (($? == 0)); then
 		echo "    Finished -> ${targetfile}"
 	else

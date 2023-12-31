@@ -14,5 +14,4 @@ RUN apt-get install -y gcc-mingw-w64-x86-64  gcc-aarch64-linux-gnu
 COPY . /app
 WORKDIR /app
 # RUN go mod tidy
-RUN bash scripts/build.sh -a
-
+CMD bash scripts/build.sh -a
