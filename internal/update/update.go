@@ -21,9 +21,10 @@ import (
 	"go.uber.org/zap"
 )
 
-// var LATEST_RELEASE_URL = "http://localhost:8901/"
-var LATEST_RELEASE_URL = "https://github.com/Karmenzind/kd/releases/latest/download/"
-var TAGLIST_URL = "https://api.github.com/repos/Karmenzind/kd/tags"
+// var LATEST_RELEASE_URL = "http://192.168.31.228:8901/"
+
+const LATEST_RELEASE_URL = "https://github.com/Karmenzind/kd/releases/latest/download/"
+const TAGLIST_URL = "https://api.github.com/repos/Karmenzind/kd/tags"
 
 type GithubTag struct {
 	Name string
@@ -146,6 +147,8 @@ func UpdateBinary(currentTag string) (err error) {
 		zap.S().Errorf("Failed to download binary file: %s", err)
 	}
 	d.EchoRun("已下载完成")
+	// d.EchoRun(fmt.Sprintf("临时文件保存位置：%s", tmpPath))
+
 	err = moveFile(tmpPath, exepath)
 	if err != nil {
 		return
@@ -170,22 +173,24 @@ func moveFile(src, tgt string) (err error) {
 	if err == nil {
 		return
 	}
-	zap.S().Infof("Permission denied. Please make sure you have write access to the destination directory.")
-	if runtime.GOOS == "windows" {
-		return fmt.Errorf("文件覆盖失败，遇到权限问题，请到release页面下载")
-	}
+	zap.S().Infof("Failed to rename binary file: %s", err)
 
-	cmd := exec.Command("sudo", "mv", src, tgt)
-	cmd.Stdin = os.Stdin
-	d.EchoRun("覆盖文件需root权限，请输入密码")
-	err = cmd.Run()
+	if runtime.GOOS == "windows" {
+		// return fmt.Errorf("文件覆盖失败，遇到权限问题（%s），请到release页面下载", err)
+		// d.EchoRun("尝试覆盖源文件")
+		err = replaceExecutable(tgt, src)
+	} else {
+		cmd := exec.Command("sudo", "mv", src, tgt)
+		cmd.Stdin = os.Stdin
+		d.EchoRun("覆盖文件需root权限，请输入密码")
+		err = cmd.Run()
+	}
 	// if linkErr, ok := err.(*os.LinkError); ok {
 	// 	if os.IsPermission(linkErr.Err) {
 	// 		zap.S().Infof("Permission denied. Please make sure you have write access to the destination directory.")
 	// 		if runtime.GOOS == "windows" {
 	// 			return fmt.Errorf("文件覆盖失败，遇到权限问题，请到release页面下载")
 	// 		}
-
 	// 		cmd := exec.Command("sudo", "mv", src, tgt)
 	// 		cmd.Stdin = os.Stdin
 	// 		d.EchoRun("覆盖文件需root权限，请输入密码")
@@ -193,4 +198,43 @@ func moveFile(src, tgt string) (err error) {
 	// 	}
 	// }
 	return
+}
+
+func replaceExecutable(oldPath, newPath string) error {
+	// 修改时改cron
+	backupPath := oldPath + ".update_backup"
+	err := os.Rename(oldPath, backupPath)
+	if err != nil {
+		return err
+	}
+
+	err = copyFile(newPath, oldPath)
+	if err != nil {
+		// XXX (k): <2024-01-01> 再挪回来？
+		return err
+	}
+
+	removeErr := os.Remove(backupPath)
+	if removeErr != nil {
+		zap.S().Warnf("Failed to remove old file (%s): %s", backupPath, removeErr)
+	}
+
+	return nil
+}
+
+func copyFile(src, dest string) error {
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer destination.Close()
+
+	_, err = io.Copy(destination, source)
+	return err
 }
