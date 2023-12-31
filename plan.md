@@ -20,6 +20,7 @@
 - 加入词库设置，供选择词库大小
 
 ## low priority
+- 一键安装脚本
 - --update下载之后缓存，避免重复下载
 - cli替换为cobra
 - source数据 分为base-sourse & web-source

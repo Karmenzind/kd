@@ -18,6 +18,7 @@ do_build() {
 	local cgo=1 cc=
 
 	if [[ $targetfile == "" ]] && [[ $os != "" ]] && [[ $arch != "" ]]; then
+        echo
 		echo ">>> Building for $os $arch..."
 
 		local filename=kd_${os}_${arch}
@@ -44,12 +45,13 @@ do_build() {
 
     set -x
 	GOOS=$os GOARCH=$arch CGO_ENABLED=$cgo CC=$cc go build ${buildopts} -o ${targetfile} -ldflags="-s -w" -tags urfave_cli_no_docs cmd/kd.go
+    local ret=$?
     set +x
 
-	if (($? == 0)); then
-		echo "    Finished -> ${targetfile}"
+	if (($ret == 0)); then
+		echo "    [✔] Finished -> ${targetfile}"
 	else
-		echo "    Failed to build for $os $arch"
+		echo "    [✘] Failed to build for $os $arch"
 	fi
 }
 

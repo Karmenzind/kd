@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Karmenzind/kd/internal/cache"
+	"github.com/Karmenzind/kd/internal/update"
 	"github.com/Karmenzind/kd/pkg"
 	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
@@ -41,10 +42,21 @@ func cronDeleteSpam() {
 }
 
 func cronCheckUpdate() {
-	ticker := time.NewTicker(120 * time.Second)
+	ticker := time.NewTicker(3600 * 12 * time.Second)
 	for {
-		t := <-ticker.C
-		zap.S().Debugf("Tick at %s", t)
+        // TODO (k): <2024-01-01> 改成检查文件Stat来判断时长
+
+        for i := 0; i < 3; i++ {
+            tag, err := update.GetLatestTag()
+            if err == nil {
+                fmt.Println("最新Tag", tag)
+                break
+            }
+            zap.S().Warnf("Failed to get latest tag: %s", err)
+            time.Sleep(5 * time.Second)
+        }
+
+		<-ticker.C
 	}
 }
 
