@@ -2,9 +2,9 @@
 
 ## wip
 - powershell命令改成当前用户范围
-- 测试windows的--update
 
 ## short-term
+- 自动检查可用更新
 - 多source直接嵌套进列表
 - 记录pid/port，先检查这两个
 - 预留一个接口调用，获取重要信息

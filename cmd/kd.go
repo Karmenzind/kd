@@ -22,7 +22,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var VERSION = "v0.0.2"
+var VERSION = "v0.0.3"
 
 func showPrompt() {
 	exename, err := pkg.GetExecutableBasename()
@@ -83,9 +83,6 @@ func flagStop(*cli.Context, bool) error {
 }
 
 func flagUpdate(ctx *cli.Context, _ bool) (err error) {
-    if runtime.GOOS == "windows" {
-        d.EchoWrong("Windows暂不支持一键更新，请手动到release页面下载")
-    }
 	var ver string
 	// if pkg.GetLinuxDistro() == "arch" {
 	// 	d.EchoFine("您在使用ArchLinux，推荐通过AUR安装/升级，更方便省心")

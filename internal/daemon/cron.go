@@ -16,25 +16,41 @@ import (
 	"go.uber.org/zap"
 )
 
+func InitCron() {
+	go cronCheckUpdate()
+	go cronUpdateDataZip()
+	go cronDeleteSpam()
+}
+
+func cronDeleteSpam() {
+	ticker := time.NewTicker(600 * time.Second)
+	for {
+		<-ticker.C
+		zap.S().Debugf("Started clearing spam")
+		p, err := pkg.GetExecutablePath()
+		if err == nil {
+			bakPath := p + ".update_backup"
+			if pkg.IsPathExists(bakPath) {
+				err = os.Remove(bakPath)
+				if err != nil {
+					zap.S().Warnf("Failed to remove %s: %s", bakPath, err)
+				}
+			}
+		}
+	}
+}
+
+func cronCheckUpdate() {
+	ticker := time.NewTicker(120 * time.Second)
+	for {
+		t := <-ticker.C
+		zap.S().Debugf("Tick at %s", t)
+	}
+}
+
 const DATA_ZIP_URL = "https://gitee.com/void_kmz/kd/releases/download/v0.0.1/kd_data.zip"
 
-func InitCron() {
-	go checkUpdate()
-	go updateDataZip()
-}
-
-// check for update
-func checkUpdate() {
-	ticker := time.NewTicker(120 * time.Second)
-	go func() {
-		for {
-			t := <-ticker.C
-			zap.S().Debugf("Tick at %s", t)
-		}
-	}()
-}
-
-func updateDataZip() {
+func cronUpdateDataZip() {
 	ticker := time.NewTicker(3 * time.Second)
 	go func() {
 		for {
@@ -94,7 +110,7 @@ func updateDataZip() {
 			// 	continue
 			// }
 
-            err = applyTempDB(dbPath, tempDBPath)
+			err = applyTempDB(dbPath, tempDBPath)
 			if err != nil {
 				zap.S().Warnf("Failed: %s", err)
 				continue
@@ -166,7 +182,7 @@ func applyTempDB(dbPath, tempDBPath string) error {
 	if runtime.GOOS == "windows" {
 		cache.LiteDB.Close()
 		zap.S().Info("Waiting for 3 sec...")
-        time.Sleep(3*time.Second)
+		time.Sleep(3 * time.Second)
 	}
 	backupPath := fmt.Sprintf("%s.backup.%d-%d-%d", dbPath, now.Year(), now.Month(), now.Day())
 	err = os.Rename(dbPath, backupPath)
@@ -286,7 +302,6 @@ func parseDBAndInsertOffsetVersion(tempDBPath string) (err error) {
 				fetched += 1
 				// zap.S().Debugf("Inserted into %s: %s", table, success)
 			}
-
 			// insertSQL := fmt.Sprintf("INSERT OR IGNORE INTO %s (query, detail, update_time) VALUES (?, ?, ?)", table)
 
 			for _, row := range params {
