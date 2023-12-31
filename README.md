@@ -144,7 +144,7 @@ GLOBAL OPTIONS:
 ```toml
 # 是否使用分页器，MacOS上默认false
 paging = true
-# 分页器命令，例如：less -F / bat / more -e
+# 分页器命令，例如：less -F / bat / (不推荐) more -e
 pager_command = "less -F"
 
 # 本地最多缓存的单词条数
@@ -223,13 +223,12 @@ alias kd=__kdwithpager
 **进行中**
 
 - 长句翻译
-- 通过命令一键更新
+- 可更新自动提醒
 
 **近期**
 
 - 支持bash/zsh/fish补全，包含命令补全和[热词](https://github.com/first20hours/google-10000-english)补全
 - 支持查看生词本功能
-- 可更新自动提醒
 - 支持tmux浮窗模式
 
 **长期**

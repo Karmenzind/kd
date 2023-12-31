@@ -163,7 +163,11 @@ func (r *Result) PrettyFormat(onlyEN bool) string {
 			var piece string
 			piece = fmt.Sprintf("%s. ", d.Idx(idx+1))
 			if i.Additional != "" {
-				piece += d.Addi("(" + i.Additional + ")")
+				if strings.HasPrefix(i.Additional, "[") && strings.HasSuffix(i.Additional, "]") {
+					piece += d.Addi(i.Additional + " ")
+				} else {
+					piece += d.Addi("(" + i.Additional + ") ")
+				}
 			}
 			piece += d.CollinsPara(transExpr)
 			s = append(s, piece)
