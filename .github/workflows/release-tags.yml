@@ -46,8 +46,8 @@ jobs:
           bash scripts/build.sh linux arm64
           bash scripts/build.sh windows amd64
 
-      - name: echo changelog
-        run: echo ${{steps.build_changelog.outputs.changelog}}
+      # - name: echo changelog
+      #   run: echo ${{steps.build_changelog.outputs.changelog}}
 
       - name: Release
         uses: softprops/action-gh-release@v1

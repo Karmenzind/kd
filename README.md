@@ -1,7 +1,3 @@
-**当前状态** 初版本测试中，ArchLinux/Debian/Win11已经正常使用
-
------
-
 :stars: a crystal clear command-line dictionary, written in Go, supported Linux/Win/Mac**
 
 **Go语言实现的简洁好用的命令行词典，跨平台、易于安装、持续维护更新**
@@ -22,7 +18,7 @@
 * [颜色主题](#颜色主题)
 * [常见问题和解决方法](#常见问题和解决方法)
     * [MacOS弹出“无法打开”提醒](#macos弹出无法打开提醒)
-    * [设置Pager后显示异常](#设置pager后显示异常)
+    * [设置less为Pager后显示异常](#设置less为pager后显示异常)
 * [进度和计划](#进度和计划)
 * [卸载](#卸载)
 
@@ -54,37 +50,57 @@
 
         ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/en_only.png)
 
+    - `kd --update`命令一键更新版本
+
 > 更多功能正在开发中 :rocket:
 
-<!-- - `kd --update`参数一键更新 -->
 
 ## 安装
 
-**注**:
+<!-- **注**: -->
+<!-- - 将命令中的`<URL>`**替换**为[releases页面](https://github.com/Karmenzind/kd/releases)中对应你平台和架构的文件链接 -->
 
-- 将命令中的`<URL>`**替换**为[releases页面](https://github.com/Karmenzind/kd/releases)中对应你平台和架构的文件链接
 - 这里下载位置为示例，可以下载到任何地方，然后将路径加入PATH环境变量
-
+- 其他架构需求请提交issue
 
 ### Linux/MacOS
 
+在终端中执行：
+
+- Linux amd64 (x86-64)
 ```bash
-sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd <URL> && chmod +x /usr/local/bin/kd'
+sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_linux_amd64 && chmod +x /usr/local/bin/kd'
 ```
+- MacOS arm64 (即M1/M2/M3芯片的架构)
+```bash
+sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_arm64 && chmod +x /usr/local/bin/kd'
+```
+- MacOS amd64 (x86-64)
+```bash
+sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_arm64 && chmod +x /usr/local/bin/kd'
+```
+- Linux arm64
+```bash
+sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_linux_arm64 && chmod +x /usr/local/bin/kd'
+```
+
+<!-- ```bash -->
+<!-- sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd <URL> && chmod +x /usr/local/bin/kd' -->
+<!-- ``` -->
+
 
 <!-- sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_arm64 && chmod +x /usr/local/bin/kd' -->
 <!-- ArchLinux推荐通过AUR一键安装`yay -S aur/kd`，后续直接通过包管理升级 -->
 
 ### Windows
 
-用Powershell执行:
+用非管理员模式的Powershell执行:
 
 ```powershell
-# 下载文件放入C:\bin，这里是Win64位架构，其他架构需求请提交issue
+# 下载文件放入C:\bin，这里是amd64(x86-64)架构
 Invoke-WebRequest -uri 'https://github.com/Karmenzind/kd/releases/latest/download/kd_windows_amd64.exe' -OutFile ( New-Item -Path "C:\bin\kd.exe" -Force )
-
-# （需要管理员权限）将C:\bin加入PATH环境变量
-[Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\bin", "Machine")
+# 将C:\bin加入PATH环境变量
+[Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\bin", "User")
 ```
 
 或手动下载文件，然后通过“计算机->属性->修改环境变量”修改PATH
@@ -128,7 +144,7 @@ GLOBAL OPTIONS:
 ```toml
 # 是否使用分页器，MacOS上默认false
 paging = true
-# 分页器命令，例如：less -F / bat / more -e
+# 分页器命令，例如：less -F / bat / (不推荐) more -e
 pager_command = "less -F"
 
 # 本地最多缓存的单词条数
@@ -186,15 +202,18 @@ enable_emoji = true
 sudo xattr -r -d com.apple.quarantine <kd文件所在路径>
 ```
 
-### 设置Pager后显示异常
+### 设置less为Pager后显示异常
 
-目前发现MacOS/Debian Bookworm设置分页器后，颜色渲染会失败，尚未解决。如果其他平台遇到此问题，请提交issue
+目前发现MacOS/Debian Bookworm设置less为分页器后，颜色渲染会失败，尚未解决。如果其他平台遇到此问题，请提交issue
 
-配置文件中设置`paging = false`可规避此问题，如果还想使用分页器，可在shell中设置alias，例如bash/zsh可在bashrc/zshrc中添加：
+解决方案：
 
+- 改用其他pager程序，如bat/more
+- 关闭pager，配置文件中设置`paging = false`
+- 如果还想使用less作为分页器，可在shell中设置alias，例如bash/zsh可在bashrc/zshrc中添加：
 ```bash
 __kdwithpager() {
-    kd ${@} | less -F
+  kd ${@} | less -F
 }
 alias kd=__kdwithpager
 ```
@@ -204,13 +223,12 @@ alias kd=__kdwithpager
 **进行中**
 
 - 长句翻译
-- 通过命令一键更新
+- 可更新自动提醒
 
 **近期**
 
 - 支持bash/zsh/fish补全，包含命令补全和[热词](https://github.com/first20hours/google-10000-english)补全
 - 支持查看生词本功能
-- 可更新自动提醒
 - 支持tmux浮窗模式
 
 **长期**

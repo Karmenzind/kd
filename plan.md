@@ -1,15 +1,14 @@
-#master plan
+# master plan
 
 ## wip
-- powershell命令改成当前用户范围
+- 自动检查可用更新
+- 长句查询另外缓存
 
 ## short-term
-- 自动检查可用更新
 - 多source直接嵌套进列表
 - 记录pid/port，先检查这两个
 - 预留一个接口调用，获取重要信息
 - 用代理爬词库
-- 长句查询另外缓存
 - use hash as cache file's name for long query
 - json储存所有查过的单词最后访问时间
 
@@ -17,7 +16,7 @@
 - 引入stardict源
 - 增加服务端
 - 更新自动提醒
-- 自动更新ua数据
+- 自动更新UA数据
 - 加入词库设置，供选择词库大小
 
 ## low priority
@@ -32,8 +31,6 @@
 - 自定义json mashal的encoder
 
 # BUG
-
-provide: see also
 
 ## Risk
 - 实际文件名 不改的时候的process_name
