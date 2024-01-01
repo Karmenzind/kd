@@ -31,12 +31,12 @@ type Config struct {
 	Paging       bool   `default:"true" toml:"paging"`
 	PagerCommand string `toml:"pager_command"`
 	AutoClear    bool   `default:"false" toml:"auto_clear"`
-	MaxCached    uint   `default:"10000" toml:"max_cached"`
+	// MaxCached    uint   `default:"10000" toml:"max_cached"`
 	EnglishOnly  bool   `default:"false" toml:"english_only"`
 	Theme        string `default:"temp" toml:"theme"`
 	HTTPProxy    string `toml:"http_proxy"`
 	ClearScreen  bool   `toml:"clear_screen" default:"false"`
-	FreqAlert    bool   `toml:"freq_alert" default:"true"`
+	FreqAlert    bool   `toml:"freq_alert" default:"false"`
 
 	Logging LoggerConfig `toml:"logging"`
 

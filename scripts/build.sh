@@ -19,7 +19,7 @@ do_build() {
 
 	if [[ $targetfile == "" ]] && [[ $os != "" ]] && [[ $arch != "" ]]; then
         echo
-		echo ">>> Building for $os $arch..."
+		echo "≫  Building for $os $arch..."
 
 		local filename=kd_${os}_${arch}
 		[[ $os == "darwin" ]] && filename=kd_macos_${arch}

@@ -1,10 +1,12 @@
-:stars: a crystal clear command-line dictionary, written in Go, supported Linux/Win/Mac**
+:stars: a crystal clear command-line dictionary, written in Go, supported Linux/Win/Mac
 
 **Go语言实现的简洁好用的命令行词典，跨平台、易于安装、持续维护更新**
 
-本项目受[无道词典](https://github.com/ChestnutHeng/Wudao-dict)启发，在复刻Wudao核心功能的基础上增加了更丰富的特性。我是Wudao的多年用户，日常工作生活重度依赖随手`wd abandon`，但可惜这个项目已经很久未更新，且存在一些可以优化的地方，所以忍不住重写了一个，选择Go是为了方便地解决安装和跨平台问题。
+<img src="https://raw.githubusercontent.com/Karmenzind/i/master/kd/kd_demo.gif" width="700" align="center">
 
-![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/kd_demo.gif)
+<!-- ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/kd_demo.gif) -->
+
+本项目受[无道词典](https://github.com/ChestnutHeng/Wudao-dict)启发，在复刻Wudao核心功能的基础上增加了更丰富的特性。我是Wudao的多年用户，日常工作生活重度依赖随手`wd abandon`，但可惜这个项目已经很久未更新，且存在一些可以优化的地方，所以忍不住重写了一个，选择Go是为了方便地解决安装和跨平台问题。
 
 **TOC**
 <!-- vim-markdown-toc GitLab -->
@@ -15,6 +17,8 @@
     * [Windows](#windows)
 * [用法](#用法)
 * [配置](#配置)
+* [提升体验技巧](#提升体验技巧)
+    * [使用tmux的悬浮窗口显示结果](#使用tmux的悬浮窗口显示结果)
 * [颜色主题](#颜色主题)
 * [常见问题和解决方法](#常见问题和解决方法)
     * [MacOS弹出“无法打开”提醒](#macos弹出无法打开提醒)
@@ -32,7 +36,7 @@
 
 - 单文件运行，多平台兼容，无需安装任何依赖。Windows运行截图：
 
-    ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/win_terminal.png)
+    <img src="https://raw.githubusercontent.com/Karmenzind/i/master/kd/win_terminal.png">
 
 - 支持查单词、词组（ :eyes: 长句翻译功能也快写好了）
 - 极速响应，超低延迟
@@ -82,6 +86,12 @@ sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmen
 - Linux arm64
 ```bash
 sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_linux_arm64 && chmod +x /usr/local/bin/kd'
+```
+
+ArchLinux可以直接通过[AUR](https://aur.archlinux.org/packages/kd)安装，例如使用yay：
+
+```bash
+yay -S aur/kd
 ```
 
 <!-- ```bash -->
@@ -147,9 +157,6 @@ paging = true
 # 分页器命令，例如：less -F / bat / (不推荐) more -e
 pager_command = "less -F"
 
-# 本地最多缓存的单词条数
-max_cached = 10000
-
 # 结果中只显示英文（英译、英文例句等）
 english_only = false
 
@@ -164,7 +171,7 @@ http_proxy = ""
 clear_screen = false
 
 # 是否开启频率提醒：本月第X次查询xxx
-freq_alert = true
+freq_alert = false
 
 # （开发中）安装了emoji字体的可以输出一些emoji字符，just for fun
 enable_emoji = true
@@ -178,6 +185,25 @@ enable_emoji = true
   # 日志级别，支持：DEBUG/INFO/WARN/PANIC/FATAL
   level = "WARN"
   stderr = false
+```
+
+## 提升体验技巧
+
+### 使用tmux的悬浮窗口显示结果
+
+如果你在使用tmux，借助悬浮窗口（popup）能让查询体验更舒适友好
+
+![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/kd_tmux_popup.gif)
+
+在bash/zsh的配置文件中加入：
+
+```bash
+if [[ -n $TMUX ]]; then
+    __kdwithtmuxpopup() {
+        tmux display-popup "kd $@"
+    }
+    alias kd=__kdwithtmuxpopup
+fi
 ```
 
 ## 颜色主题
