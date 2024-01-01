@@ -2,9 +2,9 @@
 
 **Go语言实现的简洁好用的命令行词典，跨平台、易于安装、持续维护更新**
 
-<img src="https://raw.githubusercontent.com/Karmenzind/i/master/kd/kd_demo.gif" width="700" align="center">
+<!-- <img src="https://raw.githubusercontent.com/Karmenzind/i/master/kd/kd_demo.gif" width="700" align="center"> -->
 
-<!-- ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/kd_demo.gif) -->
+![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/kd_demo.gif)
 
 本项目受[无道词典](https://github.com/ChestnutHeng/Wudao-dict)启发，在复刻Wudao核心功能的基础上增加了更丰富的特性。我是Wudao的多年用户，日常工作生活重度依赖随手`wd abandon`，但可惜这个项目已经很久未更新，且存在一些可以优化的地方，所以忍不住重写了一个，选择Go是为了方便地解决安装和跨平台问题。
 
@@ -38,12 +38,15 @@
 
     <img src="https://raw.githubusercontent.com/Karmenzind/i/master/kd/win_terminal.png">
 
-- 支持查单词、词组（ :eyes: 长句翻译功能也快写好了）
-- 极速响应，超低延迟
-- 本地词库（10W热词），可离线使用
+- 支持查单词、词组，本地词库（10W+），可离线使用
 
     > 运行时后台会自动下载数据库
 
+- 支持`-t`翻译长句
+
+    ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/longtext.png)
+
+- 极速响应，超低延迟
 - 灵活的配置项，支持修改代理、配色等
 - 其他小功能：
     - 多次查询相同词汇会出现提醒并加入生词本

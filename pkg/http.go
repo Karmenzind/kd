@@ -66,7 +66,7 @@ var userAgents = []string{
 	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.81",
 }
 
-func getRandomUA() string {
+func GetRandomUA() string {
 	var r = rand.New(rand.NewSource(time.Now().Unix()))
 	idx := r.Intn(len(userAgents))
 	return userAgents[idx]
@@ -77,20 +77,21 @@ func CreateHTTPClient(timeoutsec time.Duration) *http.Client {
 	return &c
 }
 
-func BuildYoudaoRequest(q string) (*http.Request, error) {
-	r, err := http.NewRequest("GET", fmt.Sprintf("http://dict.youdao.com/search?q=%s", q), nil)
-	if err != nil {
-		return r, err
-	}
-	r.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
-	// r.Header.Set("Accept-Encoding", "gzip, deflate, br")
-	r.Header.Set("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
-	r.Header.Set("Connection", "keep-alive")
-	r.Header.Set("Host", "dict.youdao.com")
-	r.Header.Set("User-Agent", getRandomUA())
-	// "User-Agent": Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36
-	return r, err
-}
+// func BuildYoudaoRequest(q string) (*http.Request, error) {
+// 	// r, err := http.NewRequest("GET", fmt.Sprintf("http://dict.youdao.com/search?q=%s", q), nil)
+// 	r, err := http.NewRequest("GET", fmt.Sprintf("http://dict.youdao.com/w/%s/#keyfrom=dict2.top", q), nil)
+// 	if err != nil {
+// 		return r, err
+// 	}
+// 	r.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
+// 	// r.Header.Set("Accept-Encoding", "gzip, deflate, br")
+// 	r.Header.Set("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
+// 	r.Header.Set("Connection", "keep-alive")
+// 	r.Header.Set("Host", "dict.youdao.com")
+// 	r.Header.Set("User-Agent", getRandomUA())
+// 	// "User-Agent": Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36
+// 	return r, err
+// }
 
 func DownloadFile(filepath string, url string) (err error) {
 	var client *http.Client

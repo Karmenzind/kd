@@ -2,8 +2,9 @@
 
 ## wip
 - release增加version，aur判断此文件
-- 长句查询 (另外缓存)
 - 更新后stop server
+- 长句查询 (另外缓存)
+- notfound counter 忽略longtext
 
 ## short-term
 - 多source直接嵌套进列表

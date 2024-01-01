@@ -33,6 +33,7 @@ func GetCachedQuery(r *model.Result) (err error) {
 	}
 	c.Close()
 	j := jb.Bytes()
+    zap.S().Debugf("Got cached json %s", j)
 
 	if len(j) > 0 {
 		err = json.Unmarshal(j, r)
@@ -50,10 +51,13 @@ func UpdateQueryCache(r *model.Result) (err error) {
 	if !r.Found {
 		return
 	}
+
 	j, err := json.Marshal(r)
 	if err != nil {
 		zap.S().Warnf("Failed to marshal %+v: %s", r, err)
+        return
 	}
+    zap.S().Debugf("Got marshalled json to save: %s", j)
 
 	var zb bytes.Buffer
 	jw := zlib.NewWriter(&zb)
@@ -66,7 +70,7 @@ func UpdateQueryCache(r *model.Result) (err error) {
 	if err != nil {
 		zap.S().Errorf("Failed to update cache for '%s'. Error: %s", r.Query, err)
 	}
-    zap.S().Debugf("Updated cache for '%s'. len: %d", r.Query, len(detail))
+	zap.S().Debugf("Updated cache for '%s'. len: %d", r.Query, len(detail))
 	return
 }
 
