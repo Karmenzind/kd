@@ -1,8 +1,9 @@
-# master plan
+#方便省心 master plan
 
 ## wip
-- 自动检查可用更新
-- 长句查询另外缓存
+- release增加version，aur判断此文件
+- 长句查询 (另外缓存)
+- 更新后stop server
 
 ## short-term
 - 多source直接嵌套进列表
@@ -30,6 +31,8 @@
 - not found list记录查询时间，超时删除
 - not found和索引都加入服务端缓存，benchmark比较直接查本地和tcp通信的速度
 - 自定义json mashal的encoder
+
+- AUR收尾工作
 
 # BUG
 

@@ -84,9 +84,9 @@ func flagStop(*cli.Context, bool) error {
 
 func flagUpdate(ctx *cli.Context, _ bool) (err error) {
 	var ver string
-	// if pkg.GetLinuxDistro() == "arch" {
-	// 	d.EchoFine("您在使用ArchLinux，推荐通过AUR安装/升级，更方便省心")
-	// }
+	if pkg.GetLinuxDistro() == "arch" {
+		d.EchoFine("您在使用ArchLinux，推荐直接通过AUR安装/升级（例如`yay -S kd`），更便于维护")
+	}
 	force := ctx.Bool("force")
 	if force {
 		d.EchoRun("强制更新")
@@ -312,7 +312,11 @@ func main() {
 
 	if ltag := update.GetCachedLatestTag(); ltag != "" {
 		if update.CompareVersions(ltag, VERSION) == 1 {
-			d.EchoWeakNotice(fmt.Sprintf("发现新版本%s，请执行`kd --update`更新", ltag))
+            prompt := fmt.Sprintf("发现新版本%s，请执行`kd --update`更新", ltag)
+			if pkg.GetLinuxDistro() == "arch" {
+                prompt+= "。ArchLinux推荐通过AUR安装/升级"
+			}
+			d.EchoWeakNotice(prompt)
 		}
 	}
 }
