@@ -45,6 +45,7 @@ func cronCheckUpdate() {
 	ticker := time.NewTicker(3600 * 12 * time.Second)
 	for {
         // TODO (k): <2024-01-01> 改成检查文件Stat来判断时长
+		<-ticker.C
 
         for i := 0; i < 3; i++ {
             tag, err := update.GetLatestTag()
@@ -56,7 +57,6 @@ func cronCheckUpdate() {
             time.Sleep(5 * time.Second)
         }
 
-		<-ticker.C
 	}
 }
 

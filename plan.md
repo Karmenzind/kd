@@ -1,9 +1,10 @@
-#方便省心 master plan
+# master plan
 
 ## wip
 - release增加version，aur判断此文件
-- 长句查询 (另外缓存)
 - 更新后stop server
+- 长句查询 (另外缓存)
+- notfound counter 忽略longtext
 
 ## short-term
 - 多source直接嵌套进列表
@@ -30,7 +31,6 @@
 - 检测配置保存时间变化的基础上再加上内容判断？
 - not found list记录查询时间，超时删除
 - not found和索引都加入服务端缓存，benchmark比较直接查本地和tcp通信的速度
-- 自定义json mashal的encoder
 
 - AUR收尾工作
 
@@ -53,4 +53,3 @@
 如果没有你所使用的平台/架构，请提交issue反馈
 
 如果下载受阻，请前往gitee备份页面
-
