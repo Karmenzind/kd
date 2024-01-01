@@ -27,7 +27,7 @@ func EchoFatal(content string) {
 }
 
 func EchoRun(content string) {
-	fmt.Println(Blue(">>"), Blue(content))
+	fmt.Println(Blue("≫ "), Blue(content))
 }
 
 func EchoOkay(content string) {
@@ -40,4 +40,8 @@ func EchoFine(content string) {
 
 func EchoWrong(content string) {
 	fmt.Println(Red("✘ "), Red(content))
+}
+
+func EchoWeakNotice(content string) {
+	fmt.Println(Gray("☺ "), Gray(content))
 }

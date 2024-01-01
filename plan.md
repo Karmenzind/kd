@@ -1,8 +1,10 @@
 # master plan
 
 ## wip
-- 自动检查可用更新
-- 长句查询另外缓存
+- release增加version，aur判断此文件
+- 更新后stop server
+- 长句查询 (另外缓存)
+- notfound counter 忽略longtext
 
 ## short-term
 - 多source直接嵌套进列表
@@ -20,6 +22,7 @@
 - 加入词库设置，供选择词库大小
 
 ## low priority
+- 一键安装脚本
 - --update下载之后缓存，避免重复下载
 - cli替换为cobra
 - source数据 分为base-sourse & web-source
@@ -28,7 +31,8 @@
 - 检测配置保存时间变化的基础上再加上内容判断？
 - not found list记录查询时间，超时删除
 - not found和索引都加入服务端缓存，benchmark比较直接查本地和tcp通信的速度
-- 自定义json mashal的encoder
+
+- AUR收尾工作
 
 # BUG
 
@@ -49,4 +53,3 @@
 如果没有你所使用的平台/架构，请提交issue反馈
 
 如果下载受阻，请前往gitee备份页面
-

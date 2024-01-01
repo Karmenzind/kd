@@ -1,8 +1,10 @@
 package internal
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -76,30 +78,45 @@ func StartServer() (err error) {
 			zap.S().Errorf("Failed to accept connection:", err)
 		}
 
-		// Handle connections in a new goroutine
-		go func(conn net.Conn) {
-			buf := make([]byte, 1024)
-			len, err := conn.Read(buf)
-			if err != nil {
-				fmt.Printf("Error reading: %#v\n", err)
-				zap.S().Errorf("Error reading: %#v\n", err)
-			}
-			recv := string(buf[:len])
-			fmt.Printf("Received: %s\n", recv)
-
-			r := &model.Result{Query: recv}
-			r.Initialize()
-
-			query.FetchOnline(r)
-			reply, err := json.Marshal(model.DaemonResponse{R: r, Error: "", Found: r.Found})
-
-			if err != nil {
-				zap.S().Errorf("[daemon] Failed to marshal response:", err)
-				reply, _ = json.Marshal(model.DaemonResponse{R: nil, Error: fmt.Sprintf("序列化查询结果失败：%s", err)})
-			}
-
-			conn.Write([]byte(reply))
-			conn.Close()
-		}(conn)
+		go handleClient(conn)
 	}
+}
+
+func handleClient(conn net.Conn) {
+	defer conn.Close()
+
+	recv, err := bufio.NewReader(conn).ReadBytes('\n')
+	if err == io.EOF {
+		zap.S().Debugf("Connection closed by client.")
+        fmt.Println("Connection closed by client")
+		return
+	} else if err != nil {
+		fmt.Printf("Error reading: %#v\n", err)
+		zap.S().Errorf("Error reading: %#v\n", err)
+		// FIXME (k): <2024-01-02> reply
+        return
+	}
+
+	fmt.Printf("Received: %s\n", recv)
+	q := model.TCPQuery{}
+	err = json.Unmarshal(recv, &q)
+	if err != nil {
+		zap.S().Errorf("[daemon] Failed to marshal request:", err)
+
+	}
+	r := q.GetResult()
+	r.Initialize()
+
+	query.FetchOnline(r)
+	reply, err := json.Marshal(r.ToDaemonResponse())
+
+	if err != nil {
+		zap.S().Errorf("[daemon] Failed to marshal response:", err)
+		reply, _ = json.Marshal(model.DaemonResponse{Error: fmt.Sprintf("序列化查询结果失败：%s", err)})
+	}
+
+    fmt.Printf("Sending to client: %s \n", reply)
+	conn.Write(append(reply, '\n'))
+	conn.Close()
+
 }

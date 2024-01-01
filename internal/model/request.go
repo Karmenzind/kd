@@ -1,16 +1,23 @@
 package model
 
-type QueryDaemon struct {
+type TCPQuery struct {
 	Action string
-	Q      Result
+	B      *BaseResult
+}
+
+func (q *TCPQuery) GetResult() *Result {
+    return &Result{BaseResult: q.B}
 }
 
 type DaemonResponse struct {
-	R *Result
+	R     *Result
+	Error string
 
-	Error      string
-	Found      bool
+	Base *BaseResult
+}
 
-	// 需要通过Tcp传递，又不能入库的字段
-	IsLongText bool
+func (dr *DaemonResponse) GetResult() *Result {
+	// json传递中被抹去，重新赋值
+	dr.R.BaseResult = dr.Base
+	return dr.R
 }

@@ -22,7 +22,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var VERSION = "v0.0.3"
+var VERSION = "v0.0.4"
 
 func showPrompt() {
 	exename, err := pkg.GetExecutableBasename()
@@ -84,9 +84,9 @@ func flagStop(*cli.Context, bool) error {
 
 func flagUpdate(ctx *cli.Context, _ bool) (err error) {
 	var ver string
-	// if pkg.GetLinuxDistro() == "arch" {
-	// 	d.EchoFine("您在使用ArchLinux，推荐通过AUR安装/升级，更方便省心")
-	// }
+	if pkg.GetLinuxDistro() == "arch" {
+		d.EchoFine("您在使用ArchLinux，推荐直接通过AUR安装/升级（例如`yay -S kd`），更便于维护")
+	}
 	force := ctx.Bool("force")
 	if force {
 		d.EchoRun("强制更新")
@@ -177,14 +177,31 @@ func flagStatus(*cli.Context, bool) error {
 	return nil
 }
 
+func basicCheck() {
+	if runtime.GOOS != "windows" {
+		if u, _ := user.Current(); u.Username == "root" {
+			d.EchoWrong("不支持Root用户")
+			os.Exit(1)
+		}
+	}
+
+	// XXX (k): <2024-01-01>
+	// if exename, err := pkg.GetExecutableBasename(); err == nil {
+	// 	if exename != "kd" {
+	// 		d.EchoWrong("请将名字改成kd")
+	// 		os.Exit(1)
+	// 	}
+	// } else {
+	// 	d.EchoError(err.Error())
+	// }
+}
+
 func main() {
+	basicCheck()
 	config.InitConfig()
 	cfg := config.Cfg
 	d.ApplyConfig(cfg.EnableEmoji)
-	if u, _ := user.Current(); u.Username == "root" {
-		d.EchoWrong("不支持Root用户")
-		os.Exit(1)
-	}
+
 	if cfg.Logging.Enable {
 		l, err := logger.InitLogger(&cfg.Logging)
 		if err != nil {
@@ -291,5 +308,15 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		zap.S().Errorf("APP stopped: %s", err)
 		d.EchoError(err.Error())
+	}
+
+	if ltag := update.GetCachedLatestTag(); ltag != "" {
+		if update.CompareVersions(ltag, VERSION) == 1 {
+            prompt := fmt.Sprintf("发现新版本%s，请执行`kd --update`更新", ltag)
+			if pkg.GetLinuxDistro() == "arch" {
+                prompt+= "。ArchLinux推荐通过AUR安装/升级"
+			}
+			d.EchoWeakNotice(prompt)
+		}
 	}
 }

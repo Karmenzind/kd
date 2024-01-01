@@ -32,7 +32,7 @@ type GithubTag struct {
 	// tarball_url
 }
 
-func compareVersions(v1, v2 string) int {
+func CompareVersions(v1, v2 string) int {
 	v1 = strings.TrimPrefix(v1, "v")
 	v2 = strings.TrimPrefix(v2, "v")
 
@@ -58,7 +58,9 @@ func compareVersions(v1, v2 string) int {
 	return 0
 }
 
-func getLatestTag() (tag string, err error) {
+var LATEST_TAG_FILE = filepath.Join(cache.CACHE_ROOT_PATH, "latest_tag")
+
+func GetLatestTag() (tag string, err error) {
 	req, err := http.NewRequest("GET", TAGLIST_URL, nil)
 	if err != nil {
 		zap.S().Infof("Error creating request: %v\n", err)
@@ -90,11 +92,27 @@ func getLatestTag() (tag string, err error) {
 	if err == nil {
 		if len(tags) > 0 {
 			tag = tags[0].Name
+            p := LATEST_TAG_FILE
+            writeErr := os.WriteFile(p, []byte(tag), os.ModePerm)
+            if writeErr != nil{
+                zap.S().Warnf("Failed to save latest_tag: %s", writeErr)
+            }
 		} else {
 			err = fmt.Errorf("empty response list")
 		}
 	}
 	return
+}
+
+
+func GetCachedLatestTag() (tag string) {
+    if !pkg.IsPathExists(LATEST_TAG_FILE){
+        return
+    }
+    if b, err := os.ReadFile(LATEST_TAG_FILE); err == nil {
+        tag = string(b)
+    }
+    return
 }
 
 func getBinaryURL() string {
@@ -113,11 +131,11 @@ func getBinaryURL() string {
 }
 
 func GetNewerVersion(currentTag string) (tag string, err error) {
-	latestTag, err := getLatestTag()
+	latestTag, err := GetLatestTag()
 	if err != nil {
 		return
 	}
-	if compareVersions(latestTag, currentTag) < 1 {
+	if CompareVersions(latestTag, currentTag) < 1 {
 		zap.S().Infof("Current tag %s latest tag: %s. No need to update.", currentTag, latestTag)
 		return
 	}
@@ -146,14 +164,14 @@ func UpdateBinary(currentTag string) (err error) {
 	if err != nil {
 		zap.S().Errorf("Failed to download binary file: %s", err)
 	}
-	d.EchoRun("已下载完成")
+	d.EchoOkay("已下载完成")
 	// d.EchoRun(fmt.Sprintf("临时文件保存位置：%s", tmpPath))
 
 	err = moveFile(tmpPath, exepath)
 	if err != nil {
 		return
 	} else {
-		d.EchoRun("已成功覆盖")
+		d.EchoOkay("已成功替换旧版本，更新完成")
 	}
 	if runtime.GOOS != "windows" {
 		err = pkg.AddExecutablePermission(exepath)

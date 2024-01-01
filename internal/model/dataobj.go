@@ -18,33 +18,40 @@ type CollinsItem struct {
 	// MajorTransCh string // 备用
 }
 
+type BaseResult struct {
+	Query        string
+	Prompt       string
+	IsEN         bool
+	IsPhrase     bool
+	Output       string
+	Found        bool
+	IsLongText   bool
+	MachineTrans string
+	History      chan int `json:"-"`
+}
+
 type Result struct {
-	Found      bool   `json:"-"`
-	Prompt     string `json:"-"`
-	IsEN       bool   `json:"-"`
-	IsPhrase   bool   `json:"-"`
-	IsLongText bool   `json:"-"`
-	Query      string `json:"-"`
+	*BaseResult `json:"-"`
 
-	Keyword    string            `json:"k"`
-	Pronounce  map[string]string `json:"pron"`
-	Paraphrase []string          `json:"para"`
-	// UpdateTime time.Time
-	// CreateTime time.Time
-
-	Examples map[string][][]string `json:"eg"`
-
-	// XXX (k): <2023-11-15> 直接提到第一级
-	Collins struct {
+	// 入库
+	Keyword    string                `json:"k"`
+	Pronounce  map[string]string     `json:"pron"`
+	Paraphrase []string              `json:"para"`
+	Examples   map[string][][]string `json:"eg"`
+	Collins    struct {              // XXX (k): <2023-11-15> 直接提到第一级
 		Star              int    `json:"star"`
 		ViaRank           string `json:"rank"`
 		AdditionalPattern string `json:"pat"`
 
 		Items []*CollinsItem `json:"li"`
 	} `json:"co"`
+}
 
-	Output  string   `json:"-"`
-	History chan int `json:"-"`
+func (r *Result) ToDaemonResponse() *DaemonResponse {
+	return &DaemonResponse{
+		R:    r,
+		Base: r.BaseResult,
+	}
 }
 
 func (r *Result) Initialize() {
@@ -89,7 +96,7 @@ func (r *Result) PrettyFormat(onlyEN bool) string {
 	s := []string{}
 
 	var title string
-	if r.Keyword == "" {
+	if r.Keyword == "" || r.IsLongText {
 		title = r.Query
 	} else {
 		title = r.Keyword
@@ -109,6 +116,12 @@ func (r *Result) PrettyFormat(onlyEN bool) string {
 		header = fmt.Sprintf("%s    %s", header, pronStr)
 	}
 	s = append(s, header)
+
+	if r.IsLongText {
+		s = append(s, d.Text(r.MachineTrans))
+		r.Output = strings.Join(s, "\n")
+		return r.Output
+	}
 
 	// TODO wth is de morgan's law
 	if !(onlyEN && r.IsEN) {
@@ -241,3 +254,52 @@ func cutoffLength() int {
 
 func TestPrint(t *testing.T) {
 }
+
+// type ResultToSave struct {
+// 	*Result
+// }
+
+// func (rs ResultToSave) MarshalJSON() ([]byte, error) {
+// 	var nonEmptyProps map[string]interface{}
+// 	fmt.Println("Here")
+// 	r := *rs.Result
+
+// 	t := reflect.TypeOf(r)
+// 	v := reflect.ValueOf(r)
+
+// 	nonEmptyProps = make(map[string]interface{})
+// 	for i := 0; i < t.NumField(); i++ {
+// 		field := t.Field(i)
+// 		name := field.Name
+// 		fmt.Println("Parsing", name)
+// 		switch name {
+// 		case "MachineTrans", "Found", "IsLongText":
+// 			fmt.Println("Ignored", name)
+// 			continue
+// 		}
+// 		tag := field.Tag.Get("json")
+// 		if tag == "-" {
+// 			fmt.Println("Ignored", name)
+// 			continue
+// 		}
+// 		value := v.Field(i).Interface()
+// 		switch field.Type.Kind() {
+// 		case reflect.Map, reflect.Slice:
+// 			if reflect.ValueOf(value).Len() == 0 {
+// 				fmt.Println("Ignored", name)
+// 				continue
+// 			}
+// 		case reflect.Bool, reflect.String, reflect.Int, reflect.Int8, reflect.Int64, reflect.Int32, reflect.Int16:
+// 			if value != reflect.Zero(field.Type).Interface() {
+// 				nonEmptyProps[tag] = value
+// 				fmt.Println("Saved", name, value)
+// 			}
+// 			continue
+// 		default:
+// 			subj, _ := json.Marshal(value)
+// 			nonEmptyProps[tag] = subj
+// 		}
+// 	}
+// 	fmt.Println("Got %+v\n", nonEmptyProps)
+// 	return json.Marshal(nonEmptyProps)
+// }
