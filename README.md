@@ -249,22 +249,16 @@ alias kd=__kdwithpager
 
 ## 进度和计划
 
-**进行中**
-
-- 长句翻译
-- 可更新自动提醒
-
 **近期**
 
 - 支持bash/zsh/fish补全，包含命令补全和[热词](https://github.com/first20hours/google-10000-english)补全
-- 支持查看生词本功能
-- 支持tmux浮窗模式
+- 支持生词本功能
 
 **长期**
 
 - 增加多种主题，包含常见配色如Gruvbox/Molokai，仿照bat实现
 - 支持全模块自定义显示配置
-- 引入多种查询源和词库，如stardict、必应等
+- 引入多种查询源和词库，如stardict、bing等
 - 增加服务端
 - 支持通过fzf补全
 - Vim插件，浮窗显示查词结果
