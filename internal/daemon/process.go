@@ -2,19 +2,50 @@ package daemon
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
-	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
+	"github.com/Karmenzind/kd/internal/cache"
 	"github.com/Karmenzind/kd/pkg"
 	d "github.com/Karmenzind/kd/pkg/decorate"
+	"github.com/Karmenzind/kd/pkg/proc"
 
 	"github.com/shirou/gopsutil/v3/process"
 	"go.uber.org/zap"
 )
+
+type DaemonInfoType struct {
+	StartTime int64
+	Port      string
+	PID       int
+}
+
+var DaemonInfo = &DaemonInfoType{}
+
+func RecordRunInfo(port string) {
+	DaemonInfo.StartTime = time.Now().Unix()
+	DaemonInfo.PID = os.Getpid()
+	DaemonInfo.Port = port
+	pkg.SaveJson(
+		filepath.Join(cache.CACHE_RUN_PATH, "daemon.json"),
+		DaemonInfo,
+	)
+	zap.S().Infof("Recorded running information of daemon %+v", DaemonInfo)
+}
+
+func GetDaemonInfo() *DaemonInfoType {
+	if *DaemonInfo == (DaemonInfoType{}) {
+		err := pkg.LoadJson(filepath.Join(cache.CACHE_RUN_PATH, "daemon.json"), DaemonInfo)
+		if err != nil {
+			d.EchoFatal("获取守护进程信息失败，请执行`kd --stop && kd --daemon`")
+		}
+	}
+	return DaemonInfo
+}
 
 func getKdPIDs() {
 	var cmd *exec.Cmd
@@ -40,13 +71,28 @@ func FindServerProcess() (*process.Process, error) {
 	if err != nil {
 		return nil, err
 	}
+	di := GetDaemonInfo()
 	for _, p := range processes {
 		// XXX err
 		n, _ := p.Name()
+		if p.Pid == int32(di.PID) {
+            zap.S().Debugf("Got daemon process %v via daemon info", di.PID)
+			cmdslice, _ := p.CmdlineSlice()
+			if len(cmdslice) > 1 && cmdslice[1] == "--server" {
+				return p, nil
+			}
+		}
+
 		if n == "kd" || (runtime.GOOS == "windows" && n == "kd.exe") {
 			cmd, _ := p.Cmdline()
+			if p.Pid == 13328 {
+				name, _ := p.Name()
+				cmdslice, _ := p.CmdlineSlice()
+				zap.S().Debugf("13328:Name: `%s` Cmd: `%s` cmdslice: `%+v`", name, cmd, cmdslice)
+			}
+			zap.S().Debugf("Found process kd.exe with CMD: %s", cmd)
 			if strings.Contains(cmd, " --server") {
-				zap.S().Debugf("Found process %+v Cmd: %s", p, cmd)
+				zap.S().Debugf("Found process %+v Cmd: `%s`", p, cmd)
 				return p, nil
 			}
 		}
@@ -91,43 +137,18 @@ func StartDaemonProcess() error {
 
 func KillDaemonIfRunning() error {
 	p, err := FindServerProcess()
-	var trySysKill bool
 	if err == nil {
 		if p == nil {
 			d.EchoOkay("未发现守护进程，无需停止")
 			return nil
-		} else if runtime.GOOS != "windows" {
-			zap.S().Infof("Found running daemon PID: %d,", p.Pid)
-			errSig := p.SendSignal(syscall.SIGINT)
-			if errSig != nil {
-				zap.S().Warnf("Failed to stop PID %d with syscall.SIGINT: %s", p.Pid, errSig)
-				trySysKill = true
-			}
-		} else {
-			trySysKill = true
 		}
 	} else {
 		zap.S().Warnf("[process] Failed to find daemon: %s", err)
-		trySysKill = true
+		return err
 	}
-	pidStr := strconv.Itoa(int(p.Pid))
 
-	if trySysKill {
-		var cmd *exec.Cmd
-		switch runtime.GOOS {
-		case "windows":
-			cmd = exec.Command("taskkill", "/F", "/T", "/PID", pidStr)
-			// cmd = exec.Command("taskkill", "/im", "kd", "/T", "/F")
-		case "linux":
-			cmd = exec.Command("kill", "-9", pidStr)
-			// cmd = exec.Command("killall", "kd")
-		}
-		output, err := cmd.Output()
-		zap.S().Infof("Executed '%s'. Output %s", cmd, output)
-		if err != nil {
-			zap.S().Warnf("Failed to kill daemon with system command. Error: %s", output, err)
-		}
-	}
+    err = proc.KillProcess(p)
+
 	if err == nil {
 		zap.S().Info("Terminated daemon process.")
 		d.EchoOkay("守护进程已经停止")

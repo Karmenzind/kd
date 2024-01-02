@@ -40,7 +40,7 @@
 # BUG
 
 ## Risk
-- 实际文件名 不改的时候的process_name
+- 实际文件名 不改的时候的process_name，增加同时校验kd和当前文件名
 
 ## low priority
 - (action) linux 386

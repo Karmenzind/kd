@@ -6,51 +6,15 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"os"
-	"path/filepath"
-	"time"
 
-	d "github.com/Karmenzind/kd/pkg/decorate"
-
-	"github.com/Karmenzind/kd/internal/cache"
 	"github.com/Karmenzind/kd/internal/daemon"
 	"github.com/Karmenzind/kd/internal/model"
 	"github.com/Karmenzind/kd/internal/query"
-	"github.com/Karmenzind/kd/pkg"
 	"go.uber.org/zap"
 )
 
 // TODO  支持自定义
 var SERVER_PORT = 19707
-
-type DaemonInfoType struct {
-	StartTime int64
-	Port      string
-	PID       int
-}
-
-var DaemonInfo = &DaemonInfoType{}
-
-func recordRunningInfo(port string) {
-	DaemonInfo.StartTime = time.Now().Unix()
-	DaemonInfo.PID = os.Getpid()
-	DaemonInfo.Port = port
-	pkg.SaveJson(
-		filepath.Join(cache.CACHE_RUN_PATH, "daemon.json"),
-		DaemonInfo,
-	)
-	zap.S().Infof("Recorded running information of daemon %+v", DaemonInfo)
-}
-
-func GetDaemonInfo() *DaemonInfoType {
-	if *DaemonInfo == (DaemonInfoType{}) {
-		err := pkg.LoadJson(filepath.Join(cache.CACHE_RUN_PATH, "daemon.json"), DaemonInfo)
-		if err != nil {
-			d.EchoFatal("获取守护进程信息失败，请执行`kd --stop && kd --daemon`")
-		}
-	}
-	return DaemonInfo
-}
 
 func StartServer() (err error) {
 	IS_SERVER = true
@@ -67,7 +31,7 @@ func StartServer() (err error) {
 		return err
 	}
 	daemon.InitCron()
-	go recordRunningInfo(port)
+	go daemon.RecordRunInfo(port)
 
 	fmt.Printf("Listening on host: %s, port: %s\n", host, port)
 

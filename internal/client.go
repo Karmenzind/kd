@@ -10,6 +10,7 @@ package internal
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 
@@ -18,20 +19,52 @@ import (
 	"github.com/Karmenzind/kd/internal/daemon"
 	"github.com/Karmenzind/kd/internal/model"
 	q "github.com/Karmenzind/kd/internal/query"
+	"github.com/Karmenzind/kd/pkg"
 	d "github.com/Karmenzind/kd/pkg/decorate"
+	"github.com/Karmenzind/kd/pkg/proc"
 	"github.com/Karmenzind/kd/pkg/str"
 	"go.uber.org/zap"
 )
 
 func ensureDaemon(running chan bool) {
-	if !daemon.ServerIsRunning() {
-		err := daemon.StartDaemonProcess()
+	p, _ := daemon.FindServerProcess()
+	var err error
+	if p == nil {
+		d.EchoRun("未找到守护进程，正在启动...")
+		err = daemon.StartDaemonProcess()
 		if err != nil {
-			d.EchoRun("未找到守护进程，正在启动...")
 			d.EchoFatal(err.Error())
 		}
-		running <- true
+	} else {
+		exename, err := pkg.GetExecutablePath()
+		if err == nil {
+			runningExename, _ := p.Exe()
+			// TODO (k): <2024-01-03> 增加检查版本
+			if exename != runningExename {
+				d.EchoWarn(fmt.Sprintf("正在运行的守护程序（%s）与当前程序（%s）文件信息或版本不一致，将尝试重新启动守护进程", runningExename, exename))
+				err := proc.KillProcess(p)
+				if err != nil {
+					cmd := proc.GetKillCMD(p.Pid)
+					d.EchoError(fmt.Sprintf("停止进程%v失败，请手动执行：", p.Pid))
+					fmt.Println(cmd.String())
+					os.Exit(1)
+				}
+				d.EchoRun("已终止，正在启动新的守护进程...")
+				err = daemon.StartDaemonProcess()
+				if err != nil {
+					d.EchoFatal(err.Error())
+				}
+			}
+		}
 	}
+	// if !daemon.ServerIsRunning() {
+	// 	err := daemon.StartDaemonProcess()
+	// 	if err != nil {
+	// 		d.EchoRun("未找到守护进程，正在启动...")
+	// 		d.EchoFatal(err.Error())
+	// 	}
+	// 	running <- true
+	// }
 	running <- true
 }
 
