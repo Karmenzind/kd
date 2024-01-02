@@ -11,29 +11,25 @@
 **TOC**
 <!-- vim-markdown-toc GitLab -->
 
-* [特性](#特性)
-* [安装](#安装)
+* [☑️  特性](#-特性)
+* [🚀 安装和升级](#-安装和升级)
     * [Linux/MacOS](#linuxmacos)
         * [ArchLinux](#archlinux)
     * [Windows](#windows)
-* [用法](#用法)
-* [配置](#配置)
-* [提升体验技巧](#提升体验技巧)
+    * [卸载](#卸载)
+* [⚙️ 用法和配置](#-用法和配置)
+* [🎈 提升体验技巧](#-提升体验技巧)
     * [使用tmux的悬浮窗口显示结果](#使用tmux的悬浮窗口显示结果)
-* [颜色主题](#颜色主题)
-* [常见问题和解决方法](#常见问题和解决方法)
+* [🎨 颜色主题](#-颜色主题)
+* [❓ 常见问题和解决方法](#-常见问题和解决方法)
     * [MacOS弹出“无法打开”提醒](#macos弹出无法打开提醒)
     * [设置less为Pager后显示异常](#设置less为pager后显示异常)
-* [进度和计划](#进度和计划)
-* [卸载](#卸载)
+* [📝 进度和计划](#-进度和计划)
 
 <!-- vim-markdown-toc -->
 
 
-<!-- > 理论上可兼容[所有平台/架构](https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63)，但我只有Linux/Win可测试，欢迎使用其他平台的朋友试用反馈 -->
-
-
-## 特性
+## ☑️  特性
 
 - 单文件运行，多平台兼容，无需安装任何依赖。Windows运行截图：
 
@@ -43,11 +39,11 @@
 
     > 运行时后台会自动下载数据库
 
-- 支持`-t`翻译长句
+- 支持`-t`翻译长句 👀
 
     ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/longtext.png)
 
-- 极速响应，超低延迟
+- 极速响应，超低延迟 ⚡
 - 灵活的配置项，支持修改代理、配色等
 - 其他小功能：
     - 多次查询相同词汇会出现提醒并加入生词本
@@ -60,10 +56,10 @@
 
     - `kd --update`命令一键更新版本
 
-> 更多功能正在开发中 :rocket:
+> 更多功能正在开发中 👽
 
 
-## 安装
+## 🚀 安装和升级
 
 <!-- **注**: -->
 <!-- - 将命令中的`<URL>`**替换**为[releases页面](https://github.com/Karmenzind/kd/releases)中对应你平台和架构的文件链接 -->
@@ -79,7 +75,9 @@
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/Karmenzind/kd/master/scripts/install.sh)"
 ```
 
-<details><summary>或者按照平台/架构复制命令（点击展开）</summary>
+> 如果raw.githubusercontent.com被屏蔽，改用`git clone https://github.com/Karmenzind/kd && bash kd/install.sh`
+
+<details><summary>或者按照平台/架构复制命令（🖱️ 点击展开）</summary><pre>
 ```bash
 # Linux amd64 (x86-64)
 sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_linux_amd64 && chmod +x /usr/local/bin/kd'
@@ -90,7 +88,7 @@ sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmen
 # Linux arm64
 sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_linux_arm64 && chmod +x /usr/local/bin/kd'
 ```
-</details>
+</pre></details>
 
 #### ArchLinux
 
@@ -109,7 +107,19 @@ Invoke-WebRequest -uri 'https://github.com/Karmenzind/kd/releases/latest/downloa
 
 > 或手动下载文件，然后通过“计算机->属性->修改环境变量”修改PATH
 
-## 用法
+### 卸载
+
+<details><summary>🖱️ 点击展开</summary><pre>
+
+1. 删除kd可执行文件（Linux/Mac：/usr/local/bin/kd，Win：C:\bin\kd.exe）
+2. 删除配置文件和缓存目录
+    - Linux: `rm -rfv ~/.config/kd.toml ~/.cache/kdcache`
+    - MacOS: `rm -rfv ~/.config/kd.toml ~/Library/Caches/kdcache`
+    - Win: `rm ~\kd.toml ~\kdcache`
+
+</pre></details>
+
+## ⚙️ 用法和配置
 
 直接执行`kd <text>`查单词、词组（如`kd abandon`、`kd leave me alone`）
 
@@ -137,9 +147,8 @@ GLOBAL OPTIONS:
    --version, -v                        print the version
 ```
 
-## 配置
 
-配置文件地址：Linux/MacOS为~/.config/kd.toml，Windows为~/kd.toml
+📁 配置文件地址：Linux/MacOS为~/.config/kd.toml，Windows为~/kd.toml
 
 以下为可配置项和默认值，可执行`kd --generate-config`生成默认配置文件，执行`kd --edit-config`直接用编辑器打开配置文件
 
@@ -181,11 +190,11 @@ enable_emoji = true
   stderr = false
 ```
 
-## 提升体验技巧
+## 🎈 提升体验技巧
 
 ### 使用tmux的悬浮窗口显示结果
 
-如果你在使用tmux，借助悬浮窗口（popup）能让查询体验更舒适友好
+如果你在使用tmux，借助悬浮窗口（popup）能让查询体验更舒适友好 🍭
 
 ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/kd_tmux_popup.gif)
 
@@ -200,7 +209,7 @@ if [[ -n $TMUX ]]; then
 fi
 ```
 
-## 颜色主题
+## 🎨 颜色主题
 
 目前支持以下配色，后续会增加更多
 
@@ -212,7 +221,7 @@ fi
 
     ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/theme_wudao.png)
 
-## 常见问题和解决方法
+## ❓ 常见问题和解决方法
 
 ### MacOS弹出“无法打开”提醒
 
@@ -238,7 +247,7 @@ __kdwithpager() {
 alias kd=__kdwithpager
 ```
 
-## 进度和计划
+## 📝 进度和计划
 
 **近期**
 
@@ -255,10 +264,3 @@ alias kd=__kdwithpager
 - Vim插件，浮窗显示查词结果
 - 离线词库周期更新
 
-## 卸载
-
-1. 删除kd可执行文件
-2. 删除配置文件和缓存目录
-    - Linux: `rm -rfv ~/.config/kd.toml ~/.cache/kdcache`
-    - MacOS: `rm -rfv ~/.config/kd.toml ~/Library/Caches/kdcache`
-    - Win: `rm ~\kd.toml ~\kdcache`

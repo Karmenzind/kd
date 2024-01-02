@@ -41,10 +41,10 @@ if [[ $platform == linux ]] && [[ $(cat /etc/os-release | grep "^ID=" | sed 's/^
 fi
 
 case $(uname -m) in
-    x86_64)
+    x86_64 | amd64)
         pkg=kd_${platform}_amd64
         ;;
-    aarch64)
+    aarch64 | arm64)
         pkg=kd_${platform}_arm64
         ;;
     *)

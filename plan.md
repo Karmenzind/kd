@@ -1,6 +1,8 @@
 # master plan
 
 ## wip
+
+- 升级后还提示new version
 - release增加version，aur判断此文件
 - 更新后stop server
 - 长句查询 (另外缓存)
