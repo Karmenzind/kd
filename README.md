@@ -14,6 +14,7 @@
 * [特性](#特性)
 * [安装](#安装)
     * [Linux/MacOS](#linuxmacos)
+        * [ArchLinux](#archlinux)
     * [Windows](#windows)
 * [用法](#用法)
 * [配置](#配置)
@@ -74,36 +75,26 @@
 
 在终端中执行：
 
-- Linux amd64 (x86-64)
 ```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/Karmenzind/kd/master/scripts/install.sh)"
+```
+
+<details><summary>或者按照平台/架构复制命令（点击展开）</summary>
+```bash
+# Linux amd64 (x86-64)
 sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_linux_amd64 && chmod +x /usr/local/bin/kd'
-```
-- MacOS arm64 (即M1/M2/M3芯片的架构)
-```bash
+# MacOS arm64 (即M1/M2/M3芯片的架构)
 sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_arm64 && chmod +x /usr/local/bin/kd'
-```
-- MacOS amd64 (x86-64)
-```bash
+# MacOS amd64 (x86-64)
 sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_arm64 && chmod +x /usr/local/bin/kd'
-```
-- Linux arm64
-```bash
+# Linux arm64
 sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_linux_arm64 && chmod +x /usr/local/bin/kd'
 ```
+</details>
 
-ArchLinux可以直接通过[AUR](https://aur.archlinux.org/packages/kd)安装，例如使用yay：
+#### ArchLinux
 
-```bash
-yay -S aur/kd
-```
-
-<!-- ```bash -->
-<!-- sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd <URL> && chmod +x /usr/local/bin/kd' -->
-<!-- ``` -->
-
-
-<!-- sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_arm64 && chmod +x /usr/local/bin/kd' -->
-<!-- ArchLinux推荐通过AUR一键安装`yay -S aur/kd`，后续直接通过包管理升级 -->
+ArchLinux推荐直接通过[AUR](https://aur.archlinux.org/packages/kd)安装/更新，例如：`yay -S kd`
 
 ### Windows
 
@@ -116,7 +107,7 @@ Invoke-WebRequest -uri 'https://github.com/Karmenzind/kd/releases/latest/downloa
 [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\bin", "User")
 ```
 
-或手动下载文件，然后通过“计算机->属性->修改环境变量”修改PATH
+> 或手动下载文件，然后通过“计算机->属性->修改环境变量”修改PATH
 
 ## 用法
 
