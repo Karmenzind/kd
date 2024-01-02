@@ -5,6 +5,7 @@
 - 更新后stop server
 - 长句查询 (另外缓存)
 - notfound counter 忽略longtext
+- gitea镜像
 
 ## short-term
 - 多source直接嵌套进列表
