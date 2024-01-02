@@ -114,6 +114,7 @@ func flagUpdate(ctx *cli.Context, _ bool) (err error) {
 
 	if doUpdate {
 		emoji.Println(":lightning: Let's update now")
+        go daemon.KillDaemonIfRunning()
 		err = update.UpdateBinary(VERSION)
 	}
 	return err
@@ -162,7 +163,7 @@ func flagEditConfig(*cli.Context, bool) error {
 }
 
 func flagStatus(*cli.Context, bool) error {
-	di := internal.GetDaemonInfo()
+	di := daemon.GetDaemonInfo()
 	d.EchoRun("运行和相关配置信息如下：")
 	fmt.Printf("    Daemon端口：%s\n", di.Port)
 	fmt.Printf("    Daemon PID：%d\n", di.PID)
@@ -254,7 +255,7 @@ func main() {
 				}
 			}
 
-			if cfg.FileExists && cfg.ModTime > internal.GetDaemonInfo().StartTime {
+			if cfg.FileExists && cfg.ModTime > daemon.GetDaemonInfo().StartTime {
 				d.EchoWarn("检测到配置文件发生修改，正在重启守护进程")
 				flagStop(cCtx, true)
 				flagDaemon(cCtx, true)
