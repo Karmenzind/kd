@@ -11,7 +11,7 @@
 **TOC**
 <!-- vim-markdown-toc GitLab -->
 
-* [☑️  特性](#-特性)
+* [:ballot_box_with_check: 特性](#ballot_box_with_check-特性)
 * [🚀 安装和升级](#-安装和升级)
     * [Linux/MacOS](#linuxmacos)
         * [ArchLinux](#archlinux)
@@ -28,8 +28,7 @@
 
 <!-- vim-markdown-toc -->
 
-
-## ☑️  特性
+## :ballot_box_with_check: 特性
 
 - 单文件运行，多平台兼容，无需安装任何依赖。Windows运行截图：
 
