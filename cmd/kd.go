@@ -13,6 +13,8 @@ import (
 	"github.com/Karmenzind/kd/internal/cache"
 	"github.com/Karmenzind/kd/internal/core"
 	"github.com/Karmenzind/kd/internal/daemon"
+	"github.com/Karmenzind/kd/internal/query"
+	"github.com/Karmenzind/kd/internal/run"
 	"github.com/Karmenzind/kd/internal/update"
 	"github.com/Karmenzind/kd/logger"
 	"github.com/Karmenzind/kd/pkg"
@@ -42,6 +44,7 @@ var um = map[string]string{
 	"server":          "start server foreground 在前台启动服务端",
 	"daemon":          "ensure/start the daemon process 启动守护进程",
 	"stop":            "stop the daemon process 停止守护进程",
+	"restart":         "restart the daemon process 重新启动守护进程",
 	"update":          "check and update kd client 更新kd的可执行文件",
 	"generate-config": "generate config sample 生成配置文件，Linux/Mac默认地址为~/.config/kd.toml，Win为~\\kd.toml",
 	"edit-config":     "edit configuration file with the default editor 用默认编辑器打开配置文件",
@@ -57,13 +60,13 @@ func flagServer(*cli.Context, bool) error {
 	if strings.Contains(err.Error(), "address already in use") {
 		return fmt.Errorf("端口已经被占用（%s）", err)
 	}
-	return nil
+	return err
 }
 
 func flagDaemon(*cli.Context, bool) error {
 	p, _ := daemon.FindServerProcess()
 	if p != nil {
-		d.EchoWrong(fmt.Sprintf("已存在运行中的守护进程，PID：%d。请先执行`kd --stop`停止该进程", p.Pid))
+		d.EchoWrong("已存在运行中的守护进程，PID：%d。请先执行`kd --stop`停止该进程", p.Pid)
 		return nil
 
 	}
@@ -79,7 +82,15 @@ func flagStop(*cli.Context, bool) error {
 	if err != nil {
 		d.EchoFatal(err.Error())
 	}
-	return nil
+	return err
+}
+
+func flagRestart(*cli.Context, bool) error {
+	err := daemon.KillDaemonIfRunning()
+	if err == nil {
+		err = daemon.StartDaemonProcess()
+	}
+	return err
 }
 
 func flagUpdate(ctx *cli.Context, _ bool) (err error) {
@@ -114,7 +125,7 @@ func flagUpdate(ctx *cli.Context, _ bool) (err error) {
 
 	if doUpdate {
 		emoji.Println(":lightning: Let's update now")
-        go daemon.KillDaemonIfRunning()
+		go daemon.KillDaemonIfRunning()
 		err = update.UpdateBinary(VERSION)
 	}
 	return err
@@ -175,7 +186,19 @@ func flagStatus(*cli.Context, bool) error {
 		fmt.Printf("    Binary地址：%s\n", kdpath)
 	}
 
-	return nil
+	return err
+}
+
+func checkAndNoticeUpdate() {
+	if ltag := update.GetCachedLatestTag(); ltag != "" {
+		if update.CompareVersions(ltag, VERSION) == 1 {
+			prompt := fmt.Sprintf("发现新版本%s，请执行`kd --update`更新", ltag)
+			if pkg.GetLinuxDistro() == "arch" {
+				prompt += "。ArchLinux推荐通过AUR安装/升级"
+			}
+			d.EchoWeakNotice(prompt)
+		}
+	}
 }
 
 func basicCheck() {
@@ -202,6 +225,8 @@ func main() {
 	config.InitConfig()
 	cfg := config.Cfg
 	d.ApplyConfig(cfg.EnableEmoji)
+
+	run.Info.Version = VERSION
 
 	if cfg.Logging.Enable {
 		l, err := logger.InitLogger(&cfg.Logging)
@@ -242,6 +267,7 @@ func main() {
 			&cli.BoolFlag{Name: "server", DisableDefaultText: true, Action: flagServer, Hidden: true, Usage: um["server"]},
 			&cli.BoolFlag{Name: "daemon", DisableDefaultText: true, Action: flagDaemon, Usage: um["daemon"]},
 			&cli.BoolFlag{Name: "stop", DisableDefaultText: true, Hidden: true, Action: flagStop, Usage: um["stop"]},
+			&cli.BoolFlag{Name: "restart", DisableDefaultText: true, Hidden: true, Action: flagRestart, Usage: um["restart"]},
 			&cli.BoolFlag{Name: "update", DisableDefaultText: true, Action: flagUpdate, Usage: um["update"]},
 			&cli.BoolFlag{Name: "generate-config", DisableDefaultText: true, Action: flagGenerateConfig, Usage: um["generate-config"]},
 			&cli.BoolFlag{Name: "edit-config", DisableDefaultText: true, Action: flagEditConfig, Usage: um["edit-config"]},
@@ -249,7 +275,10 @@ func main() {
 		},
 		Action: func(cCtx *cli.Context) error {
 			// 除了--text外，其他的BoolFlag都当subcommand用
-			for _, flag := range []string{"init", "server", "daemon", "stop", "update", "generate-config", "edit-config", "status"} {
+			if !cCtx.Bool("update") {
+				defer checkAndNoticeUpdate()
+			}
+			for _, flag := range []string{"init", "server", "daemon", "stop", "restart", "update", "generate-config", "edit-config", "status"} {
 				if cCtx.Bool(flag) {
 					return nil
 				}
@@ -257,8 +286,7 @@ func main() {
 
 			if cfg.FileExists && cfg.ModTime > daemon.GetDaemonInfo().StartTime {
 				d.EchoWarn("检测到配置文件发生修改，正在重启守护进程")
-				flagStop(cCtx, true)
-				flagDaemon(cCtx, true)
+				flagRestart(cCtx, true)
 			}
 
 			if cCtx.String("theme") != "" {
@@ -268,10 +296,6 @@ func main() {
 
 			if cCtx.Args().Len() > 0 {
 				zap.S().Debugf("Recieved Arguments (len: %d): %+v \n", cCtx.Args().Len(), cCtx.Args().Slice())
-				// emoji.Printf(":eyes: Arguments are: %+v \n", cCtx.Args().Slice())
-				// emoji.Printf(":eyes: Flat --update  %+v \n", cCtx.Bool("update"))
-				// emoji.Printf(":eyes: Flat --nocache  %+v \n", cCtx.Bool("nocache"))
-				// emoji.Printf(":eyes: flags are: %+v \n", cCtx.App.VisibleFlags)
 				// emoji.Printf("Test emoji:\n:accept: :inbox_tray: :information: :us: :uk:  🗣  :lips: :eyes: :balloon: \n")
 
 				qstr := strings.Join(cCtx.Args().Slice(), " ")
@@ -284,7 +308,7 @@ func main() {
 				}
 				if err == nil {
 					if r.Found {
-						err = pkg.OutputResult(r.PrettyFormat(cfg.EnglishOnly), cfg.Paging, cfg.PagerCommand, cfg.ClearScreen)
+						err = pkg.OutputResult(query.PrettyFormat(r, cfg.EnglishOnly), cfg.Paging, cfg.PagerCommand, cfg.ClearScreen)
 						if err != nil {
 							d.EchoFatal(err.Error())
 						}
@@ -309,15 +333,5 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		zap.S().Errorf("APP stopped: %s", err)
 		d.EchoError(err.Error())
-	}
-
-	if ltag := update.GetCachedLatestTag(); ltag != "" {
-		if update.CompareVersions(ltag, VERSION) == 1 {
-            prompt := fmt.Sprintf("发现新版本%s，请执行`kd --update`更新", ltag)
-			if pkg.GetLinuxDistro() == "arch" {
-                prompt+= "。ArchLinux推荐通过AUR安装/升级"
-			}
-			d.EchoWeakNotice(prompt)
-		}
 	}
 }
