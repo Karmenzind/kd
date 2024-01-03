@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Karmenzind/kd/config"
 	"github.com/Karmenzind/kd/internal/cache"
@@ -17,14 +18,14 @@ import (
 	"go.uber.org/zap"
 )
 
-var ydCliLegacy = &http.Client{}
-var ydCli = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
+var ydCliLegacy = &http.Client{Timeout: 5 * time.Second}
+var ydCli = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}, Timeout: 5 * time.Second}
 
 func requestYoudao(r *model.Result) (body []byte, err error) {
 	var req *http.Request
 	var url string
 	var cli *http.Client
-    useNewApi := false
+	useNewApi := false
 	q := strings.ReplaceAll(r.Query, " ", "%20")
 	if useNewApi {
 		cli = ydCli
@@ -122,6 +123,6 @@ func FetchOnline(r *model.Result) (err error) {
 	return
 }
 
-func init() {
-	ydCli = pkg.CreateHTTPClient(5)
-}
+// func init() {
+// 	ydCli = pkg.CreateHTTPClient(5)
+// }

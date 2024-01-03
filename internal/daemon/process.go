@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Karmenzind/kd/internal/cache"
+	"github.com/Karmenzind/kd/internal/model"
 	"github.com/Karmenzind/kd/pkg"
 	d "github.com/Karmenzind/kd/pkg/decorate"
 	"github.com/Karmenzind/kd/pkg/proc"
@@ -18,27 +18,27 @@ import (
 	"go.uber.org/zap"
 )
 
-type DaemonInfoType struct {
-	StartTime int64
-	Port      string
-	PID       int
-}
+// type model.RunInfo struct {
+// 	*proc.ProcInfo
+// 	Port    string
+// 	Version string
+// }
 
-var DaemonInfo = &DaemonInfoType{}
+var DaemonInfo = &model.RunInfo{}
 
-func RecordRunInfo(port string) {
-	DaemonInfo.StartTime = time.Now().Unix()
-	DaemonInfo.PID = os.Getpid()
-	DaemonInfo.Port = port
-	pkg.SaveJson(
-		filepath.Join(cache.CACHE_RUN_PATH, "daemon.json"),
-		DaemonInfo,
-	)
-	zap.S().Infof("Recorded running information of daemon %+v", DaemonInfo)
-}
+// func RecordRunInfo(port string) {
+// 	run.Info.Port = port
 
-func GetDaemonInfo() *DaemonInfoType {
-	if *DaemonInfo == (DaemonInfoType{}) {
+// 	err := pkg.SaveJson(filepath.Join(run.CACHE_RUN_PATH, "daemon.json"), run.Info)
+// 	if err == nil {
+// 		zap.S().Infof("Recorded running information of daemon %+v", DaemonInfo)
+// 	} else {
+// 		zap.S().Warnf("Failed to record running info of daemon %+v", err)
+// 	}
+// }
+
+func GetDaemonInfo() *model.RunInfo {
+	if *DaemonInfo == (model.RunInfo{}) {
 		err := pkg.LoadJson(filepath.Join(cache.CACHE_RUN_PATH, "daemon.json"), DaemonInfo)
 		if err != nil {
 			d.EchoFatal("获取守护进程信息失败，请执行`kd --stop && kd --daemon`")
@@ -76,7 +76,7 @@ func FindServerProcess() (*process.Process, error) {
 		// XXX err
 		n, _ := p.Name()
 		if p.Pid == int32(di.PID) {
-            zap.S().Debugf("Got daemon process %v via daemon info", di.PID)
+			zap.S().Debugf("Got daemon process %v via daemon info", di.PID)
 			cmdslice, _ := p.CmdlineSlice()
 			if len(cmdslice) > 1 && cmdslice[1] == "--server" {
 				return p, nil
@@ -147,7 +147,7 @@ func KillDaemonIfRunning() error {
 		return err
 	}
 
-    err = proc.KillProcess(p)
+	err = proc.KillProcess(p)
 
 	if err == nil {
 		zap.S().Info("Terminated daemon process.")
