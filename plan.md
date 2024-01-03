@@ -2,9 +2,7 @@
 
 ## wip
 
-- 记录daemon更多信息
-    - 运行时候比较server版本
-    - check if fits daemon.json
+- 读文件加锁
 - 指定port
 - release增加version，aur判断此文件
 - 长句查询 (另外缓存)
