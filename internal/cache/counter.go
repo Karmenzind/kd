@@ -26,7 +26,7 @@ func CounterIncr(query string, history chan int) {
 	c := make(MonthCounter)
 	counterPath := filepath.Join(CACHE_STAT_DIR_PATH, fmt.Sprintf("counter-%d%02d.json", n.Year(), int(n.Month())))
 	if pkg.IsPathExists(counterPath) {
-		err := loadJson(counterPath, &c)
+		err := pkg.LoadJson(counterPath, &c)
 		if err != nil {
 			zap.S().Warnf("Failed to load counter")
 			return
@@ -35,5 +35,5 @@ func CounterIncr(query string, history chan int) {
 	}
 	c[query] += 1
 	history <- c[query]
-	saveJson(counterPath, &c)
+	pkg.SaveJson(counterPath, &c)
 }

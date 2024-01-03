@@ -6,19 +6,24 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"path/filepath"
 
 	"github.com/Karmenzind/kd/internal/daemon"
 	"github.com/Karmenzind/kd/internal/model"
 	"github.com/Karmenzind/kd/internal/query"
+	"github.com/Karmenzind/kd/internal/run"
+	"github.com/Karmenzind/kd/pkg"
+	d "github.com/Karmenzind/kd/pkg/decorate"
 	"go.uber.org/zap"
 )
 
-// TODO  支持自定义
-var SERVER_PORT = 19707
-
 func StartServer() (err error) {
-	IS_SERVER = true
-	addr := fmt.Sprintf("localhost:%d", SERVER_PORT)
+	if !pkg.IsPortOpen(run.SERVER_PORT) {
+		d.EchoFatal("端口%d已经被占用，请停止占用端口的程序后重试", run.SERVER_PORT)
+	}
+
+	run.Info.SetServer(true)
+	addr := fmt.Sprintf("localhost:%d", run.SERVER_PORT)
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
 		zap.S().Errorf("Failed to start server:", err)
@@ -30,13 +35,13 @@ func StartServer() (err error) {
 		zap.S().Errorf("Failed to SplitHostPort:", err)
 		return err
 	}
-	daemon.InitCron()
-	go daemon.RecordRunInfo(port)
+	run.Info.SetPort(port)
+	go run.Info.SaveToFile(filepath.Join(run.CACHE_RUN_PATH, "daemon.json"))
+	d.EchoOkay("Listening on host: %s, port: %s\n", host, port)
 
-	fmt.Printf("Listening on host: %s, port: %s\n", host, port)
+	daemon.InitCron()
 
 	for {
-		// Listen for an incoming connection
 		conn, err := l.Accept()
 		if err != nil {
 			zap.S().Errorf("Failed to accept connection:", err)
@@ -52,16 +57,16 @@ func handleClient(conn net.Conn) {
 	recv, err := bufio.NewReader(conn).ReadBytes('\n')
 	if err == io.EOF {
 		zap.S().Debugf("Connection closed by client.")
-        fmt.Println("Connection closed by client")
+		d.EchoWarn("Connection closed by client")
 		return
 	} else if err != nil {
-		fmt.Printf("Error reading: %#v\n", err)
+		d.EchoWrong(fmt.Sprintf("Error reading: %#v\n", err))
 		zap.S().Errorf("Error reading: %#v\n", err)
 		// FIXME (k): <2024-01-02> reply
-        return
+		return
 	}
 
-	fmt.Printf("Received: %s\n", recv)
+	d.EchoRun("Received: %s\n", recv)
 	q := model.TCPQuery{}
 	err = json.Unmarshal(recv, &q)
 	if err != nil {
@@ -79,8 +84,7 @@ func handleClient(conn net.Conn) {
 		reply, _ = json.Marshal(model.DaemonResponse{Error: fmt.Sprintf("序列化查询结果失败：%s", err)})
 	}
 
-    fmt.Printf("Sending to client: %s \n", reply)
+	d.EchoRun("Sending to client: %s \n", reply)
 	conn.Write(append(reply, '\n'))
 	conn.Close()
-
 }
