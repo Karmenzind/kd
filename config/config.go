@@ -32,11 +32,11 @@ type Config struct {
 	PagerCommand string `toml:"pager_command"`
 	AutoClear    bool   `default:"false" toml:"auto_clear"`
 	// MaxCached    uint   `default:"10000" toml:"max_cached"`
-	EnglishOnly  bool   `default:"false" toml:"english_only"`
-	Theme        string `default:"temp" toml:"theme"`
-	HTTPProxy    string `toml:"http_proxy"`
-	ClearScreen  bool   `toml:"clear_screen" default:"false"`
-	FreqAlert    bool   `toml:"freq_alert" default:"false"`
+	EnglishOnly bool   `default:"false" toml:"english_only"`
+	Theme       string `default:"temp" toml:"theme"`
+	HTTPProxy   string `toml:"http_proxy"`
+	ClearScreen bool   `toml:"clear_screen" default:"false"`
+	FreqAlert   bool   `toml:"freq_alert" default:"false"`
 
 	Logging LoggerConfig `toml:"logging"`
 
@@ -107,7 +107,7 @@ func InitConfig() error {
 	err = Cfg.CheckAndApply()
 	if err != nil {
 		fmt.Println(err)
-        os.Exit(1)
+		os.Exit(1)
 	}
 	return err
 }
