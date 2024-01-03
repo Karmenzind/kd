@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var VERSION = "v0.0.5"
+var VERSION = "v0.0.6"
 
 func showPrompt() {
 	exename, err := pkg.GetExecutableBasename()
@@ -174,7 +174,7 @@ func flagEditConfig(*cli.Context, bool) error {
 }
 
 func flagStatus(*cli.Context, bool) error {
-	di := daemon.GetDaemonInfo()
+	di, _ := daemon.GetDaemonInfo()
 	d.EchoRun("运行和相关配置信息如下：")
 	fmt.Printf("    Daemon端口：%s\n", di.Port)
 	fmt.Printf("    Daemon PID：%d\n", di.PID)
@@ -284,9 +284,12 @@ func main() {
 				}
 			}
 
-			if cfg.FileExists && cfg.ModTime > daemon.GetDaemonInfo().StartTime {
-				d.EchoWarn("检测到配置文件发生修改，正在重启守护进程")
-				flagRestart(cCtx, true)
+			if cfg.FileExists {
+				di, err := daemon.GetDaemonInfo()
+				if err == nil && cfg.ModTime > di.StartTime {
+					d.EchoWarn("检测到配置文件发生修改，正在重启守护进程")
+					flagRestart(cCtx, true)
+				}
 			}
 
 			if cCtx.String("theme") != "" {

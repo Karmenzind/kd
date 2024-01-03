@@ -11,8 +11,10 @@ import (
 	"time"
 
 	"github.com/Karmenzind/kd/internal/cache"
+	"github.com/Karmenzind/kd/internal/run"
 	"github.com/Karmenzind/kd/internal/update"
 	"github.com/Karmenzind/kd/pkg"
+	d "github.com/Karmenzind/kd/pkg/decorate"
 	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
 )
@@ -21,6 +23,36 @@ func InitCron() {
 	go cronCheckUpdate()
 	go cronUpdateDataZip()
 	go cronDeleteSpam()
+	go cronEnsureDaemonJsonFile()
+}
+
+func cronEnsureDaemonJsonFile() {
+	ticker := time.NewTicker(5 * time.Minute)
+	for {
+		<-ticker.C
+		di, err := GetDaemonInfoFromFile()
+		// TODO 检查信息与当前是否匹配
+		var needUpdate bool
+		if err != nil {
+			zap.S().Warnf("Failed to get daemon info from file: %s", err)
+			needUpdate = true
+		} else {
+			ri := run.Info
+			if !(ri.StartTime == di.StartTime &&
+				ri.PID == di.PID &&
+				ri.Port == di.Port &&
+				ri.ExeName == di.ExeName &&
+				ri.ExePath == di.ExePath &&
+				ri.Version == di.Version) {
+				zap.S().Warn("DaemonInfo from json is different from current run.Info")
+				needUpdate = true
+			}
+		}
+		if needUpdate {
+			run.Info.SaveToFile(GetDaemonInfoPath())
+			d.EchoRun("Update daemon.json")
+		}
+	}
 }
 
 func cronDeleteSpam() {
@@ -44,18 +76,18 @@ func cronDeleteSpam() {
 func cronCheckUpdate() {
 	ticker := time.NewTicker(3600 * 12 * time.Second)
 	for {
-        // TODO (k): <2024-01-01> 改成检查文件Stat来判断时长
+		// TODO (k): <2024-01-01> 改成检查文件Stat来判断时长
 		<-ticker.C
 
-        for i := 0; i < 3; i++ {
-            tag, err := update.GetLatestTag()
-            if err == nil {
-                fmt.Println("最新Tag", tag)
-                break
-            }
-            zap.S().Warnf("Failed to get latest tag: %s", err)
-            time.Sleep(5 * time.Second)
-        }
+		for i := 0; i < 3; i++ {
+			tag, err := update.GetLatestTag()
+			if err == nil {
+				fmt.Println("最新Tag", tag)
+				break
+			}
+			zap.S().Warnf("Failed to get latest tag: %s", err)
+			time.Sleep(5 * time.Second)
+		}
 
 	}
 }

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Karmenzind/kd/internal/cache"
 	"github.com/Karmenzind/kd/internal/model"
+	"github.com/Karmenzind/kd/internal/run"
 	"github.com/Karmenzind/kd/pkg"
 	d "github.com/Karmenzind/kd/pkg/decorate"
 	"github.com/Karmenzind/kd/pkg/proc"
@@ -29,22 +29,40 @@ var DaemonInfo = &model.RunInfo{}
 // func RecordRunInfo(port string) {
 // 	run.Info.Port = port
 
-// 	err := pkg.SaveJson(filepath.Join(run.CACHE_RUN_PATH, "daemon.json"), run.Info)
-// 	if err == nil {
-// 		zap.S().Infof("Recorded running information of daemon %+v", DaemonInfo)
-// 	} else {
-// 		zap.S().Warnf("Failed to record running info of daemon %+v", err)
-// 	}
-// }
+//		err := pkg.SaveJson(filepath.Join(run.CACHE_RUN_PATH, "daemon.json"), run.Info)
+//		if err == nil {
+//			zap.S().Infof("Recorded running information of daemon %+v", DaemonInfo)
+//		} else {
+//			zap.S().Warnf("Failed to record running info of daemon %+v", err)
+//		}
+//	}
 
-func GetDaemonInfo() *model.RunInfo {
+func GetDaemonInfoPath() string {
+	return filepath.Join(run.CACHE_RUN_PATH, "daemon.json")
+}
+
+func GetDaemonInfoFromFile() (*model.RunInfo, error) {
+	dipath := filepath.Join(run.CACHE_RUN_PATH, "daemon.json")
+	if !pkg.IsPathExists(dipath) {
+		return DaemonInfo, fmt.Errorf("获取守护进程信息失败，文件不存在")
+	}
+	err := pkg.LoadJson(dipath, DaemonInfo)
+	return DaemonInfo, err
+}
+
+func GetDaemonInfo() (*model.RunInfo, error) {
+	var err error
 	if *DaemonInfo == (model.RunInfo{}) {
-		err := pkg.LoadJson(filepath.Join(cache.CACHE_RUN_PATH, "daemon.json"), DaemonInfo)
+		dipath := filepath.Join(run.CACHE_RUN_PATH, "daemon.json")
+		if !pkg.IsPathExists(dipath) {
+			return DaemonInfo, fmt.Errorf("获取守护进程信息失败，文件不存在")
+		}
+		err := pkg.LoadJson(dipath, DaemonInfo)
 		if err != nil {
-			d.EchoFatal("获取守护进程信息失败，请执行`kd --stop && kd --daemon`")
+			return DaemonInfo, err
 		}
 	}
-	return DaemonInfo
+	return DaemonInfo, err
 }
 
 func getKdPIDs() {
@@ -71,11 +89,11 @@ func FindServerProcess() (*process.Process, error) {
 	if err != nil {
 		return nil, err
 	}
-	di := GetDaemonInfo()
 	for _, p := range processes {
 		// XXX err
 		n, _ := p.Name()
-		if p.Pid == int32(di.PID) {
+		di, err := GetDaemonInfo()
+		if err == nil && p.Pid == int32(di.PID) {
 			zap.S().Debugf("Got daemon process %v via daemon info", di.PID)
 			cmdslice, _ := p.CmdlineSlice()
 			if len(cmdslice) > 1 && cmdslice[1] == "--server" {

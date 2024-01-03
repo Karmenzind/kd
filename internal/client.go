@@ -28,8 +28,8 @@ func ensureDaemon(running chan bool) {
 	} else {
 		var warn string
 		// recorded daemon info
-		recDi := daemon.GetDaemonInfo()
-		if run.Info.Version != recDi.Version {
+		recDi, err := daemon.GetDaemonInfo()
+		if err == nil && run.Info.Version != recDi.Version {
 			warn = fmt.Sprintf("正在运行的守护程序版本（%s）与当前程序（%s）不一致", recDi.Version, run.Info.Version)
 		} else if daemonExepath, _ := p.Exe(); run.Info.ExePath != daemonExepath {
 			warn = fmt.Sprintf("正在运行的守护程序（%s）与当前程序（%s）文件路径不一致", daemonExepath, run.Info.ExePath)
