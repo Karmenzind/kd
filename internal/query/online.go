@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/Karmenzind/kd/config"
 	"github.com/Karmenzind/kd/internal/cache"
 	"github.com/Karmenzind/kd/internal/model"
+	"github.com/Karmenzind/kd/internal/run"
 	"github.com/Karmenzind/kd/pkg"
 	"github.com/anaskhan96/soup"
 	"go.uber.org/zap"
@@ -66,9 +68,16 @@ func requestYoudao(r *model.Result) (body []byte, err error) {
 		zap.S().Debugf("[http-get] detail: header %+v", url, len(body), resp.Header)
 	}
 	if config.Cfg.Debug {
-		errW := os.WriteFile(fmt.Sprintf("/home/k/Workspace/kd/data/%s.html", r.Query), (body), 0666)
-		if errW != nil {
-			zap.S().Warnf("Failed to write file '%s': %s", r.Query, errW)
+		htmlDir := filepath.Join(run.CACHE_ROOT_PATH, "html")
+		errW := os.MkdirAll(htmlDir, os.ModePerm)
+		if errW == nil {
+			htmlPath := filepath.Join(htmlDir, fmt.Sprintf("%s.html", r.Query))
+			errW = os.WriteFile(htmlPath, body, 0666)
+		}
+		if errW == nil {
+			zap.S().Debugf("Saved '%s.html'", r.Query)
+		} else {
+			zap.S().Warnf("Failed to save html data for '%s': %s", r.Query, errW)
 		}
 	}
 	return
@@ -102,6 +111,7 @@ func FetchOnline(r *model.Result) (err error) {
 		yr.parseMachineTrans()
 		if r.MachineTrans != "" {
 			r.Found = true
+            go cache.UpdateLongTextCache(r)
 		}
 		return
 	}

@@ -23,11 +23,16 @@ TODO:
 */
 
 func FetchCached(r *model.Result) (err error) {
-	err = cache.GetCachedQuery(r)
+    if r.IsLongText {
+        err = cache.GetLongTextCache(r)
+    } else {
+        err = cache.GetCachedQuery(r)
+    }
 	if err == nil {
 		r.Found = true
 		return
 	}
+    zap.S().Debugf("[cache] Query error: %s", err)
 	r.Found = false
 	return
 }

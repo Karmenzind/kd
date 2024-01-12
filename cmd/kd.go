@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var VERSION = "v0.0.6"
+var VERSION = "v0.0.7"
 
 func showPrompt() {
 	exename, err := pkg.GetExecutableBasename()
@@ -185,7 +185,6 @@ func flagStatus(*cli.Context, bool) error {
 	if err == nil {
 		fmt.Printf("    Binary地址：%s\n", kdpath)
 	}
-
 	return err
 }
 
