@@ -66,8 +66,10 @@ func Query(query string, noCache bool, longText bool) (r *model.Result, err erro
 	daemonRunning := make(chan bool)
 	go ensureDaemon(daemonRunning)
 
-	core.WG.Add(1)
-	go cache.CounterIncr(query, r.History)
+	if !longText {
+		core.WG.Add(1)
+		go cache.CounterIncr(query, r.History)
+	}
 
 	// any valid char
 	if m, _ := regexp.MatchString("^[a-zA-Z0-9\u4e00-\u9fa5]", query); !m {
@@ -91,18 +93,12 @@ func Query(query string, noCache bool, longText bool) (r *model.Result, err erro
 			inNotFound = true
 		}
 		r.Initialize()
+	}
 
-		if !noCache {
-			cacheErr := q.FetchCached(r)
-			if cacheErr != nil {
-				zap.S().Warnf("[cache] Query error: %s", cacheErr)
-			}
-			if r.Found {
-				return
-			}
-			_ = err
+	if !noCache {
+		if cacheErr := q.FetchCached(r); cacheErr == nil && r.Found {
+			return
 		}
-
 	}
 
 	if <-daemonRunning {

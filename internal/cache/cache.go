@@ -5,9 +5,11 @@ import (
 	"compress/zlib"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/Karmenzind/kd/internal/model"
 	"github.com/Karmenzind/kd/pkg"
@@ -76,6 +78,54 @@ func UpdateQueryCache(r *model.Result) (err error) {
 }
 
 //  -----------------------------------------------------------------------------
+//  Long Text query cache
+//  -----------------------------------------------------------------------------
+
+type LongTextData struct {
+	Result   string `json:"r"`
+	AccessTS int64  `json:"a"`
+	CreateTS int64  `json:"c"`
+}
+
+func GetLongTextCache(r *model.Result) (err error) {
+	var m map[string]LongTextData
+	if pkg.IsPathExists(LONG_TEXT_CACHE_FILE) {
+		err = pkg.LoadJson(LONG_TEXT_CACHE_FILE, &m)
+		if err != nil {
+			return err
+		}
+        if res, ok := m[r.Query]; ok {
+            r.MachineTrans = res.Result
+            zap.S().Debugf("Got cached '%s'", r.Query)
+            (&res).AccessTS = time.Now().Unix()
+            m[r.Query] = res
+            go pkg.SaveJson(LONG_TEXT_CACHE_FILE, &m)
+            return
+        } else {
+            return fmt.Errorf("no cache for %s", r.Query)
+        }
+    } 
+    return
+}
+
+func UpdateLongTextCache(r *model.Result) (err error) {
+	var m map[string]LongTextData
+	if pkg.IsPathExists(LONG_TEXT_CACHE_FILE) {
+		err = pkg.LoadJson(LONG_TEXT_CACHE_FILE, &m)
+		if err != nil {
+			return err
+		}
+	} else {
+		m = map[string]LongTextData{}
+	}
+	now := time.Now().Unix()
+	m[r.Query] = LongTextData{r.MachineTrans, now, now}
+	err = pkg.SaveJson(LONG_TEXT_CACHE_FILE, m)
+	return err
+}
+
+//  -----------------------------------------------------------------------------
+// deprecated
 //  JSON version
 //  -----------------------------------------------------------------------------
 
