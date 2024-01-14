@@ -17,7 +17,7 @@
         * [ArchLinux](#archlinux)
     * [Windows](#windows)
     * [卸载](#卸载)
-* [⚙️ 用法和配置](#-用法和配置)
+* [:gear: 用法和配置](#gear-用法和配置)
 * [🎈 提升体验技巧](#-提升体验技巧)
     * [使用tmux的悬浮窗口显示结果](#使用tmux的悬浮窗口显示结果)
 * [🎨 颜色主题](#-颜色主题)
@@ -59,9 +59,6 @@
 
 
 ## 🚀 安装和升级
-
-<!-- **注**: -->
-<!-- - 将命令中的`<URL>`**替换**为[releases页面](https://github.com/Karmenzind/kd/releases)中对应你平台和架构的文件链接 -->
 
 - 这里下载位置为示例，可以下载到任何地方，然后将路径加入PATH环境变量
 - 其他架构需求请提交issue
@@ -118,7 +115,7 @@ Invoke-WebRequest -uri 'https://github.com/Karmenzind/kd/releases/latest/downloa
 
 </pre></details>
 
-## ⚙️ 用法和配置
+## :gear: 用法和配置
 
 直接执行`kd <text>`查单词、词组（如`kd abandon`、`kd leave me alone`）
 
