@@ -151,17 +151,14 @@ func displayExample(item []string, tab string, onlyEN bool, isEN bool) string {
 			r = d.EgEn(item[0])
 		} else {
 			var rh string
-			if len(item) >= 3 {
-				// if strings.ToLower(item[2]) != "youdao" {
-				// 	rh = d.EgCh(item[1]) + d.EgCh(item[2])
-				// }
-					rh = d.EgCh(item[1]) + d.EgCh(item[2])
+			if len(item) >= 3 && strings.ToLower(item[2]) != "youdao" {
+				rh = d.EgCh(item[1]) + d.EgCh(item[2])
 			}
+
 			if rh == "" {
 				rh = d.EgCh(item[1])
 			}
 			r = fmt.Sprintf("%s %s", d.EgEn(item[0]), rh)
-			// r = fmt.Sprintf("%s %s", d.EgEn(item[0]), d.EgCh(item[1]))
 		}
 	case "au":
 		// TODO 增加来源渲染
