@@ -94,18 +94,18 @@ func GetLongTextCache(r *model.Result) (err error) {
 		if err != nil {
 			return err
 		}
-        if res, ok := m[r.Query]; ok {
-            r.MachineTrans = res.Result
-            zap.S().Debugf("Got cached '%s'", r.Query)
-            (&res).AccessTS = time.Now().Unix()
-            m[r.Query] = res
-            go pkg.SaveJson(LONG_TEXT_CACHE_FILE, &m)
-            return
-        } else {
-            return fmt.Errorf("no cache for %s", r.Query)
-        }
-    } 
-    return
+		if res, ok := m[r.Query]; ok {
+			r.MachineTrans = res.Result
+			zap.S().Debugf("Got cached '%s'", r.Query)
+			(&res).AccessTS = time.Now().Unix()
+			m[r.Query] = res
+			go pkg.SaveJson(LONG_TEXT_CACHE_FILE, &m)
+			return
+		} else {
+			return fmt.Errorf("no cache for %s", r.Query)
+		}
+	}
+	return fmt.Errorf("cache file not found")
 }
 
 func UpdateLongTextCache(r *model.Result) (err error) {
