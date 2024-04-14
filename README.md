@@ -227,7 +227,7 @@ WantedBy=default.target
 
 目前支持以下配色，后续会增加更多。如果不希望输出颜色，设置环境变量`NO_COLOR=1`即可
 
-- `default` 暂定的默认配色
+- `temp` 暂定的默认配色
 
     ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/theme_default.png)
 
