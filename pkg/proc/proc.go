@@ -15,7 +15,9 @@ func KillProcess(p *process.Process) (err error) {
 	if runtime.GOOS != "windows" {
 		errSig := p.SendSignal(syscall.SIGINT)
 		if errSig == nil {
-			if yes, errCheck := p.IsRunning(); errCheck == nil && !yes {
+			yes, errCheck := p.IsRunning()
+			zap.S().Infof("Checking if running (pid %v): %v err: %v", p.Pid, yes, errCheck)
+			if errCheck == nil && !yes {
 				zap.S().Infof("Stopped process %v with SIGINT.", p.Pid)
 				return
 			}
@@ -49,3 +51,8 @@ func SysKillPID(pid int32) (err error) {
 	}
 	return
 }
+
+func SendSignalToProcess(pid int32, signal syscall.Signal) error {
+	return nil
+}
+

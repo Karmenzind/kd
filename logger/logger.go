@@ -15,27 +15,32 @@ var LOG_FILE string
 
 func buildLogger(logCfg *config.LoggerConfig, options ...zap.Option) (*zap.Logger, error) {
 	cfg := zap.NewDevelopmentConfig()
-	var f string
-	if logCfg.Path == "" {
-		u, err := user.Current()
-		if err != nil {
-			f = filepath.Join(os.TempDir(), "kd.log")
-		} else {
-			name := strings.ReplaceAll(u.Username, " ", "_")
-			name = strings.ReplaceAll(name, "\\", "_")
-			f = filepath.Join(os.TempDir(), fmt.Sprintf("kd_%s.log", name))
-		}
+	if logCfg.RedirectToStream {
+		LOG_FILE = "[stream]"
+		cfg.OutputPaths = []string{"stdout"}
+		cfg.ErrorOutputPaths = []string{"stderr"}
 	} else {
-		f = logCfg.Path
-	}
-	if _, err := os.Stat(f); err == nil {
-		os.Chmod(f, 0o666)
-	}
-    LOG_FILE = f
+		var f string
+		if logCfg.Path == "" {
+			u, err := user.Current()
+			if err != nil {
+				f = filepath.Join(os.TempDir(), "kd.log")
+			} else {
+				name := strings.ReplaceAll(u.Username, " ", "_")
+				name = strings.ReplaceAll(name, "\\", "_")
+				f = filepath.Join(os.TempDir(), fmt.Sprintf("kd_%s.log", name))
+			}
+		} else {
+			f = logCfg.Path
+		}
+		if _, err := os.Stat(f); err == nil {
+			os.Chmod(f, 0o666)
+		}
+		LOG_FILE = f
 
-	cfg.OutputPaths = []string{f}
-	cfg.ErrorOutputPaths = []string{f}
-
+		cfg.OutputPaths = []string{f}
+		cfg.ErrorOutputPaths = []string{f}
+	}
 	level, err := zap.ParseAtomicLevel(logCfg.Level)
 	if err != nil {
 		return nil, err

@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var VERSION = "v0.0.8"
+var VERSION = "v0.0.9"
 
 func showPrompt() {
 	exename, err := pkg.GetExecutableBasename()
@@ -32,6 +32,7 @@ func showPrompt() {
 		d.EchoFatal(err.Error())
 	}
 	fmt.Printf(`%[1]s <text>	查单词、词组
+%[1]s -t <text>	查长句
 %[1]s -h    	查看详细帮助
 `, exename)
 }
@@ -49,6 +50,7 @@ var um = map[string]string{
 	"generate-config": "generate config sample 生成配置文件，Linux/Mac默认地址为~/.config/kd.toml，Win为~\\kd.toml",
 	"edit-config":     "edit configuration file with the default editor 用默认编辑器打开配置文件",
 	"status":          "show running status 展示运行信息",
+	"log-to-stream":   "redirect logging output to stdout&stderr (for debugging or server mode)",
 }
 
 //  -----------------------------------------------------------------------------
@@ -86,16 +88,12 @@ func flagStop(*cli.Context, bool) error {
 }
 
 func flagRestart(*cli.Context, bool) error {
-	err := daemon.KillDaemonIfRunning()
-	if err == nil {
-		err = daemon.StartDaemonProcess()
-	}
-	return err
+	return daemon.RestartDaemon()
 }
 
 func flagUpdate(ctx *cli.Context, _ bool) (err error) {
 	var ver string
-	if pkg.GetLinuxDistro() == "arch" {
+	if runtime.GOOS == "linux" && pkg.GetLinuxDistro() == "arch" {
 		d.EchoFine("您在使用ArchLinux，推荐直接通过AUR安装/升级（例如`yay -S kd`），更便于维护")
 	}
 	force := ctx.Bool("force")
@@ -241,9 +239,6 @@ func main() {
 	}
 	defer cache.LiteDB.Close()
 	defer core.WG.Wait()
-	// emoji.Println(":beer: Beer!!!")
-	// pizzaMessage := emoji.Sprint("I like a :pizza: and :sushi:!!")
-	// fmt.Println(pizzaMessage)
 
 	app := &cli.App{
 		Suggest:         true, // XXX
@@ -271,6 +266,7 @@ func main() {
 			&cli.BoolFlag{Name: "generate-config", DisableDefaultText: true, Action: flagGenerateConfig, Usage: um["generate-config"]},
 			&cli.BoolFlag{Name: "edit-config", DisableDefaultText: true, Action: flagEditConfig, Usage: um["edit-config"]},
 			&cli.BoolFlag{Name: "status", DisableDefaultText: true, Hidden: true, Action: flagStatus, Usage: um["status"]},
+			&cli.BoolFlag{Name: "log-to-stream", DisableDefaultText: true, Hidden: true, Action: flagStatus, Usage: um["log-to-stream"]},
 		},
 		Action: func(cCtx *cli.Context) error {
 			// 除了--text外，其他的BoolFlag都当subcommand用

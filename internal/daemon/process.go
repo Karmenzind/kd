@@ -13,29 +13,14 @@ import (
 	"github.com/Karmenzind/kd/pkg"
 	d "github.com/Karmenzind/kd/pkg/decorate"
 	"github.com/Karmenzind/kd/pkg/proc"
+	"github.com/Karmenzind/kd/pkg/systemd"
 
 	"github.com/shirou/gopsutil/v3/process"
 	"go.uber.org/zap"
 )
 
-// type model.RunInfo struct {
-// 	*proc.ProcInfo
-// 	Port    string
-// 	Version string
-// }
-
+var SYSTEMD_UNIT_NAME = "kd-server"
 var DaemonInfo = &model.RunInfo{}
-
-// func RecordRunInfo(port string) {
-// 	run.Info.Port = port
-
-//		err := pkg.SaveJson(filepath.Join(run.CACHE_RUN_PATH, "daemon.json"), run.Info)
-//		if err == nil {
-//			zap.S().Infof("Recorded running information of daemon %+v", DaemonInfo)
-//		} else {
-//			zap.S().Warnf("Failed to record running info of daemon %+v", err)
-//		}
-//	}
 
 func GetDaemonInfoPath() string {
 	return filepath.Join(run.CACHE_RUN_PATH, "daemon.json")
@@ -103,12 +88,7 @@ func FindServerProcess() (*process.Process, error) {
 
 		if n == "kd" || (runtime.GOOS == "windows" && n == "kd.exe") {
 			cmd, _ := p.Cmdline()
-			if p.Pid == 13328 {
-				name, _ := p.Name()
-				cmdslice, _ := p.CmdlineSlice()
-				zap.S().Debugf("13328:Name: `%s` Cmd: `%s` cmdslice: `%+v`", name, cmd, cmdslice)
-			}
-			zap.S().Debugf("Found process kd.exe with CMD: %s", cmd)
+			// zap.S().Debugf("Found process kd with CMD: %s", cmd)
 			if strings.Contains(cmd, " --server") {
 				zap.S().Debugf("Found process %+v Cmd: `%s`", p, cmd)
 				return p, nil
@@ -154,6 +134,16 @@ func StartDaemonProcess() error {
 }
 
 func KillDaemonIfRunning() error {
+	if runtime.GOOS == "linux" {
+		if yes, _ := systemd.ServiceIsActive(SYSTEMD_UNIT_NAME, true); yes {
+			d.EchoWarn("检测到daemon作为systemd unit运行，将使用systemctl停止，再次启动需执行systemctl start --user %s", SYSTEMD_UNIT_NAME)
+			_, err := systemd.StopService(SYSTEMD_UNIT_NAME, true)
+			if err == nil {
+				d.EchoOkay("已经通过systemd停止kd-server服务")
+			}
+			return err
+		}
+	}
 	p, err := FindServerProcess()
 	if err == nil {
 		if p == nil {
@@ -170,6 +160,32 @@ func KillDaemonIfRunning() error {
 	if err == nil {
 		zap.S().Info("Terminated daemon process.")
 		d.EchoOkay("守护进程已经停止")
+	} else {
+		zap.S().Warnf("Failed to terminate daemon process: %s", err)
+	}
+	return err
+}
+
+// TODO (k): <2024-05-05 15:56>
+func SendHUP2Daemon() error {
+	return nil
+}
+
+func RestartDaemon() error {
+	if runtime.GOOS == "linux" {
+		if yes, _ := systemd.ServiceIsActive(SYSTEMD_UNIT_NAME, true); yes {
+			zap.S().Debugf("Found systemd unit: %s", SYSTEMD_UNIT_NAME)
+			d.EchoWarn("检测到daemon存在相应systemd unit，将使用systemctl重启")
+			_, err := systemd.RestartService(SYSTEMD_UNIT_NAME, true)
+			if err == nil {
+				d.EchoOkay("已经通过systemctl重启daemon服务")
+			}
+			return err
+		}
+	}
+	err := KillDaemonIfRunning()
+	if err == nil {
+		err = StartDaemonProcess()
 	}
 	return err
 }
