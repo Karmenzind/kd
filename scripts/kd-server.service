@@ -1,0 +1,10 @@
+[Unit]
+Description=kd the command-line dictionary's server
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/kd --server --log-to-stream
+Restart=always
+
+[Install]
+WantedBy=default.target

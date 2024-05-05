@@ -107,13 +107,13 @@ Invoke-WebRequest -uri 'https://github.com/Karmenzind/kd/releases/latest/downloa
 ### 卸载
 
 <details><summary>🖱️ 点击展开</summary><pre>
-
 1. 删除kd可执行文件（Linux/Mac：/usr/local/bin/kd，Win：C:\bin\kd.exe）
 2. 删除配置文件和缓存目录
     - Linux: `rm -rfv ~/.config/kd.toml ~/.cache/kdcache`
     - MacOS: `rm -rfv ~/.config/kd.toml ~/Library/Caches/kdcache`
     - Win: `rm ~\kd.toml ~\kdcache`
 
+如果通过AUR安装，则直接通过AUR管理工具卸载，例如：`yay -Rs kd`
 </pre></details>
 
 ## :gear: 用法和配置
@@ -168,8 +168,6 @@ theme = "temp"
 http_proxy = ""
 
 # 输出内容前自动清空终端，适合强迫症
-clear_screen = false
-
 # 是否开启频率提醒：本月第X次查询xxx
 freq_alert = false
 
@@ -184,7 +182,6 @@ enable_emoji = true
   path = ""
   # 日志级别，支持：DEBUG/INFO/WARN/PANIC/FATAL
   level = "WARN"
-  stderr = false
 ```
 
 ## 🎈 提升体验技巧
@@ -208,20 +205,9 @@ fi
 
 ### 通过systemd管理daemon进程
 
-为避免每次开机后第一次查询都要等待守护进程启动，可以创建service文件`/usr/lib/systemd/user/kd-server.service`，然后执行`systemctl enable --user kd-server`，daemon进程将随系统自动启动：
+为避免每次开机后第一次查询都要等待守护进程启动，可以创建service文件`/usr/lib/systemd/user/kd-server.service`，然后执行`systemctl enable --user kd-server`，daemon进程将随系统自动启动
 
-```
-[Unit]
-Description=kd the command-line dictionary's server
-
-[Service]
-Type=simple
-ExecStart=/usr/bin/kd --server
-Restart=always
-
-[Install]
-WantedBy=default.target
-```
+内容参考[kd-server.service](./scripts/kd-server.service)
 
 ## 🎨 颜色主题
 
@@ -273,7 +259,7 @@ sudo xattr -r -d com.apple.quarantine <kd文件所在路径>
 - 增加多种主题，包含常见配色如Gruvbox/Molokai，仿照bat实现
 - 支持全模块自定义显示配置
 - 引入多种查询源和词库，如stardict、bing等
-- 增加服务端
+- 增加远程服务端
 - 支持通过fzf补全
 - Vim插件，浮窗显示查词结果
 - 离线词库周期更新

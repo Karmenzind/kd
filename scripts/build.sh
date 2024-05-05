@@ -73,7 +73,7 @@ case $1 in
 "")
 	echo ">>> Building for current workspace..."
 	# do_build '' '' ${PROJECT_DIR}/kd
-	do_build '' '' /usr/local/bin/kd
+	do_build '' '' /usr/bin/kd
 	exit
 	;;
 -a)

@@ -16,10 +16,11 @@ import (
 var CONFIG_PATH string
 
 type LoggerConfig struct {
-	Enable bool   `default:"true" toml:"enable"`
-	Path   string `toml:"path"`
-	Level  string `default:"warn" toml:"level"`
-	Stderr bool   `default:"false" toml:"stderr"`
+	Enable           bool   `default:"true" toml:"enable"`
+	Path             string `toml:"path"`
+	Level            string `default:"warn" toml:"level"`
+	Stderr           bool   `default:"false" toml:"stderr"`
+	RedirectToStream bool   `default:"false" toml:"redirect_to_stream"`
 }
 
 type Config struct {
@@ -58,9 +59,15 @@ func (c *Config) CheckAndApply() (err error) {
 			c.Logging.Level = "warn"
 		} else if !str.InSlice(c.Logging.Level, []string{"debug", "info", "warn", "panic", "fatal"}) {
 			return fmt.Errorf("[logging.level] 不支持的日志等级：%s", c.Logging.Level)
-
 		}
 	}
+    for _, arg := range os.Args {
+        if arg == "--log-to-stream" {
+            c.Logging.Enable = true
+            c.Logging.RedirectToStream = true
+            break
+        }
+    }
 	return
 }
 
