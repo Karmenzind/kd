@@ -38,6 +38,7 @@ func cronEnsureDaemonJsonFile() {
 			needUpdate = true
 		} else {
 			ri := run.Info
+            run.Info.SetOSInfo()
 			if !(ri.StartTime == di.StartTime &&
 				ri.PID == di.PID &&
 				ri.Port == di.Port &&
@@ -129,7 +130,7 @@ func cronUpdateDataZip() {
 					fmt.Println(":)")
 				}
 			}
-			zap.S().Debugf("Need to dl: %s", need2Dl)
+			zap.S().Debugf("Need to dl: %v", need2Dl)
 			var err error
 			// if need to download
 			if need2Dl {
@@ -142,7 +143,11 @@ func cronUpdateDataZip() {
 			}
 			err = decompressDBZip(tempDBPath, zipPath)
 			if err != nil {
-				zap.S().Warnf("Failed: %s", err)
+				zap.S().Warnf("Failed: %s. Current invalid file will be removed.", err)
+                errDel := os.Remove(zipPath)
+                if errDel != nil {
+                    zap.S().Warnf("Failed to remove file: %s", err)
+                }
 				continue
 			}
 			zap.S().Infof("Decompressed DB zip file -> %s", tempDBPath)

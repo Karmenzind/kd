@@ -81,7 +81,7 @@ if (($? != 0)); then
     exit 1
 fi
 
-INST_PATH=/usr/local/bin/kd
+INST_PATH=/usr/bin/kd
 
 echo "[✔] 已经下载完成，文件临时保存位置：${TEMP_PATH}"
 if [[ $(whoami) == "root" ]]; then

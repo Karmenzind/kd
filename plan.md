@@ -8,6 +8,7 @@
 - gitea镜像
 
 ## short-term
+- edit时候文件不存在，自动创建
 - 重启改为signal
 - 多source直接嵌套进列表
 - 记录pid/port，先检查这两个
@@ -37,6 +38,7 @@
 # BUG
 
 - `--status` shows port and pid of dead daemon
+- disable pager on Debian/MacOS
 
 ## Risk
 - 实际文件名 不改的时候的process_name，增加同时校验kd和当前文件名

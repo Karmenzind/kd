@@ -69,7 +69,7 @@
 在终端中执行：
 
 ```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/Karmenzind/kd/master/scripts/install.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Karmenzind/kd/master/scripts/install.sh)"
 ```
 
 > 如果raw.githubusercontent.com被屏蔽，改用`git clone https://github.com/Karmenzind/kd && bash kd/install.sh`

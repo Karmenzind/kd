@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/Karmenzind/kd/internal/run"
 	"github.com/Karmenzind/kd/pkg/str"
 	"github.com/jinzhu/configor"
 )
@@ -18,7 +19,7 @@ var CONFIG_PATH string
 type LoggerConfig struct {
 	Enable           bool   `default:"true" toml:"enable"`
 	Path             string `toml:"path"`
-	Level            string `default:"warn" toml:"level"`
+	Level            string `default:"info" toml:"level"`
 	Stderr           bool   `default:"false" toml:"stderr"`
 	RedirectToStream bool   `default:"false" toml:"redirect_to_stream"`
 }
@@ -99,6 +100,10 @@ func parseConfig() (err error) {
 		switch runtime.GOOS {
 		case "darwin": //MacOS
 			Cfg.Paging = false
+        case "linux":
+            if run.Info.GetOSInfo().IsDebianBased {
+                Cfg.Paging = false
+            }
 		}
 	}
 	return err

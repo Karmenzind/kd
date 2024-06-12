@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var VERSION = "v0.0.9"
+var VERSION = "v0.0.10"
 
 func showPrompt() {
 	exename, err := pkg.GetExecutableBasename()
@@ -93,7 +93,7 @@ func flagRestart(*cli.Context, bool) error {
 
 func flagUpdate(ctx *cli.Context, _ bool) (err error) {
 	var ver string
-	if runtime.GOOS == "linux" && pkg.GetLinuxDistro() == "arch" {
+	if runtime.GOOS == "linux" && run.Info.GetOSInfo().Distro == "arch" {
 		d.EchoFine("您在使用ArchLinux，推荐直接通过AUR安装/升级（例如`yay -S kd`），更便于维护")
 	}
 	force := ctx.Bool("force")
@@ -160,6 +160,16 @@ func flagEditConfig(*cli.Context, bool) error {
 				break
 			}
 		}
+        for _, k := range []string{"nano", "vi", "vim"} {
+            d.EchoRun("未找到EDITOR或VISUAL环境变量，尝试启动编辑器%s", k)
+            if pkg.CommandExists(k) {
+                cmd = exec.Command(k, p)
+                break
+            }
+        }
+        if cmd == nil {
+            return fmt.Errorf("未找到nano或vim，请安装至少一种，或者指定环境变量EDITOR/VISUAL")
+        }
 	case "windows":
 		cmd = exec.Command("notepad", p)
 	case "darwin":
@@ -190,7 +200,7 @@ func checkAndNoticeUpdate() {
 	if ltag := update.GetCachedLatestTag(); ltag != "" {
 		if update.CompareVersions(ltag, VERSION) == 1 {
 			prompt := fmt.Sprintf("发现新版本%s，请执行`kd --update`更新", ltag)
-			if pkg.GetLinuxDistro() == "arch" {
+			if run.Info.GetOSInfo().Distro == "arch" {
 				prompt += "。ArchLinux推荐通过AUR安装/升级"
 			}
 			d.EchoWeakNotice(prompt)

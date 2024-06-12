@@ -14,6 +14,8 @@ type RunInfo struct {
 	ExePath   string
 	Version   string
 
+	OS *pkg.OSInfo
+
 	isServer   bool
 	termHeight int
 	termWidth  int
@@ -29,6 +31,21 @@ func (r *RunInfo) SetServer(v bool) {
 
 func (r *RunInfo) SetPort(v string) {
 	r.Port = v
+}
+
+func (r *RunInfo) SetOSInfo() {
+    var err error
+	r.OS, err = pkg.GetOSInfo()
+    if err != nil {
+        zap.S().Warn("Failed to fetch os info: %s", err)
+    }
+}
+
+func (r *RunInfo) GetOSInfo() *pkg.OSInfo {
+	if r.OS == nil {
+        r.SetOSInfo()
+	}
+	return r.OS
 }
 
 func (r *RunInfo) GetTermSize() (int, int, error) {
