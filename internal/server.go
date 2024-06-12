@@ -36,7 +36,10 @@ func StartServer() (err error) {
 		return err
 	}
 	run.Info.SetPort(port)
+    run.Info.SetOSInfo()
+
 	go run.Info.SaveToFile(filepath.Join(run.CACHE_RUN_PATH, "daemon.json"))
+
 	d.EchoOkay("Listening on host: %s, port: %s\n", host, port)
     zap.S().Info("Started kd server")
 
