@@ -59,7 +59,7 @@ func OutputResult(out string, paging bool, pagerCmd string, doClear bool) error 
 				logger.Debugf("Using system pager %s", sysPager)
 				pagerCmd = sysPager
 			} else if runtime.GOOS != "windows" && CommandExists("less") {
-				pagerCmd = "less -F"
+				pagerCmd = "less -RF"
 				logger.Debugf("Using default pager %s", pagerCmd)
 			}
 		} else {
