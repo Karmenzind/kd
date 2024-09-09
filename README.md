@@ -230,7 +230,8 @@ fi
 
 解决方案：
 
-- 改用其他pager程序，如bat/more
+- 配置文件中设置`pager_command = "less -RF"`（新版本默认）
+- 改用其他pager程序，如[bat](https://github.com/sharkdp/bat)/more（安装bat后，在配置文件设置`pager_command = "bat"`）
 - 关闭pager，配置文件中设置`paging = false`
 - 如果还想使用less作为分页器，可在shell中设置alias，例如bash/zsh可在bashrc/zshrc中添加：
 ```bash
