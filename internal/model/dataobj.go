@@ -29,7 +29,6 @@ type BaseResult struct {
 type Result struct {
 	*BaseResult `json:"-"`
 
-	// 入库
 	Keyword    string                `json:"k"`
 	Pronounce  map[string]string     `json:"pron"`
 	Paraphrase []string              `json:"para"`

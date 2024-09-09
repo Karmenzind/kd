@@ -152,10 +152,11 @@ GLOBAL OPTIONS:
 <!-- 修改配置文件后，请执行`kd --stop && kd --daemon`重启服务端 -->
 
 ```toml
-# 是否使用分页器，MacOS上默认false
+# 是否使用分页器，MacOS和Debian系上默认false，请自行开启
 paging = true
-# 分页器命令，例如：less -F / bat / (不推荐) more -e
-pager_command = "less -F"
+# 分页器命令，例如：less -RF / bat / (不推荐) more -e
+# 注意：less命令如果不加上-R，在某些系统/发行版上会产生颜色乱码问题
+pager_command = "less -RF"
 
 # 结果中只显示英文（英译、英文例句等）
 english_only = false
@@ -229,12 +230,13 @@ fi
 
 解决方案：
 
-- 改用其他pager程序，如bat/more
+- 配置文件中设置`pager_command = "less -RF"`（新版本默认）
+- 改用其他pager程序，如[bat](https://github.com/sharkdp/bat)/more（安装bat后，在配置文件设置`pager_command = "bat"`）
 - 关闭pager，配置文件中设置`paging = false`
 - 如果还想使用less作为分页器，可在shell中设置alias，例如bash/zsh可在bashrc/zshrc中添加：
 ```bash
 __kdwithpager() {
-  kd ${@} | less -F
+  kd ${@} | less -RF
 }
 alias kd=__kdwithpager
 ```
