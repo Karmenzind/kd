@@ -152,28 +152,37 @@ func flagEditConfig(*cli.Context, bool) error {
 	var cmd *exec.Cmd
 	p := config.CONFIG_PATH
 	switch runtime.GOOS {
-	case "linux":
-		for _, k := range []string{"EDITOR", "VISIAL"} {
+	case "linux", "darwin":
+		for _, k := range []string{"VISUAL", "EDITOR"} {
 			if env := os.Getenv(k); env != "" {
-				fmt.Println("start editor")
+				d.EchoRun("找到预设%s：%s，正在启动", k, env)
 				cmd = exec.Command(env, p)
 				break
 			}
 		}
-        for _, k := range []string{"nano", "vi", "vim"} {
-            d.EchoRun("未找到EDITOR或VISUAL环境变量，尝试启动编辑器%s", k)
-            if pkg.CommandExists(k) {
-                cmd = exec.Command(k, p)
-                break
-            }
-        }
-        if cmd == nil {
-            return fmt.Errorf("未找到nano或vim，请安装至少一种，或者指定环境变量EDITOR/VISUAL")
-        }
+		if cmd == nil {
+			if runtime.GOOS == "darwin" {
+				cmd = exec.Command("open", "-e", p)
+			} else {
+				for _, k := range []string{"nano", "vim", "vi"} {
+					d.EchoRun("未找到EDITOR或VISUAL环境变量，尝试启动编辑器%s", k)
+					if pkg.CommandExists(k) {
+						cmd = exec.Command(k, p)
+						break
+					}
+				}
+				if cmd == nil {
+					return fmt.Errorf("未找到nano或vim，请安装至少一种，或者指定环境变量EDITOR/VISUAL")
+				}
+			}
+		}
 	case "windows":
 		cmd = exec.Command("notepad", p)
-	case "darwin":
-		cmd = exec.Command("open", "-e", p)
+	// case "darwin":
+	// 	cmd = exec.Command("open", "-e", p)
+	default:
+		return fmt.Errorf("暂不支持为当前操作系统%s自动打开编辑器，请提交issue反馈", runtime.GOOS)
+		// d.EchoRun("找到%s：%s，正在启动", k, env)
 	}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
