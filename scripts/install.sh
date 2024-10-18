@@ -87,12 +87,17 @@ echo "[✔] 已经下载完成，文件临时保存位置：${TEMP_PATH}"
 if [[ $(whoami) == "root" ]]; then
     usesudo=0
 else
-    if [[ ":$PATH:" == *":$HOME/.local/bin:"* ]]; then
-        usesudo=0
-        INST_PATH=$HOME/.local/bin/kd
-        echo "≫  检测到PATH中包含~/.local/bin，kd将保存到该目录下"
-    else
-        usesudo=1
+    # if [[ ":$PATH:" == *":$HOME/.local/bin:"* ]]; then
+    #     usesudo=0
+    #     INST_PATH=$HOME/.local/bin/kd
+    #     echo "≫  检测到PATH中包含~/.local/bin，kd将保存到该目录下"
+    # else
+    #     usesudo=1
+    # fi
+    usesudo=1
+    if [[ ":$PATH:" == *":/usr/local/bin:"* ]]; then
+        INST_PATH=/usr/local/bin/kd
+        echo "≫  检测到PATH中包含/usr/local/bin，kd将保存到该目录下"
     fi
 fi
 

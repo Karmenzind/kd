@@ -45,7 +45,7 @@ func GetKillCMD(pid int32) *exec.Cmd {
 func SysKillPID(pid int32) (err error) {
 	cmd := GetKillCMD(pid)
 	output, err := cmd.Output()
-	zap.S().Infof("Executed '%s'. Output %s", cmd, output)
+	zap.S().Infof("Executed '%s'. Output '%s'", cmd, output)
 	if err != nil {
 		zap.S().Warnf("Failed to kill %v with system command. Output: `%s` Error: `%s`", pid, output, err)
 	}

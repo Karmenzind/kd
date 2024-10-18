@@ -1,20 +1,19 @@
-name: release-tags
+name: Mannual Trigger Workflow
 
 on:
-  # push:
-  #   branches: [ "main" ]
-  # pull_request:
-  #   branches: [ "main" ]
-  push:
-    tags:
-      - "*"
-
+  workflow_dispatch:
+    # inputs:
+    #   branch_name:
+    #     description: 'Branch name to checkout'
+    #     required: true
+    #     default: 'dev'
+    #
 jobs:
   linux-part:
-    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -27,64 +26,62 @@ jobs:
           mode: "COMMIT"
           failOnError: true
 
-      - name: Set up Go
+      - name: echo changelog
+        run: echo "${{steps.build_changelog.outputs.changelog}}"
+
+      - name: "Set up Go"
         uses: actions/setup-go@v5
         with:
           check-latest: true
           go-version-file: go.mod
 
-      - name: Install system dependencies
+      - name: "Install system dependencies"
         run: sudo apt-get install -y gcc-mingw-w64-x86-64  gcc-aarch64-linux-gnu
 
-      - name: Install dependencies
+      - name: "Install dependencies"
         run: go mod tidy
 
-      - name: Build
+      - name: "Build"
         run: |
           bash scripts/build.sh linux amd64
           bash scripts/build.sh linux arm64
           bash scripts/build.sh windows amd64
 
-      # - name: echo changelog
-      #   run: echo ${{steps.build_changelog.outputs.changelog}}
-
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        # if: startsWith(github.ref, 'refs/tags/')
+      - name: "Save artifacts"
+        uses: actions/upload-artifact@v4
         with:
-          body: ${{steps.build_changelog.outputs.changelog}}
-          fail_on_unmatched_files: true
-          prerelease: false
-          files: build/*
-
-      # - name: info
-      #   run: echo ${{ steps.Release.outputs.url }} ${{ steps.Release.outputs.upload_url }} ${{ steps.Release.outputs.id }}
+          name: linux-and-win
+          path: build
+          if-no-files-found: error
+          retention-days: 15
+          overwrite: true
 
   mac-part:
-    if: startsWith(github.ref, 'refs/tags/')
     runs-on: macos-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Go
+
+      - name: "Set up Go"
         uses: actions/setup-go@v5
         with:
           check-latest: true
           go-version-file: go.mod
 
-      - name: Install dependencies
+      - name: "Install dependencies"
         run: go mod tidy
 
-      - name: Build
+      - name: "Build"
         run: |
           bash scripts/build.sh darwin arm64
           bash scripts/build.sh darwin amd64
 
-      - name: Release
-        uses: svenstaro/upload-release-action@v2
+      - name: "Save artifacts"
+        uses: actions/upload-artifact@v4
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          name: macos
+          path: build
+          if-no-files-found: error
+          retention-days: 15
           overwrite: true
-          file_glob: true
-          file: build/*

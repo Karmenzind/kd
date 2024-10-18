@@ -93,43 +93,97 @@ func CreateHTTPClient(timeoutsec time.Duration) *http.Client {
 // 	return r, err
 // }
 
-func DownloadFile(filepath string, url string) (err error) {
-	var client *http.Client
+func getHTTPClient(url string) *http.Client {
 	if strings.HasPrefix(url, "https") {
-		client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
-	} else {
-		client = &http.Client{}
+		return &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 	}
+	return &http.Client{}
+}
+
+func DownloadFile(filepath string, url string) (err error) {
+	client := getHTTPClient(url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
 	}
 
-	// Get the data
 	resp, err := client.Do(req)
-	// resp, err := http.Get(url)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	// Create the file
 	out, err := os.Create(filepath)
 	if err != nil {
 		return err
 	}
 	defer out.Close()
 
-	// Check server response
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("bad status: %s", resp.Status)
 	}
 
-	// Writer the body to file
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func DownloadFileWithProgress(filepath string, url string) (err error) {
+	client := getHTTPClient(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("bad status: %s", resp.Status)
+	}
+
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	totalBytes := resp.ContentLength
+	if totalBytes < 0 {
+		return fmt.Errorf("content length is unknown")
+	}
+
+	// Create a buffer to hold the data
+	buffer := make([]byte, 4096)
+	var downloadedBytes int64
+
+	for {
+		n, err := resp.Body.Read(buffer)
+		if n > 0 {
+			_, writeErr := out.Write(buffer[:n])
+			if writeErr != nil {
+				return writeErr
+			}
+			downloadedBytes += int64(n)
+
+			progress := float64(downloadedBytes) / float64(totalBytes) * 100
+			fmt.Printf("\rDownloading... %.2f%%", progress)
+		}
+
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	fmt.Println("\nDownload completed.")
 	return nil
 }
