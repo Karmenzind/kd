@@ -28,11 +28,12 @@ func getCacheRootPath() string {
     var target string
     userdir, _ := os.UserHomeDir()
     switch runtime.GOOS {
-    case "linux":
+    case "linux", "windows":
         target = filepath.Join(userdir, ".cache", cacheDirname)
     case "darwin":
         target = filepath.Join(userdir, "Library/Caches", cacheDirname)
-    case "windows":
+    default:
+        d.EchoWarn("检测到架构为%s，此平台尚未进行测试，如出现问题请通过issue反馈", runtime.GOOS)
         target = filepath.Join(userdir, ".cache", cacheDirname)
     }
     return target
