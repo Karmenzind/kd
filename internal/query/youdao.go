@@ -102,7 +102,12 @@ func (r *YdResult) parseCollins() {
                 transStr := str.Simplify(transTag.FullText())
 
                 if adtStr != "" {
-                    transStr = transStr[len(adtStr)+1:]
+                    zap.S().Debugf("Got transStr: `%s` adtStr: `%s`", transStr, adtStr)
+                    if transStr == adtStr {
+                        continue
+                    } else if len(transStr) > len(adtStr) && strings.HasPrefix(transStr, adtStr) {
+                        transStr = transStr[len(adtStr)+1:]
+                    }
                 }
                 // TODO (k): <2023-11-16> 此处如果分割中文，猜测
                 // - 找到第一个中文char的index

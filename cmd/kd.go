@@ -336,12 +336,12 @@ func main() {
                 qstr := strings.Join(cCtx.Args().Slice(), " ")
 
                 r, err := internal.Query(qstr, cCtx.Bool("nocache"), cCtx.Bool("text"))
-                if cfg.FreqAlert {
-                    if h := <-r.History; h > 3 {
-                        d.EchoWarn(fmt.Sprintf("本月第%d次查询`%s`", h, r.Query))
-                    }
-                }
                 if err == nil {
+                    if cfg.FreqAlert {
+                        if h := <-r.History; h > 3 {
+                            d.EchoWarn(fmt.Sprintf("本月第%d次查询`%s`", h, r.Query))
+                        }
+                    }
                     if r.Found {
                         err = pkg.OutputResult(query.PrettyFormat(r, cfg.EnglishOnly), cfg.Paging, cfg.PagerCommand, cfg.ClearScreen)
                         if err != nil {

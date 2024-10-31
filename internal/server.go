@@ -59,6 +59,7 @@ func handleClient(conn net.Conn) {
 	defer conn.Close()
 
 	recv, err := bufio.NewReader(conn).ReadBytes('\n')
+    // zap.S().Debugf("Received `%+v` Error `%+v`", recv, err)
 	if err == io.EOF {
 		zap.S().Debugf("Connection closed by client.")
 		d.EchoWarn("Connection closed by client")
@@ -75,14 +76,12 @@ func handleClient(conn net.Conn) {
 	err = json.Unmarshal(recv, &q)
 	if err != nil {
 		zap.S().Errorf("[daemon] Failed to marshal request:", err)
-
 	}
 	r := q.GetResult()
 	r.Initialize()
 
 	query.FetchOnline(r)
 	reply, err := json.Marshal(r.ToDaemonResponse())
-
 	if err != nil {
 		zap.S().Errorf("[daemon] Failed to marshal response:", err)
 		reply, _ = json.Marshal(model.DaemonResponse{Error: fmt.Sprintf("序列化查询结果失败：%s", err)})
