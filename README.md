@@ -25,6 +25,7 @@
 * [🎨 颜色主题](#-颜色主题)
 * [❓ 常见问题和解决方法](#-常见问题和解决方法)
     * [设置less为Pager后显示异常](#设置less为pager后显示异常)
+    * [生词本](#生词本)
     * [MacOS弹出“无法打开”提醒](#macos弹出无法打开提醒)
 * [📝 进度和计划](#-进度和计划)
 
@@ -259,6 +260,12 @@ __kdwithpager() {
 }
 alias kd=__kdwithpager
 ```
+
+### 生词本
+
+我还在犹豫生词本的具体实现形式，可能考虑作为笔记推送到Notion之类的应用。
+
+目前可以参考[@exaithrg提供的方式](https://github.com/Karmenzind/kd/issues/37)来做一个Repo形式的生词本。
 
 ### MacOS弹出“无法打开”提醒
 
