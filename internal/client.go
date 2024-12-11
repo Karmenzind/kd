@@ -53,6 +53,14 @@ func ensureDaemon(running chan bool) {
 	running <- true
 }
 
+// pre-compile
+// shortRegex: base regex
+// longRegex: allows Chinese punctuation marks as leading characters
+var (
+	shortRegex = regexp.MustCompile("^[a-zA-Z0-9\u4e00-\u9fa5]")
+	longRegex  = regexp.MustCompile("^[a-zA-Z0-9\u4e00-\u9fa5\u3000-\u303F]")
+)
+
 func Query(query string, noCache bool, longText bool) (r *model.Result, err error) {
 	// TODO (k): <2024-01-02> regexp
 	query = str.Simplify(query)
@@ -71,10 +79,17 @@ func Query(query string, noCache bool, longText bool) (r *model.Result, err erro
 		go cache.CounterIncr(query, r.History)
 	}
 
-	// any valid char
-	if m, _ := regexp.MatchString("^[a-zA-Z0-9\u4e00-\u9fa5]", query); !m {
+	regex := shortRegex
+	prompt := "请以字母、数字或汉字开头"
+	if longText {
+		regex = longRegex
+		prompt = "请以字母、数字、汉字或标点符号开头"
+	}
+
+	// Validate input characters
+	if !regex.MatchString(query) {
 		r.Found = false
-		r.Prompt = "请输入有效查询字符或参数"
+		r.Prompt = prompt
 		return
 	}
 
