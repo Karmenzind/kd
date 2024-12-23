@@ -22,18 +22,28 @@ func f(s string, a ...any) string {
     return s
 }
 
+// Abnormal
+// --------------------------------------------
+
 func EchoWarn(content string, a ...any) {
-    fmt.Println(WarnBg("⚠ WARNING:"), Warn(f(content, a...)))
+    fmt.Fprintln(os.Stderr, WarnBg("⚠ WARNING:"), Warn(f(content, a...)))
 }
 
 func EchoError(content string, a ...any) {
-    fmt.Println(ErrorBg("☣ ERROR:"), Error(f(content, a...)))
+    fmt.Fprintln(os.Stderr, ErrorBg("☣ ERROR:"), Error(f(content, a...)))
 }
 
 func EchoFatal(content string, a ...any) {
-    fmt.Println(ErrorBg("☣ ERROR:"), Error(f(content, a...)))
+    fmt.Fprintln(os.Stderr, ErrorBg("☣ ERROR:"), Error(f(content, a...)))
     os.Exit(1)
 }
+
+func EchoWrong(content string, a ...any) {
+    fmt.Fprintln(os.Stderr, Red("✘ "), Red(f(content, a...)))
+}
+
+// Normal
+// --------------------------------------------
 
 func EchoRun(content string, a ...any) {
     fmt.Println(Blue("≫ "), Blue(f(content, a...)))
@@ -45,10 +55,6 @@ func EchoOkay(content string, a ...any) {
 
 func EchoFine(content string, a ...any) {
     fmt.Println(Green("☺ "), Green(f(content, a...)))
-}
-
-func EchoWrong(content string, a ...any) {
-    fmt.Println(Red("✘ "), Red(f(content, a...)))
 }
 
 func EchoWeakNotice(content string, a ...any) {

@@ -6,6 +6,7 @@
 - 指定port
 - release增加version，aur判断此文件
 - gitea镜像
+- -t查询增加本地缓存，例如最近1000条
 
 ## short-term
 - edit时候文件不存在，自动创建

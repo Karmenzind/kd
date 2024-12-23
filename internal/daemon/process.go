@@ -155,6 +155,7 @@ func KillDaemonIfRunning() error {
         return err
     }
 
+    zap.S().Debugf("try killing process: %v", p)
     err = proc.KillProcess(p)
 
     if err == nil {

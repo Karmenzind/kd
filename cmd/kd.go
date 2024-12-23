@@ -210,6 +210,7 @@ func flagEditConfig(ctx *cli.Context, b bool) error {
 func flagStatus(*cli.Context, bool) error {
     di, _ := daemon.GetDaemonInfo()
     d.EchoRun("运行和相关配置信息如下：")
+    fmt.Printf("    版本：%s\n", VERSION)
     fmt.Printf("    Daemon端口：%s\n", di.Port)
     fmt.Printf("    Daemon PID：%d\n", di.PID)
     fmt.Printf("    配置文件地址：%s\n", config.CONFIG_PATH)
