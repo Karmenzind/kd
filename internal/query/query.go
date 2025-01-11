@@ -57,7 +57,7 @@ func QueryDaemon(addr string, r *model.Result) error {
 
     dr := r.ToDaemonResponse()
     err = json.Unmarshal(message, &dr)
-    zap.S().Debugf("Message from server: %s", string(message))
+    zap.S().Debugf("Message from server: %q", string(message))
     if err != nil {
         return fmt.Errorf("解析daemon返回结果失败: %s", err)
     }

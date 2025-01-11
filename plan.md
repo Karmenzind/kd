@@ -1,7 +1,6 @@
 # master plan
 
 ## wip
-
 - 读文件加锁
 - 指定port
 - release增加version，aur判断此文件
@@ -9,6 +8,8 @@
 - -t查询增加本地缓存，例如最近1000条
 
 ## short-term
+- logger加上server/client标识
+- 记录崩溃日志 if possible
 - edit时候文件不存在，自动创建
 - 重启改为signal
 - 多source直接嵌套进列表

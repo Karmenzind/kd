@@ -24,7 +24,7 @@ import (
     // "github.com/kyokomi/emoji/v2"
 )
 
-var VERSION = "v0.0.12"
+var VERSION = "v0.0.13"
 
 func showPrompt() {
     exename, err := pkg.GetExecutableBasename()

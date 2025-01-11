@@ -71,7 +71,7 @@ func handleClient(conn net.Conn) {
 		return
 	}
 
-	d.EchoRun("Received: %s\n", recv)
+	zap.S().Debugf("Received: %q", recv)
 	q := model.TCPQuery{}
 	err = json.Unmarshal(recv, &q)
 	if err != nil {
@@ -87,7 +87,7 @@ func handleClient(conn net.Conn) {
 		reply, _ = json.Marshal(model.DaemonResponse{Error: fmt.Sprintf("序列化查询结果失败：%s", err)})
 	}
 
-	d.EchoRun("Sending to client: %s \n", reply)
+	zap.S().Debugf("Sending to client: %q", reply)
 	conn.Write(append(reply, '\n'))
 	conn.Close()
 }
