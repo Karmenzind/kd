@@ -120,14 +120,13 @@ func cronUpdateDataZip() {
                 fmt.Println(1)
                 if pkg.IsPathExists(zipPath) {
                     // TODO checksum
-                    fmt.Println(2)
+                    zap.S().Infof("Found zip file: %s", zipPath)
                     if checksumZIP(zipPath) {
-                        fmt.Println(3)
                         need2Dl = false
                     }
                 } else {
                     need2Dl = true
-                    fmt.Println(":)")
+                    zap.S().Infof("Zip file not found. Will download later.")
                 }
             }
             zap.S().Debugf("Need to dl: %v", need2Dl)
@@ -141,12 +140,12 @@ func cronUpdateDataZip() {
                     continue
                 }
             }
-            err = decompressDBZip(tempDBPath, zipPath)
-            if err != nil {
+            if err = decompressDBZip(tempDBPath, zipPath); err != nil {
                 zap.S().Warnf("Failed: %s. Current invalid file will be removed.", err)
-                errDel := os.Remove(zipPath)
-                if errDel != nil {
+                if errDel := os.Remove(zipPath); errDel != nil {
                     zap.S().Warnf("Failed to remove file: %s", err)
+                } else {
+                    zap.S().Infof("Removed invalid zip file")
                 }
                 continue
             }
@@ -188,7 +187,7 @@ func checksumZIP(zipPath string) bool {
 func downloadDataZip(savePath string) (err error) {
     err = pkg.DownloadFile(savePath, DATA_ZIP_URL)
     if err != nil {
-        zap.S().Warnf("Failed to download %s: %s", DATA_ZIP_URL)
+        zap.S().Warnf("Failed to download %s: %v", DATA_ZIP_URL, err)
     }
     zap.S().Info("Downloaded %s: %s", DATA_ZIP_URL)
     return

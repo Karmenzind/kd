@@ -93,10 +93,10 @@ func OutputResult(out string, paging bool, pagerCmd string, doClear bool) error 
         }
     }
     if doClear {
-        _, h, err := GetTermSize()
-        if err == nil && strings.Count(out, "\n") < h {
-            ClearScreen()
-        }
+        // _, h, err := GetTermSize()
+        // if err == nil && strings.Count(out, "\n") < h {
+        ClearScreen()
+        // }
     }
     fmt.Println(out)
     return nil
@@ -151,17 +151,32 @@ func AskYN(prompt string) bool {
     }
 }
 
+func isPowershell() bool {
+    return strings.Contains(os.Getenv("PSModulePath"), "WindowsPowerShell")
+}
+
 func ClearScreen() {
     var c *exec.Cmd
     switch runtime.GOOS {
     case "linux", "darwin":
         c = exec.Command("clear")
     case "windows":
-        c = exec.Command("cls")
+        if isPowershell() {
+            c = exec.Command("powershell", "-Command", "Clear-Host")
+        } else {
+            c = exec.Command("cmd", "/c", "cls")
+        }
     }
-    c.Stdout = os.Stdout
-    c.Run()
-    zap.S().Debugf("Cleared screen.")
+
+    if c != nil {
+        c.Stdout = os.Stdout
+        err := c.Run()
+        if err != nil {
+            zap.S().Warnf("Failed to cleared screen. Err: %v", err)
+        } else {
+            zap.S().Debugf("Cleared screen.")
+        }
+    }
 }
 
 func GetTermSize() (int, int, error) {

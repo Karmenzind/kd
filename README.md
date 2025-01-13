@@ -78,14 +78,15 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Karmenzind/kd/master/scr
 
 <details><summary>或者按照平台/架构复制命令（🖱️ 点击展开）</summary><pre>
 ```bash
+# （如有需要，可以将路径/usr/bin/kd改成/usr/local/bin/kd）
 # Linux amd64 (x86-64)
-sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_linux_amd64 && chmod +x /usr/local/bin/kd'
+sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_linux_amd64 && chmod +x /usr/bin/kd'
 # MacOS arm64 (即M1/M2/M3芯片的架构)
-sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_arm64 && chmod +x /usr/local/bin/kd'
+sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_arm64 && chmod +x /usr/bin/kd'
 # MacOS amd64 (x86-64)
-sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_arm64 && chmod +x /usr/local/bin/kd'
+sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_arm64 && chmod +x /usr/bin/kd'
 # Linux arm64
-sudo sh -c 'curl --create-dirs -L -o /usr/local/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_linux_arm64 && chmod +x /usr/local/bin/kd'
+sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_linux_arm64 && chmod +x /usr/bin/kd'
 ```
 </pre></details>
 
@@ -176,7 +177,7 @@ GLOBAL OPTIONS:
 paging = true
 # 分页器命令，例如：less -RF / bat / (不推荐) more -e
 # 注意：less命令如果不加上-R，在某些系统/发行版上会产生颜色乱码问题
-pager_command = "less -RF"
+pager_command = "less -RF"  # Linux默认
 
 # 结果中只显示英文（英译、英文例句等）
 english_only = false
@@ -189,11 +190,13 @@ theme = "temp"
 http_proxy = ""
 
 # 输出内容前自动清空终端，适合强迫症
-# 是否开启频率提醒：本月第X次查询xxx
-freq_alert = false
+clear_screen = false
 
 # （开发中）安装了emoji字体的可以输出一些emoji字符，just for fun
 enable_emoji = true
+
+# 是否开启频率提醒：本月第X次查询xxx
+freq_alert = false
 
 # 日志配置
 [logging]
@@ -228,7 +231,7 @@ fi
 
 为避免每次开机后第一次查询都要等待守护进程启动，可以创建service文件`/usr/lib/systemd/user/kd-server.service`，然后执行`systemctl enable --user kd-server`，daemon进程将随系统自动启动
 
-内容参考[kd-server.service](./scripts/kd-server.service)
+内容参考[kd-server.service](./scripts/kd-server.service)（请检查service文件中的kd路径是否与实际安装位置一致）
 
 ## 🎨 颜色主题
 

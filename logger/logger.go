@@ -54,6 +54,7 @@ func InitLogger(logCfg *config.LoggerConfig) (*zap.Logger, error) {
     if err != nil {
         panic(err)
     }
+
     zap.ReplaceGlobals(l)
 
     return l, err
