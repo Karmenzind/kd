@@ -1,11 +1,11 @@
 package decorate
 
 import (
-    "fmt"
-    "os"
+	"fmt"
+	"os"
 
-    fc "github.com/fatih/color"
-    gc "github.com/gookit/color"
+	fc "github.com/fatih/color"
+	gc "github.com/gookit/color"
 )
 
 /*
@@ -61,48 +61,48 @@ var ErrorBg = fc.New(fc.BgRed, fc.FgBlack, fc.Italic, fc.Faint).SprintFunc()
 type ColorStringFunc func(a ...interface{}) string
 
 var Title, Nation, Line, Pron, Property, Idx, Addi, Para,
-    CollinsPara, Eg, EgPref, EgEn, EgCh,
-    Star, Rank ColorStringFunc
+	CollinsPara, Eg, EgPref, EgEn, EgCh,
+	Star, Rank ColorStringFunc
 
 var Text = fc.New(fc.FgWhite).SprintFunc()
 
 func applyTheme(colorscheme string) {
-    switch colorscheme {
-    case "", "temp":
-        Title = fc.New(fc.FgHiMagenta, fc.Italic, fc.Bold, fc.Underline).SprintFunc()
-        Line = fc.New(fc.FgHiBlack, fc.Faint).SprintFunc()
-        Pron = fc.New(fc.Faint).SprintFunc()
-        Property = fc.New(fc.FgGreen).SprintFunc()
-        Idx = fc.New(fc.FgHiWhite).SprintFunc()
-        Addi = fc.New(fc.FgCyan, fc.Italic).SprintFunc()
-        Para = Text
-        CollinsPara = fc.New(fc.FgYellow).SprintFunc()
-        Eg = fc.New(fc.FgHiWhite, fc.Faint, fc.Italic).SprintFunc()
-        EgPref = Eg
-        // EgEn = Text
-        EgEn = fc.New(fc.FgHiWhite, fc.BgBlack).SprintFunc()
-        EgCh = fc.New(fc.FgHiWhite, fc.Faint, fc.Italic).SprintFunc()
-        Star = fc.New(fc.FgYellow).SprintFunc()
-        Rank = Eg
+	switch colorscheme {
+	case "", "temp":
+		Title = fc.New(fc.FgHiMagenta, fc.Italic, fc.Bold, fc.Underline).SprintFunc()
+		Line = fc.New(fc.FgHiBlack, fc.Faint).SprintFunc()
+		Pron = fc.New(fc.Faint).SprintFunc()
+		Property = fc.New(fc.FgGreen).SprintFunc()
+		Idx = fc.New(fc.FgHiWhite).SprintFunc()
+		Addi = fc.New(fc.FgCyan, fc.Italic).SprintFunc()
+		Para = Text
+		CollinsPara = fc.New(fc.FgYellow).SprintFunc()
+		Eg = fc.New(fc.FgHiWhite, fc.Faint, fc.Italic).SprintFunc()
+		EgPref = Eg
+		// EgEn = Text
+		EgEn = fc.New(fc.FgHiWhite, fc.BgBlack).SprintFunc()
+		EgCh = fc.New(fc.FgHiWhite, fc.Faint, fc.Italic).SprintFunc()
+		Star = fc.New(fc.FgYellow).SprintFunc()
+		Rank = Eg
 
-    case "wudao":
-        Title = fc.New(fc.FgRed, fc.Italic, fc.Bold, fc.Underline).SprintFunc()
-        Line = fc.New(fc.FgHiBlack, fc.Faint).SprintFunc()
-        Pron = fc.New(fc.FgCyan).SprintFunc()
-        Property = fmt.Sprint
-        Idx = fc.New(fc.FgHiWhite).SprintFunc()
-        Addi = fc.New(fc.FgGreen, fc.Italic).SprintFunc()
-        Para = Text
-        CollinsPara = fc.New(fc.FgHiWhite).SprintFunc()
-        Eg = fc.New(fc.FgHiYellow, fc.Faint, fc.Italic).SprintFunc()
-        EgPref = Addi
-        EgEn = fc.New(fc.FgYellow, fc.Italic).SprintFunc()
-        EgCh = Text
-        Star = fc.New(fc.FgYellow).SprintFunc()
-        Rank = fc.New(fc.FgRed, fc.Italic).SprintFunc()
+	case "wudao":
+		Title = fc.New(fc.FgRed, fc.Italic, fc.Bold, fc.Underline).SprintFunc()
+		Line = fc.New(fc.FgHiBlack, fc.Faint).SprintFunc()
+		Pron = fc.New(fc.FgCyan).SprintFunc()
+		Property = fmt.Sprint
+		Idx = fc.New(fc.FgHiWhite).SprintFunc()
+		Addi = fc.New(fc.FgGreen, fc.Italic).SprintFunc()
+		Para = Text
+		CollinsPara = fc.New(fc.FgHiWhite).SprintFunc()
+		Eg = fc.New(fc.FgHiYellow, fc.Faint, fc.Italic).SprintFunc()
+		EgPref = Addi
+		EgEn = fc.New(fc.FgYellow, fc.Italic).SprintFunc()
+		EgCh = Text
+		Star = fc.New(fc.FgYellow).SprintFunc()
+		Rank = fc.New(fc.FgRed, fc.Italic).SprintFunc()
 
-    default:
-        fc.New(fc.FgRed).Printf("✘ Unknown theme: %s\n", colorscheme)
-        os.Exit(1)
-    }
+	default:
+		fc.New(fc.FgRed).Printf("✘ Unknown theme: %s\n", colorscheme)
+		os.Exit(1)
+	}
 }

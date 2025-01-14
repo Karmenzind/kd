@@ -1,13 +1,13 @@
 package run
 
 import (
-    "os"
-    "path/filepath"
-    "runtime"
-    "time"
+	"os"
+	"path/filepath"
+	"runtime"
+	"time"
 
-    "github.com/Karmenzind/kd/internal/model"
-    d "github.com/Karmenzind/kd/pkg/decorate"
+	"github.com/Karmenzind/kd/internal/model"
+	d "github.com/Karmenzind/kd/pkg/decorate"
 )
 
 var Info *model.RunInfo
@@ -25,35 +25,35 @@ var SERVER_PORT = 19707
 var cacheDirname = "kdcache"
 
 func getCacheRootPath() string {
-    var target string
-    userdir, _ := os.UserHomeDir()
-    switch runtime.GOOS {
-    case "linux", "windows":
-        target = filepath.Join(userdir, ".cache", cacheDirname)
-    case "darwin":
-        target = filepath.Join(userdir, "Library/Caches", cacheDirname)
-    default:
-        d.EchoWarn("检测到架构为%s，此平台尚未进行测试，如出现问题请通过issue反馈", runtime.GOOS)
-        target = filepath.Join(userdir, ".cache", cacheDirname)
-    }
-    return target
+	var target string
+	userdir, _ := os.UserHomeDir()
+	switch runtime.GOOS {
+	case "linux", "windows":
+		target = filepath.Join(userdir, ".cache", cacheDirname)
+	case "darwin":
+		target = filepath.Join(userdir, "Library/Caches", cacheDirname)
+	default:
+		d.EchoWarn("检测到架构为%s，此平台尚未进行测试，如出现问题请通过issue反馈", runtime.GOOS)
+		target = filepath.Join(userdir, ".cache", cacheDirname)
+	}
+	return target
 
 }
 
 func init() {
-    exepath, err := os.Executable()
-    if err != nil {
-        d.EchoFatal(err.Error())
-    }
-    Info = &model.RunInfo{
-        PID:       os.Getpid(),
-        StartTime: time.Now().Unix(),
-        ExePath:   exepath,
-        ExeName:   filepath.Base(exepath),
-    }
+	exepath, err := os.Executable()
+	if err != nil {
+		d.EchoFatal(err.Error())
+	}
+	Info = &model.RunInfo{
+		PID:       os.Getpid(),
+		StartTime: time.Now().Unix(),
+		ExePath:   exepath,
+		ExeName:   filepath.Base(exepath),
+	}
 
-    CACHE_ROOT_PATH = getCacheRootPath()
-    CACHE_WORDS_PATH = filepath.Join(CACHE_ROOT_PATH, "words")
-    CACHE_STAT_DIR_PATH = filepath.Join(CACHE_ROOT_PATH, "stat")
-    CACHE_RUN_PATH = filepath.Join(CACHE_ROOT_PATH, "run")
+	CACHE_ROOT_PATH = getCacheRootPath()
+	CACHE_WORDS_PATH = filepath.Join(CACHE_ROOT_PATH, "words")
+	CACHE_STAT_DIR_PATH = filepath.Join(CACHE_ROOT_PATH, "stat")
+	CACHE_RUN_PATH = filepath.Join(CACHE_ROOT_PATH, "run")
 }
