@@ -13,7 +13,11 @@ type OSInfo struct {
     IsDebianBased bool
 }
 
+// Deprecated: use GetOSInfo
 func GetLinuxDistro() string {
+    if runtime.GOOS != "linux" {
+        return ""
+    }
     file, err := os.Open("/etc/os-release")
     if err != nil {
         return ""
@@ -31,12 +35,11 @@ func GetLinuxDistro() string {
 }
 
 func GetOSInfo() (*OSInfo, error) {
-    var ret = &OSInfo{
-        OS: runtime.GOOS,
-    }
+    var ret = &OSInfo{OS: runtime.GOOS}
     if ret.OS != "linux" {
         return ret, nil
     }
+
     // Open the os-release file
     file, err := os.Open("/etc/os-release")
     if err != nil {

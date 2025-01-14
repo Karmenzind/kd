@@ -1,6 +1,7 @@
 package daemon
 
 import (
+    "errors"
     "fmt"
     "os/exec"
     "path/filepath"
@@ -29,7 +30,7 @@ func GetDaemonInfoPath() string {
 func GetDaemonInfoFromFile() (*model.RunInfo, error) {
     dipath := filepath.Join(run.CACHE_RUN_PATH, "daemon.json")
     if !pkg.IsPathExists(dipath) {
-        return DaemonInfo, fmt.Errorf("获取守护进程信息失败，文件不存在")
+        return DaemonInfo, errors.New("获取守护进程信息失败，文件不存在")
     }
     err := pkg.LoadJson(dipath, DaemonInfo)
     return DaemonInfo, err
@@ -40,10 +41,9 @@ func GetDaemonInfo() (*model.RunInfo, error) {
     if *DaemonInfo == (model.RunInfo{}) {
         dipath := filepath.Join(run.CACHE_RUN_PATH, "daemon.json")
         if !pkg.IsPathExists(dipath) {
-            return DaemonInfo, fmt.Errorf("获取守护进程信息失败，文件不存在")
+            return DaemonInfo, errors.New("获取守护进程信息失败，文件不存在")
         }
-        err := pkg.LoadJson(dipath, DaemonInfo)
-        if err != nil {
+        if err = pkg.LoadJson(dipath, DaemonInfo); err != nil {
             return DaemonInfo, err
         }
     }
@@ -127,7 +127,7 @@ func StartDaemonProcess() error {
         d.EchoRun("正在检查运行结果，稍等...")
     }
     if p == nil {
-        err = fmt.Errorf("启动失败，请重试。如果多次启动失败，请创建Issue并提交日志文件")
+        err = errors.New("启动失败，请重试。如果多次启动失败，请创建Issue并提交日志文件")
         return err
     }
     return nil

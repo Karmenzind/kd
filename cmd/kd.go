@@ -1,6 +1,7 @@
 package main
 
 import (
+    "errors"
     "fmt"
     "os"
     "os/exec"
@@ -192,7 +193,7 @@ func flagEditConfig(ctx *cli.Context, b bool) error {
                     }
                 }
                 if cmd == nil {
-                    return fmt.Errorf("未找到nano或vim，请安装至少一种，或者指定环境变量EDITOR/VISUAL")
+                    return errors.New("未找到nano或vim，请安装至少一种，或者指定环境变量EDITOR/VISUAL")
                 }
             }
         }
@@ -273,6 +274,8 @@ func main() {
         }
         defer l.Sync()
     }
+    zap.S().Debugf("Got configuration: %+v", cfg)
+    zap.S().Debugf("Got run info: %+v", run.Info)
 
     if err := cache.InitDB(); err != nil {
         d.EchoFatal(err.Error())
@@ -333,18 +336,20 @@ func main() {
             if cCtx.Args().Len() > 0 {
                 zap.S().Debugf("Recieved Arguments (len: %d): %+v \n", cCtx.Args().Len(), cCtx.Args().Slice())
                 // emoji.Printf("Test emoji:\n:accept: :inbox_tray: :information: :us: :uk:  🗣  :lips: :eyes: :balloon: \n")
+                if cfg.ClearScreen {
+                    pkg.ClearScreen()
+                }
 
                 qstr := strings.Join(cCtx.Args().Slice(), " ")
 
-                r, err := internal.Query(qstr, cCtx.Bool("nocache"), cCtx.Bool("text"))
-                if err == nil {
+                if r, err := internal.Query(qstr, cCtx.Bool("nocache"), cCtx.Bool("text")); err == nil {
                     if cfg.FreqAlert {
                         if h := <-r.History; h > 3 {
                             d.EchoWarn(fmt.Sprintf("本月第%d次查询`%s`", h, r.Query))
                         }
                     }
                     if r.Found {
-                        err = pkg.OutputResult(query.PrettyFormat(r, cfg.EnglishOnly), cfg.Paging, cfg.PagerCommand, cfg.ClearScreen)
+                        err = pkg.OutputResult(query.PrettyFormat(r, cfg.EnglishOnly), cfg.Paging, cfg.PagerCommand)
                         if err != nil {
                             d.EchoFatal(err.Error())
                         }

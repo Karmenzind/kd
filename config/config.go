@@ -1,11 +1,13 @@
 package config
 
 import (
+    "errors"
     "fmt"
     "net/http"
     "net/url"
     "os"
     "path/filepath"
+    "regexp"
     "runtime"
     "slices"
     "strings"
@@ -48,9 +50,19 @@ type Config struct {
 
 func (c *Config) CheckAndApply() (err error) {
     if c.HTTPProxy != "" {
+        proxyRegex := `^(https?:\/\/)(?:[\w\-\.]+(?::[\w\-\.]*)?@)?(?:\d{1,3}(?:\.\d{1,3}){3}|\[[^\]]+\]|[a-zA-Z0-9\-\.]+):\d{1,5}$`
+        re := regexp.MustCompile(proxyRegex)
+        if !re.MatchString(c.HTTPProxy) {
+            return errors.New(`[http_proxy] 代理地址格式不合法，请参考以下格式：  
+  - http://127.0.0.1:8080
+  - http://example.com:80
+  - https://username:password@192.168.1.1:3128
+  - https://[2001:db8::1]:443`)
+        }
+        // if !strings.HasPrefix(c.HTTPProxy, "http:") && !
         proxyUrl, err := url.Parse(c.HTTPProxy)
         if err != nil {
-            return fmt.Errorf("[http_proxy] 代理地址格式不合法")
+            return fmt.Errorf("[http_proxy] 代理地址格式不合法（%s）", err)
         }
         http.DefaultTransport = &http.Transport{Proxy: http.ProxyURL(proxyUrl)}
     }
@@ -97,8 +109,8 @@ func parseConfig() (err error) {
         // 没有配置文件，部分默认值处理
         err = configor.New(&configor.Config{ErrorOnUnmatchedKeys: false}).Load(&Cfg)
         switch runtime.GOOS {
-        case "darwin": // MacOS
-            Cfg.Paging = false
+        // case "darwin": // MacOS
+        //     Cfg.Paging = false
         case "linux":
             if run.Info.GetOSInfo().IsDebianBased {
                 Cfg.Paging = false

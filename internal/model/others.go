@@ -1,6 +1,8 @@
 package model
 
 import (
+    "runtime"
+
     "github.com/Karmenzind/kd/pkg"
     "go.uber.org/zap"
     "golang.org/x/term"
@@ -35,9 +37,8 @@ func (r *RunInfo) SetPort(v string) {
 
 func (r *RunInfo) SetOSInfo() {
     var err error
-    r.OS, err = pkg.GetOSInfo()
-    if err != nil {
-        zap.S().Warn("Failed to fetch os info: %s", err)
+    if r.OS, err = pkg.GetOSInfo(); err != nil {
+        zap.S().Warn("Failed to fetch os info: %s. (Current GOOS: %s)", err, runtime.GOOS)
     }
 }
 

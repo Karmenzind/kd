@@ -3,15 +3,16 @@ package query
 // query api
 
 import (
-    "bufio"
-    "encoding/json"
-    "fmt"
-    "net"
+	"bufio"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net"
 
-    "github.com/Karmenzind/kd/internal/cache"
-    "github.com/Karmenzind/kd/internal/model"
-    d "github.com/Karmenzind/kd/pkg/decorate"
-    "go.uber.org/zap"
+	"github.com/Karmenzind/kd/internal/cache"
+	"github.com/Karmenzind/kd/internal/model"
+	d "github.com/Karmenzind/kd/pkg/decorate"
+	"go.uber.org/zap"
 )
 
 /*
@@ -54,15 +55,15 @@ func QueryDaemon(addr string, r *model.Result) error {
     fmt.Fprint(conn, string(j)+"\n")
 
     message, _ := bufio.NewReader(conn).ReadBytes('\n')
+    zap.S().Debugf("Message from server: %q", string(message))
 
     dr := r.ToDaemonResponse()
     err = json.Unmarshal(message, &dr)
-    zap.S().Debugf("Message from server: %q", string(message))
     if err != nil {
         return fmt.Errorf("解析daemon返回结果失败: %s", err)
     }
     if dr.Error != "" {
-        return fmt.Errorf(dr.Error)
+        return errors.New(dr.Error)
     }
     dr.GetResult()
     return nil

@@ -1,24 +1,25 @@
 package update
 
 import (
-    "crypto/tls"
-    "encoding/json"
-    "fmt"
-    "io"
-    "net/http"
-    "os"
-    "os/exec"
-    "path/filepath"
-    "regexp"
-    "runtime"
-    "strconv"
-    "strings"
+	"crypto/tls"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"runtime"
+	"strconv"
+	"strings"
 
-    "github.com/Karmenzind/kd/internal/cache"
-    d "github.com/Karmenzind/kd/pkg/decorate"
+	"github.com/Karmenzind/kd/internal/cache"
+	d "github.com/Karmenzind/kd/pkg/decorate"
 
-    "github.com/Karmenzind/kd/pkg"
-    "go.uber.org/zap"
+	"github.com/Karmenzind/kd/pkg"
+	"go.uber.org/zap"
 )
 
 const LATEST_RELEASE_URL = "https://github.com/Karmenzind/kd/releases/latest/download/"
@@ -96,7 +97,7 @@ func GetLatestTag() (tag string, err error) {
                 zap.S().Warnf("Failed to save latest_tag: %s", writeErr)
             }
         } else {
-            err = fmt.Errorf("empty response list")
+            err = errors.New("empty response list")
         }
     }
     return
@@ -201,7 +202,7 @@ func moveFile(src, tgt string) (err error) {
     // 	if os.IsPermission(linkErr.Err) {
     // 		zap.S().Infof("Permission denied. Please make sure you have write access to the destination directory.")
     // 		if runtime.GOOS == "windows" {
-    // 			return fmt.Errorf("文件覆盖失败，遇到权限问题，请到release页面下载")
+    // 			return errors.New("文件覆盖失败，遇到权限问题，请到release页面下载")
     // 		}
     // 		cmd := exec.Command("sudo", "mv", src, tgt)
     // 		cmd.Stdin = os.Stdin

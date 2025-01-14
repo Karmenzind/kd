@@ -50,7 +50,7 @@ func GetExecutableBasename() (string, error) {
 // pager or print
 // config > $PAGER > less -f
 // TODO 增加检测pager可用
-func OutputResult(out string, paging bool, pagerCmd string, doClear bool) error {
+func OutputResult(out string, paging bool, pagerCmd string) error {
     var err error
     var logger = zap.S()
     if paging {
@@ -91,12 +91,6 @@ func OutputResult(out string, paging bool, pagerCmd string, doClear bool) error 
             }
             d.EchoWarn(fmt.Sprintf("pager command `%s` not found", program))
         }
-    }
-    if doClear {
-        // _, h, err := GetTermSize()
-        // if err == nil && strings.Count(out, "\n") < h {
-        ClearScreen()
-        // }
     }
     fmt.Println(out)
     return nil
@@ -166,7 +160,10 @@ func ClearScreen() {
         } else {
             c = exec.Command("cmd", "/c", "cls")
         }
+    default:
+        d.EchoWarn("Didn't support clear_screen on platform: %s", runtime.GOOS)
     }
+    zap.S().Debugf("Got screen clear cmd: %v", c)
 
     if c != nil {
         c.Stdout = os.Stdout

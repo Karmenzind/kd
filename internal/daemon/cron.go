@@ -83,7 +83,7 @@ func cronCheckUpdate() {
         for i := 0; i < 3; i++ {
             tag, err := update.GetLatestTag()
             if err == nil {
-                fmt.Println("最新Tag", tag)
+                zap.S().Infof("Got latest tag: %q", tag)
                 break
             }
             zap.S().Warnf("Failed to get latest tag: %s", err)
