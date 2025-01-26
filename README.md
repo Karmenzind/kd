@@ -200,8 +200,8 @@ freq_alert = false
 
 # 日志配置
 [logging]
-  # 开启日志记录
-  enable = false
+  # 开启日志记录（程序异常时会记录关键信息，不建议关闭）
+  enable = true
   # 默认值：Linux/MacOS为/tmp/kd_<username>.log，windows为%TMPDIR%/kd_<username>.log
   path = ""
   # 日志级别，支持：DEBUG/INFO/WARN/PANIC/FATAL

@@ -22,7 +22,7 @@ var CONFIG_PATH string
 type LoggerConfig struct {
 	Enable           bool   `default:"true" toml:"enable"`
 	Path             string `toml:"path"`
-	Level            string `default:"info" toml:"level"`
+	Level            string `default:"warn" toml:"level"`
 	Stderr           bool   `default:"false" toml:"stderr"`
 	RedirectToStream bool   `default:"false" toml:"redirect_to_stream"`
 }
