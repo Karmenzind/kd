@@ -51,15 +51,14 @@ func QueryDaemon(addr string, r *model.Result) error {
 		zap.S().Errorf("Failed to marshal msg (%s): %s", j, err)
 		return err
 	}
-	zap.S().Debugf("Sending msg: %s\n", j)
+	zap.S().Debugf("Sending msg: %s", j)
 	fmt.Fprint(conn, string(j)+"\n")
 
 	message, _ := bufio.NewReader(conn).ReadBytes('\n')
 	zap.S().Debugf("Message from server: %q", string(message))
 
 	dr := r.ToDaemonResponse()
-	err = json.Unmarshal(message, &dr)
-	if err != nil {
+	if err = json.Unmarshal(message, &dr); err != nil {
 		return fmt.Errorf("解析daemon返回结果失败: %s", err)
 	}
 	if dr.Error != "" {

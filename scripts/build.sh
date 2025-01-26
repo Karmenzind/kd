@@ -44,7 +44,13 @@ do_build() {
 	esac
 
 	set -x
-	GOOS=$os GOARCH=$arch CGO_ENABLED=$cgo CC=$cc go build ${buildopts} -o ${targetfile} -ldflags="-s -w" -tags urfave_cli_no_docs cmd/kd.go
+	GOOS=$os GOARCH=$arch CGO_ENABLED=$cgo CC=$cc go build \
+        ${buildopts} \
+        -o ${targetfile} \
+        -ldflags="-s -w" \
+        -tags urfave_cli_no_docs \
+        -mod=vendor \
+        cmd/kd.go
 	local ret=$?
 	set +x
 
@@ -73,7 +79,8 @@ case $1 in
 "")
 	echo ">>> Building for current workspace..."
 	# do_build '' '' ${PROJECT_DIR}/kd
-	do_build '' '' /usr/bin/kd
+	# do_build '' '' /usr/bin/kd
+	do_build '' '' /usr/local/bin/kd
 	exit
 	;;
 -a | --all)

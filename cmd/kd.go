@@ -121,8 +121,7 @@ func flagUpdate(ctx *cli.Context, _ bool) (err error) {
 
 	if doUpdate {
 		// emoji.Println(":lightning: Let's update now")
-		err = daemon.KillDaemonIfRunning()
-		if err != nil {
+		if err = daemon.KillDaemonIfRunning(); err != nil {
 			warnMsg := "可能会影响后续文件替换。如果出现问题，请手动执行`kd --stop`后重试"
 			d.EchoWarn("停止守护进程出现异常（%s），%s", err, warnMsg)
 			if p, perr := daemon.FindServerProcess(); perr == nil {
@@ -272,7 +271,14 @@ func main() {
 		if err != nil {
 			d.EchoFatal(err.Error())
 		}
-		defer l.Sync()
+		defer func() {
+			if r := recover(); r != nil {
+				zap.S().Errorln("Application crashed", zap.Any("reason", r))
+				if syncErr := l.Sync(); syncErr != nil {
+					fmt.Printf("Failed to sync logger: %v\n", syncErr)
+				}
+			}
+		}()
 	}
 	zap.S().Debugf("Got configuration: %+v", cfg)
 	zap.S().Debugf("Got run info: %+v", run.Info)
@@ -334,7 +340,7 @@ func main() {
 			d.ApplyTheme(cfg.Theme)
 
 			if cCtx.Args().Len() > 0 {
-				zap.S().Debugf("Recieved Arguments (len: %d): %+v \n", cCtx.Args().Len(), cCtx.Args().Slice())
+				zap.S().Debugf("Recieved Arguments (len: %d): %+v", cCtx.Args().Len(), cCtx.Args().Slice())
 				// emoji.Printf("Test emoji:\n:accept: :inbox_tray: :information: :us: :uk:  🗣  :lips: :eyes: :balloon: \n")
 				if cfg.ClearScreen {
 					pkg.ClearScreen()
@@ -362,7 +368,7 @@ func main() {
 					}
 				} else {
 					d.EchoError(err.Error())
-					zap.S().Errorf("%+v\n", err)
+					zap.S().Errorf("%+v", err)
 				}
 			} else {
 				showPrompt()

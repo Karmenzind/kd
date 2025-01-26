@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/v4/process"
 	"go.uber.org/zap"
 )
 

@@ -49,15 +49,14 @@ func UnitExists(unitName string, isUser bool) (bool, error) {
 	}
 	var out bytes.Buffer
 	cmd.Stdout = &out
-	err := cmd.Run()
-	if err != nil {
+	if err := cmd.Run(); err != nil {
 		zap.S().Warnf("Failed to fetch unit-files. Error: %s", err)
 		return false, err
 	}
 	output := out.String()
 
 	zap.S().Debugf("Fetched unit-files: %s", output)
-	return strings.Contains(output, unitName), err
+	return strings.Contains(output, unitName), nil
 }
 
 func StopService(unit string, isUser bool) (string, error) {

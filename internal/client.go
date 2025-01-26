@@ -17,8 +17,11 @@ import (
 )
 
 func ensureDaemon(running chan bool) {
-	p, _ := daemon.FindServerProcess()
 	var err error
+	p, err := daemon.FindServerProcess()
+	if err != nil {
+		d.EchoFatal("查询守护进程失败：%s", err)
+	}
 	if p == nil {
 		d.EchoRun("未找到守护进程，正在启动...")
 		err = daemon.StartDaemonProcess()

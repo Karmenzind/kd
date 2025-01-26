@@ -55,6 +55,6 @@ func AddExecutablePermission(filePath string) error {
 	if err := os.Chmod(filePath, newMode); err != nil {
 		return err
 	}
-	zap.S().Infof("Executable permission added to %s\n", filePath)
+	zap.S().Infof("Executable permission added to %s", filePath)
 	return nil
 }

@@ -68,7 +68,7 @@ func handleClient(conn net.Conn) {
 		return
 	} else if err != nil {
 		d.EchoWrong(fmt.Sprintf("Error reading: %#v\n", err))
-		zap.S().Errorf("Error reading: %#v\n", err)
+		zap.S().Errorf("Error reading: %#v", err)
 		// FIXME (k): <2024-01-02> reply
 		return
 	}

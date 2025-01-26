@@ -16,7 +16,7 @@ import (
 	"github.com/Karmenzind/kd/pkg/proc"
 	"github.com/Karmenzind/kd/pkg/systemd"
 
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/v4/process"
 	"go.uber.org/zap"
 )
 
@@ -69,6 +69,10 @@ func ServerIsRunning() bool {
 	return p != nil
 }
 
+func processNameMatched(n string) bool {
+	return n == "kd" || (runtime.GOOS == "windows" && n == "kd.exe")
+}
+
 func FindServerProcess() (*process.Process, error) {
 	processes, err := process.Processes()
 	if err != nil {
@@ -86,9 +90,13 @@ func FindServerProcess() (*process.Process, error) {
 			}
 		}
 
-		if n == "kd" || (runtime.GOOS == "windows" && n == "kd.exe") {
+		if processNameMatched(n) {
 			cmd, _ := p.Cmdline()
-			// zap.S().Debugf("Found process kd with CMD: %s", cmd)
+			zap.S().Debugf("Found process kd with PID: %v CMD: %s", p.Pid, cmd)
+			// user, _ := p.Username()
+			// zap.S().Debugf("Found process kd with PID: %v CMD: %s User: %s", p.Pid, cmd, user)
+			// cmdSlice, _ := p.CmdlineSlice()
+			// zap.S().Debugf("Found process kd with CMD slice: %s", cmdSlice)
 			if strings.Contains(cmd, " --server") {
 				zap.S().Debugf("Found process %+v Cmd: `%s`", p, cmd)
 				return p, nil
@@ -173,18 +181,19 @@ func SendHUP2Daemon() error {
 }
 
 func RestartDaemon() error {
+	var err error
 	if runtime.GOOS == "linux" {
 		if yes, _ := systemd.ServiceIsActive(SYSTEMD_UNIT_NAME, true); yes {
 			zap.S().Debugf("Found systemd unit: %s", SYSTEMD_UNIT_NAME)
 			d.EchoWarn("检测到daemon存在相应systemd unit，将使用systemctl重启")
-			_, err := systemd.RestartService(SYSTEMD_UNIT_NAME, true)
+			_, err = systemd.RestartService(SYSTEMD_UNIT_NAME, true)
 			if err == nil {
 				d.EchoOkay("已经通过systemctl重启daemon服务")
 			}
 			return err
 		}
 	}
-	err := KillDaemonIfRunning()
+	err = KillDaemonIfRunning()
 	if err == nil {
 		err = StartDaemonProcess()
 	}

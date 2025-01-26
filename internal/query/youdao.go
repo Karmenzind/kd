@@ -24,7 +24,7 @@ func (r *YdResult) parseParaphrase() {
 				para = str.Simplify(v.Text())
 				if para != "" {
 					r.Paraphrase = append(r.Paraphrase, para)
-					zap.S().Debugf("Got para: %s\n", para)
+					zap.S().Debugf("Got para: %s", para)
 				}
 			}
 		} else {
@@ -32,12 +32,12 @@ func (r *YdResult) parseParaphrase() {
 				para = str.Simplify(wg.FullText())
 				if para != "" {
 					r.Paraphrase = append(r.Paraphrase, para)
-					zap.S().Debugf("Got para: %s\n", para)
+					zap.S().Debugf("Got para: %s", para)
 				}
 			}
 		}
 	} else {
-		zap.S().Debug("div trans-container not found\n")
+		zap.S().Debug("div trans-container not found")
 	}
 }
 

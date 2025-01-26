@@ -62,7 +62,7 @@ var LATEST_TAG_FILE = filepath.Join(cache.CACHE_ROOT_PATH, "latest_tag")
 func GetLatestTag() (tag string, err error) {
 	req, err := http.NewRequest("GET", TAGLIST_URL, nil)
 	if err != nil {
-		zap.S().Infof("Error creating request: %v\n", err)
+		zap.S().Infof("Error creating request: %v", err)
 		return
 	}
 
@@ -74,17 +74,17 @@ func GetLatestTag() (tag string, err error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		zap.S().Infof("Error sending request: %v\n", err)
+		zap.S().Infof("Error sending request: %v", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		zap.S().Infof("Error reading response body: %v\n", err)
+		zap.S().Infof("Error reading response body: %v", err)
 		return
 	}
-	zap.S().Debugf("Response Status: %s Body: %s\n", resp.Status, string(body))
+	zap.S().Debugf("Response Status: %s Body: %s", resp.Status, string(body))
 
 	tags := []*GithubTag{}
 

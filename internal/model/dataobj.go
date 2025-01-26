@@ -55,6 +55,6 @@ func (r *Result) Initialize() {
 		if strings.Contains(r.Query, " ") {
 			r.IsPhrase = true
 		}
-		zap.S().Debugf("Query: isEn: %v isPhrase: %v\n", r.IsEN, r.IsPhrase)
+		zap.S().Debugf("Query: isEn: %v isPhrase: %v", r.IsEN, r.IsPhrase)
 	}
 }

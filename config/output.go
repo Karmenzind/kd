@@ -11,8 +11,7 @@ func GenerateDefaultConfig() (string, error) {
 	var buf = new(bytes.Buffer)
 	var err error
 	encoder := toml.NewEncoder(buf)
-	err = encoder.Encode(Cfg)
-	if err != nil {
+	if err = encoder.Encode(Cfg); err != nil {
 		return "", err
 	}
 	var validline int

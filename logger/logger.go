@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -22,8 +23,7 @@ func buildLogger(logCfg *config.LoggerConfig, options ...zap.Option) (*zap.Logge
 	} else {
 		var f string
 		if logCfg.Path == "" {
-			u, err := user.Current()
-			if err != nil {
+			if u, err := user.Current(); err != nil {
 				f = filepath.Join(os.TempDir(), "kd.log")
 			} else {
 				name := strings.ReplaceAll(u.Username, " ", "_")
@@ -52,10 +52,9 @@ func buildLogger(logCfg *config.LoggerConfig, options ...zap.Option) (*zap.Logge
 func InitLogger(logCfg *config.LoggerConfig) (*zap.Logger, error) {
 	l, err := buildLogger(logCfg)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
 
 	zap.ReplaceGlobals(l)
-
 	return l, err
 }

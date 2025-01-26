@@ -22,7 +22,7 @@ var CONFIG_PATH string
 type LoggerConfig struct {
 	Enable           bool   `default:"true" toml:"enable"`
 	Path             string `toml:"path"`
-	Level            string `default:"info" toml:"level"`
+	Level            string `default:"warn" toml:"level"`
 	Stderr           bool   `default:"false" toml:"stderr"`
 	RedirectToStream bool   `default:"false" toml:"redirect_to_stream"`
 }
@@ -106,7 +106,6 @@ func parseConfig() (err error) {
 		Cfg.ModTime = fileinfo.ModTime().Unix()
 		err = configor.New(&configor.Config{ErrorOnUnmatchedKeys: false}).Load(&Cfg, p)
 	} else {
-		// 没有配置文件，部分默认值处理
 		err = configor.New(&configor.Config{ErrorOnUnmatchedKeys: false}).Load(&Cfg)
 		switch runtime.GOOS {
 		// case "darwin": // MacOS
