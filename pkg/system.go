@@ -71,3 +71,11 @@ func GetOSInfo() (*OSInfo, error) {
 
 	return ret, nil
 }
+
+func GetCurUsername() string {
+	username := os.Getenv("USER")
+	if username == "" {
+		username = os.Getenv("LOGNAME")
+	}
+	return username
+}

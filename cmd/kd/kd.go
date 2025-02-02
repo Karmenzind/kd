@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"os/user"
 	"runtime"
 	"strings"
 
@@ -242,7 +241,7 @@ func checkAndNoticeUpdate() {
 
 func basicCheck() {
 	if runtime.GOOS != "windows" {
-		if u, _ := user.Current(); u.Username == "root" {
+		if os.Geteuid() == 0 && os.Getenv("KD_ENABLE_ROOT") != "1"{
 			d.EchoWrong("不支持Root用户")
 			os.Exit(1)
 		}

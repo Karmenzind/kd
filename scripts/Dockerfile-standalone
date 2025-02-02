@@ -1,0 +1,30 @@
+# vim:set noet sts=0 sw=4 ts=4 ft=dockerfile:
+# 1. --------------------------------------------
+
+FROM golang:1.23 AS builder
+
+RUN apt-get update && apt-get install -y musl-tools libsqlite3-dev pkg-config
+
+WORKDIR /app
+COPY . .
+
+ENV CGO_ENABLED=1
+ENV CC=musl-gcc
+
+RUN go build -tags "sqlite_omit_load_extension,urfave_cli_no_docs" \
+    -ldflags="-linkmode external -extldflags '-static' -s -w" \
+    -o /kd cmd/kd/kd.go
+
+# 2. --------------------------------------------
+
+FROM scratch
+
+COPY --from=builder /kd /kd
+
+ENV KD_CACHE_DIR=/kddata
+ENV KD_LOG_PATH=/kddata/kd.log
+ENV KD_ENABLE_ROOT=1
+
+VOLUME [ "/kddata" ]
+
+ENTRYPOINT ["/kd"]

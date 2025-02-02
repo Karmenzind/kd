@@ -23,23 +23,25 @@ var CACHE_STAT_DIR_PATH string
 
 // TODO (k) 支持config
 var SERVER_PORT = 19707
-
-var cacheDirname = "kdcache"
+var cacheDefaultDirname = "kdcache"
 
 func getCacheRootPath() string {
+	if preset := os.Getenv("KD_CACHE_DIR"); preset != "" {
+		return preset
+	}
+
 	var target string
 	userdir, _ := os.UserHomeDir()
 	switch runtime.GOOS {
 	case "linux", "windows":
-		target = filepath.Join(userdir, ".cache", cacheDirname)
+		target = filepath.Join(userdir, ".cache", cacheDefaultDirname)
 	case "darwin":
-		target = filepath.Join(userdir, "Library/Caches", cacheDirname)
+		target = filepath.Join(userdir, "Library/Caches", cacheDefaultDirname)
 	default:
 		d.EchoWarn("检测到架构为%s，此平台尚未进行测试，如出现问题请通过issue反馈", runtime.GOOS)
-		target = filepath.Join(userdir, ".cache", cacheDirname)
+		target = filepath.Join(userdir, ".cache", cacheDefaultDirname)
 	}
 	return target
-
 }
 
 func init() {
