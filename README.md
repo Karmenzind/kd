@@ -1,6 +1,8 @@
 :stars: a crystal clear command-line dictionary, written in Go, supported Linux/Win/Mac
 
-**Go语言实现的简洁好用的命令行词典，跨平台、易于安装、持续维护更新**
+**Go语言实现的简洁好用的命令行词典，跨平台、易于安装、持续维护更新** 
+
+[![GitHub Release](https://img.shields.io/github/v/release/karmenzind/kd)](https://github.com/Karmenzind/kd/releases)
 
 <!-- <img src="https://raw.githubusercontent.com/Karmenzind/i/master/kd/kd_demo.gif" width="700" align="center"> -->
 
@@ -92,6 +94,8 @@ sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/k
 </pre></details>
 
 #### ArchLinux
+
+[![AUR Version](https://img.shields.io/aur/version/kd-bin)](https://aur.archlinux.org/packages/kd-bin)
 
 ArchLinux推荐直接通过[AUR](https://aur.archlinux.org/packages/kd)安装/更新，例如：`yay -S kd`
 
