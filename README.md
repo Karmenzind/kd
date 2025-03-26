@@ -97,7 +97,7 @@ sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/k
 
 [![AUR Version](https://img.shields.io/aur/version/kd-bin)](https://aur.archlinux.org/packages/kd-bin)
 
-ArchLinux推荐直接通过[AUR](https://aur.archlinux.org/packages/kd)安装/更新，例如：`yay -S kd`
+ArchLinux推荐直接通过[AUR](https://aur.archlinux.org/packages/kd-bin)安装/更新，例如：`yay -S kd-bin`
 
 ### Windows
 
@@ -139,7 +139,7 @@ mv kd /usr/bin/kd
     - MacOS: `rm -rfv ~/.config/kd.toml ~/Library/Caches/kdcache`
     - Win: `rm ~\kd.toml ~\kdcache`
 
-如果通过AUR安装，则直接通过AUR管理工具卸载，例如：`yay -Rs kd`
+如果通过AUR安装，则直接通过AUR管理工具卸载，例如：`yay -Rs kd-bin`
 </pre></details>
 
 ## :gear: 用法和配置
