@@ -1,6 +1,6 @@
 :stars: a crystal clear command-line dictionary, written in Go, supported Linux/Win/Mac
 
-**Go语言实现的简洁好用的命令行词典，跨平台、易于安装、持续维护更新** 
+**Go语言实现的简洁好用的命令行词典，跨平台、易于安装、持续维护更新**
 
 [![GitHub Release](https://img.shields.io/github/v/release/karmenzind/kd)](https://github.com/Karmenzind/kd/releases)
 
@@ -20,7 +20,9 @@
     * [Windows](#windows)
     * [其他平台](#其他平台)
     * [卸载](#卸载)
-* [:gear: 用法和配置](#gear-用法和配置)
+* [:gear: 用法](#gear-用法)
+    * [配置文件](#配置文件)
+    * [读音功能（experimental）](#读音功能experimental)
 * [🎈 提升体验技巧](#-提升体验技巧)
     * [NeoVim插件kd_translate.nvim](#neovim插件kd_translatenvim)
     * [使用tmux的悬浮窗口显示结果](#使用tmux的悬浮窗口显示结果)
@@ -48,6 +50,7 @@
 
     ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/longtext.png)
 
+- 支持`-s`朗读单词 📢
 - 极速响应，超低延迟 ⚡
 - 灵活的配置项，支持修改代理、配色等
 - 其他小功能：
@@ -62,7 +65,6 @@
     - `kd --update`命令一键更新版本
 
 > 更多功能正在开发中 👽
-
 
 ## 🚀 安装和升级
 
@@ -142,7 +144,7 @@ mv kd /usr/bin/kd
 如果通过AUR安装，则直接通过AUR管理工具卸载，例如：`yay -Rs kd-bin`
 </pre></details>
 
-## :gear: 用法和配置
+## :gear: 用法
 
 直接执行`kd <text>`查单词、词组（如`kd abandon`、`kd leave me alone`）
 
@@ -170,6 +172,7 @@ GLOBAL OPTIONS:
    --version, -v                        print the version
 ```
 
+### 配置文件
 
 📁 配置文件地址：Linux/MacOS为~/.config/kd.toml，Windows为~/kd.toml
 
@@ -212,6 +215,25 @@ freq_alert = false
   # 日志级别，支持：DEBUG/INFO/WARN/PANIC/FATAL
   level = "WARN"
 ```
+
+### 读音功能（experimental）
+
+⚠️ 目前处于实验阶段，请斟酌使用
+
+**此功能需要访问Google**
+
+单词前加speak参数，例如 `kd -s abandon`
+
+**Windows**
+
+- 默认会调用系统默认音频播放程序（如Media Player），会弹出窗口，体验不佳
+- 如果要实现命令行直接播放声音，无弹窗干扰，可安装以下之一：
+    - mpv，可通过Chocolatey（ `choco install mpvio` ）或参考 https://mpv.io/installation/
+    - ffmpeg，可通过Chocolatey（ `choco install ffmpeg` ）或Winget（ `winget install ffmeg` ）安装
+
+**Mac/Linux** 
+
+尚未测试，可能会报错
 
 ## 🎈 提升体验技巧
 

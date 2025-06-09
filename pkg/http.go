@@ -93,15 +93,25 @@ func CreateHTTPClient(timeoutsec time.Duration) *http.Client {
 // 	return r, err
 // }
 
-func getHTTPClient(url string) *http.Client {
+func getHTTPClient(url string, timeout time.Duration) *http.Client {
+	var cli *http.Client
 	if strings.HasPrefix(url, "https") {
-		return &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
+		cli = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 	}
-	return &http.Client{}
+	cli = &http.Client{}
+	if timeout > 0 {
+		cli.Timeout = timeout
+	}
+	return cli
 }
 
+// Disable timeout
 func DownloadFile(filepath string, url string) (err error) {
-	client := getHTTPClient(url)
+	return DownloadFileWithTimeout(filepath, url, 0)
+}
+
+func DownloadFileWithTimeout(filepath string, url string, timeout time.Duration) (err error) {
+	client := getHTTPClient(url, timeout)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -132,7 +142,7 @@ func DownloadFile(filepath string, url string) (err error) {
 }
 
 func DownloadFileWithProgress(filepath string, url string) (err error) {
-	client := getHTTPClient(url)
+	client := getHTTPClient(url, 0)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err

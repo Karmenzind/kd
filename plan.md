@@ -1,6 +1,7 @@
 # master plan
 
 ## wip
+- 下载audio增加timeout
 - 读文件加锁
 - 指定port
 - release增加version，aur判断此文件

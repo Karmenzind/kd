@@ -28,7 +28,7 @@ type LoggerConfig struct {
 }
 
 type Config struct {
-	// FIXME
+	// FIXME (k): <2025-06-12 01:08> 
 	Debug bool `default:"false" toml:"debug"`
 
 	// Modules      []string

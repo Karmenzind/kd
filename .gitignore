@@ -20,7 +20,7 @@ build/
 data/
 
 # Others
-kd
+./kd
 .idea
 .vscode
 
