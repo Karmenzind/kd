@@ -47,11 +47,12 @@ func checkSpeaker() string {
 	var checkList []string
 	switch runtime.GOOS {
 	case "linux":
-		checkList = []string{"mpv", "mpg123", "ffplay", "aplay"}
+		// XXX (qk): <2025-06-22 14:25> "aplay" only works with wav
+		checkList = []string{"ffplay", "mpg123", "mpv"}
 	case "darwin":
-		checkList = []string{"mpv", "ffplay", "afplay"}
+		checkList = []string{"afplay", "ffplay", "mpv"}
 	case "windows":
-		checkList = []string{"mpv", "ffplay"}
+		checkList = []string{"ffplay", "mpv"}
 	}
 
 	for _, p := range checkList {
@@ -110,6 +111,7 @@ func playAudio(filePath string) error {
 func Speak(word string) error {
 	var err error
 	checkSpeaker()
+
 	if speakerProgram == "" {
 		return fmt.Errorf("no speaker found")
 	}

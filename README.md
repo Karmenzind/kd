@@ -88,10 +88,10 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Karmenzind/kd/master/scr
 # （如有需要，可以将路径/usr/bin/kd改成/usr/local/bin/kd）
 # Linux amd64 (x86-64)
 sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_linux_amd64 && chmod +x /usr/bin/kd'
-# MacOS arm64 (即M1/M2/M3芯片的架构)
+# MacOS arm64 (即M1/M2/M3/M4芯片架构)
 sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_arm64 && chmod +x /usr/bin/kd'
 # MacOS amd64 (x86-64)
-sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_arm64 && chmod +x /usr/bin/kd'
+sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_amd64 && chmod +x /usr/bin/kd'
 # Linux arm64
 sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_linux_arm64 && chmod +x /usr/bin/kd'
 ```
@@ -230,7 +230,7 @@ freq_alert = false
 
 > 此功能需要访问Google
 
-⚠️ 目前处于实验阶段，请斟酌使用
+⚠️ 目前处于实验阶段，请斟酌使用。MacOS尚未测试，可能会报错
 
 单词前加speak参数，例如 `kd -s abandon`
 
@@ -241,7 +241,6 @@ freq_alert = false
     - mpv，可通过Chocolatey（ `choco install mpvio` ）或参考 https://mpv.io/installation/
     - ffmpeg，可通过Chocolatey（ `choco install ffmpeg` ）或Winget（ `winget install ffmpeg` ）安装
 
-**Mac/Linux** ：尚未测试，可能会报错
 
 ## 🎈 提升体验技巧
 
