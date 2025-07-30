@@ -60,15 +60,14 @@ var ErrorBg = fc.New(fc.BgRed, fc.FgBlack, fc.Italic, fc.Faint).SprintFunc()
 // Theme
 type ColorStringFunc func(a ...interface{}) string
 
-var Title, Nation, Line, Pron, Property, Idx, Addi, Para,
+var Text, Title, Nation, Line, Pron, Property, Idx, Addi, Para,
 	CollinsPara, Eg, EgPref, EgEn, EgCh,
 	Star, Rank ColorStringFunc
-
-var Text = fc.New(fc.FgWhite).SprintFunc()
 
 func applyTheme(colorscheme string) {
 	switch colorscheme {
 	case "", "temp":
+		Text = fc.New(fc.FgWhite).SprintFunc()
 		Title = fc.New(fc.FgHiMagenta, fc.Italic, fc.Bold, fc.Underline).SprintFunc()
 		Line = fc.New(fc.FgHiBlack, fc.Faint).SprintFunc()
 		Pron = fc.New(fc.Faint).SprintFunc()
@@ -86,6 +85,7 @@ func applyTheme(colorscheme string) {
 		Rank = Eg
 
 	case "wudao":
+		Text = fc.New(fc.FgWhite).SprintFunc()
 		Title = fc.New(fc.FgRed, fc.Italic, fc.Bold, fc.Underline).SprintFunc()
 		Line = fc.New(fc.FgHiBlack, fc.Faint).SprintFunc()
 		Pron = fc.New(fc.FgCyan).SprintFunc()
@@ -100,6 +100,23 @@ func applyTheme(colorscheme string) {
 		EgCh = Text
 		Star = fc.New(fc.FgYellow).SprintFunc()
 		Rank = fc.New(fc.FgRed, fc.Italic).SprintFunc()
+
+	case "canvas":
+		Text = fc.New(fc.FgBlack).SprintFunc()
+		Title = fc.New(fc.FgBlue, fc.Bold, fc.Underline).SprintFunc()
+		Line = fc.New(fc.FgHiBlack, fc.Faint).SprintFunc()
+		Pron = fc.New(fc.FgMagenta).SprintFunc()
+		Property = fc.New(fc.FgHiCyan, fc.Bold).SprintFunc()
+		Idx = fc.New(fc.FgCyan).SprintFunc()
+		Addi = fc.New(fc.FgGreen, fc.Italic).SprintFunc()
+		Para = Text
+		CollinsPara = fc.New(fc.FgBlack).SprintFunc()
+		Eg = fc.New(fc.FgHiBlack, fc.Italic).SprintFunc()
+		EgPref = fc.New(fc.FgHiBlue).SprintFunc()
+		EgEn = fc.New(fc.FgBlack, fc.BgHiWhite).SprintFunc()
+		EgCh = fc.New(fc.FgHiBlack, fc.Italic).SprintFunc()
+		Star = fc.New(fc.FgYellow).SprintFunc()
+		Rank = fc.New(fc.FgRed, fc.Bold).SprintFunc()
 
 	default:
 		fc.New(fc.FgRed).Printf("✘ Unknown theme: %s\n", colorscheme)

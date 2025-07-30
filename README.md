@@ -162,18 +162,27 @@ NAME:
    kd - A crystal clean command-line dictionary.
 
 USAGE:
-   kd [global options] [arguments...]
+   kd [global options]
+
+VERSION:
+   v0.0.14
+
+AUTHOR:
+   kmz <valesail7@gmail.com>
 
 GLOBAL OPTIONS:
-   --nocache, -n                        don't use cached result 不使用本地词库，查询网络结果
-   --theme value, -T value              choose the color theme for current query 选择颜色主题，仅当前查询生效 (default: temp)
-   --server                             start server foreground 在前台启动服务端
-   --daemon                             ensure/start the daemon process 启动守护进程
-   --update                             check and update kd client 更新kd的可执行文件
-   --generate-config                    generate config sample 生成配置文件，默认地址为~/.config/kd.toml
-   --edit-config                        edit configuration file with the default editor 用默认编辑器打开配置文件
-   --help, -h                           show help
-   --version, -v                        print the version
+   --text TEXT, -t TEXT     translate long query TEXT with e.g. --text="Long time ago" 翻译长句
+   --json                   output as JSON
+   --nocache, -n            don't use cached result 不使用本地词库，查询网络结果
+   --theme value, -T value  choose the color theme for current query 选择颜色主题，仅当前查询生效 (default: temp)
+   --force, -f              forcely update (only after --update) 强制更新（仅搭配--update）
+   --speak, -s              (experimental) read the word with speaker program 单词朗读
+   --daemon                 ensure/start the daemon process 启动守护进程
+   --update                 check and update kd client 更新kd的可执行文件
+   --generate-config        generate config sample 生成配置文件，Linux/Mac默认地址为~/.config/kd.toml，Win为~\kd.toml
+   --edit-config            edit configuration file with the default editor 用默认编辑器打开配置文件
+   --help, -h               show help
+   --version, -v            print the version
 ```
 
 说明：
@@ -228,9 +237,7 @@ freq_alert = false
 
 #### 读音功能（experimental）
 
-> 此功能需要访问Google
-
-⚠️ 目前处于实验阶段，请斟酌使用。MacOS尚未测试，可能会报错
+⚠️ 此功能需要访问Google。目前处于实验阶段，请斟酌使用
 
 单词前加speak参数，例如 `kd -s abandon`
 
@@ -286,6 +293,10 @@ fi
 - `temp` 暂定的默认配色
 
     ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/theme_default.png)
+
+- `canvas` 适合浅色背景
+
+    ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/theme_canvas.png)
 
 - `wudao` 复刻Wudao Dict的配色，鲜明易读
 
