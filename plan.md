@@ -42,6 +42,16 @@
 - `--status` shows port and pid of dead daemon
 - disable pager on Debian/MacOS
 
+```
+panic: assignment to entry in nil map
+
+goroutine 27 [running]:
+github.com/Karmenzind/kd/internal/cache.UpdateLongTextCache(0xc000294400)
+        /home/runner/work/kd/kd/internal/cache/cache.go:121 +0x10c
+created by github.com/Karmenzind/kd/internal/query.FetchOnline in goroutine 26
+        /home/runner/work/kd/kd/internal/query/online.go:114 +0x1a8
+```
+
 ## Risk
 - 实际文件名 不改的时候的process_name，增加同时校验kd和当前文件名
 
