@@ -94,11 +94,10 @@ func CreateHTTPClient(timeoutsec time.Duration) *http.Client {
 // }
 
 func getHTTPClient(url string, timeout time.Duration) *http.Client {
-	var cli *http.Client
+	cli := &http.Client{}
 	if strings.HasPrefix(url, "https") {
-		cli = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
+		cli.Transport = &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
 	}
-	cli = &http.Client{}
 	if timeout > 0 {
 		cli.Timeout = timeout
 	}

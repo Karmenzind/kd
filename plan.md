@@ -1,6 +1,7 @@
 # master plan
 
 ## wip
+- Docker mode
 - 下载audio增加timeout
 - 读文件加锁
 - 指定port
@@ -69,3 +70,54 @@ created by github.com/Karmenzind/kd/internal/query.FetchOnline in goroutine 26
 如果没有你所使用的平台/架构，请提交issue反馈
 
 如果下载受阻，请前往gitee备份页面
+
+
+## Others
+
+
+```
+panic: assignment to entry in nil map
+
+goroutine 651 [running]:
+github.com/Karmenzind/kd/internal/cache.UpdateLongTextCache(0xc000340400)
+        /app/internal/cache/cache.go:121 +0x10c
+created by github.com/Karmenzind/kd/internal/query.FetchOnline in goroutine 664
+        /app/internal/query/online.go:114 +0x1a8
+
+```
+
+```
+
+2025-06-29T11:48:13.051Z        WARN    daemon/cron.go:139      Failed to download zip file: Get "https://gitee.com/void_kmz/kd/releases/download/v0.0.1/kd_data.zip": tls: failed to verify certificate: x509: certificate signed by unknown authority
+github.com/Karmenzind/kd/internal/daemon.cronUpdateDataZip.func1
+        /app/internal/daemon/cron.go:139
+
+```
+
+```
+
+2025-06-29T11:47:20.166Z        WARN    model/others.go:41  Failed to fetch os info: %s. (Current GOOS: %s)open /etc/os-release: no such file or directorylinux
+github.com/Karmenzind/kd/internal/model.(*RunInfo).SetOSInfo
+        /app/internal/model/others.go:41
+github.com/Karmenzind/kd/internal.StartServer
+        /app/internal/server.go:40
+main.flagServer
+        /app/cmd/kd/kd.go:66
+github.com/urfave/cli/v2.(*BoolFlag).RunAction
+        /app/vendor/github.com/urfave/cli/v2/flag_bool.go:101
+github.com/urfave/cli/v2.runFlagActions
+        /app/vendor/github.com/urfave/cli/v2/app.go:484
+github.com/urfave/cli/v2.(*Command).Run
+        /app/vendor/github.com/urfave/cli/v2/command.go:224
+github.com/urfave/cli/v2.(*App).RunContext
+        /app/vendor/github.com/urfave/cli/v2/app.go:333
+github.com/urfave/cli/v2.(*App).Run
+        /app/vendor/github.com/urfave/cli/v2/app.go:307
+main.main
+        /app/cmd/kd/kd.go:404
+runtime.main
+        /usr/local/go/src/runtime/proc.go:272
+
+
+```
+

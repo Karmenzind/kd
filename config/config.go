@@ -21,8 +21,8 @@ var CONFIG_PATH string
 
 type LoggerConfig struct {
 	Enable           bool   `default:"true" toml:"enable"`
-	Path             string `toml:"path"`
-	Level            string `default:"warn" toml:"level"`
+	Path             string `toml:"path" env:"KD_LOG_PATH"`
+	Level            string `default:"warn" toml:"level" env:"KD_LOG_LEVEL"`
 	Stderr           bool   `default:"false" toml:"stderr"`
 	RedirectToStream bool   `default:"false" toml:"redirect_to_stream"`
 }

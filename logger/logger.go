@@ -4,15 +4,25 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
 
 	"github.com/Karmenzind/kd/config"
+	"github.com/Karmenzind/kd/pkg"
 	"go.uber.org/zap"
 )
 
 var LOG_FILE string
+
+func getUserBasedLogfileName() string {
+	username := pkg.GetCurUsername()
+	if username == "" {
+		return "kd.log"
+	}
+	name := strings.ReplaceAll(username, " ", "_")
+	name = strings.ReplaceAll(name, "\\", "_")
+	return fmt.Sprintf("kd_%s.log", name)
+}
 
 func buildLogger(logCfg *config.LoggerConfig, options ...zap.Option) (*zap.Logger, error) {
 	cfg := zap.NewDevelopmentConfig()
@@ -23,13 +33,7 @@ func buildLogger(logCfg *config.LoggerConfig, options ...zap.Option) (*zap.Logge
 	} else {
 		var f string
 		if logCfg.Path == "" {
-			if u, err := user.Current(); err != nil {
-				f = filepath.Join(os.TempDir(), "kd.log")
-			} else {
-				name := strings.ReplaceAll(u.Username, " ", "_")
-				name = strings.ReplaceAll(name, "\\", "_")
-				f = filepath.Join(os.TempDir(), fmt.Sprintf("kd_%s.log", name))
-			}
+			f = filepath.Join(os.TempDir(), getUserBasedLogfileName())
 		} else {
 			f = logCfg.Path
 		}
