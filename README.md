@@ -2,6 +2,8 @@
 
 **Go语言实现的简洁好用的命令行词典，跨平台、易于安装、持续维护更新**
 
+[![GitHub Release](https://img.shields.io/github/v/release/karmenzind/kd)](https://github.com/Karmenzind/kd/releases)
+
 <!-- <img src="https://raw.githubusercontent.com/Karmenzind/i/master/kd/kd_demo.gif" width="700" align="center"> -->
 
 ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/kd_demo.gif)
@@ -9,6 +11,7 @@
 本项目受[无道词典](https://github.com/ChestnutHeng/Wudao-dict)启发，在复刻Wudao核心功能的基础上增加了更丰富的特性。我是Wudao的多年用户，日常工作生活重度依赖随手`wd abandon`，但可惜这个项目已经很久未更新，且存在一些可以优化的地方，所以忍不住重写了一个，选择Go是为了方便地解决安装和跨平台问题。
 
 **TOC**
+
 <!-- vim-markdown-toc GitLab -->
 
 * [:ballot_box_with_check: 特性](#ballot_box_with_check-特性)
@@ -18,7 +21,10 @@
     * [Windows](#windows)
     * [其他平台](#其他平台)
     * [卸载](#卸载)
-* [:gear: 用法和配置](#gear-用法和配置)
+* [⚙️ 用法](#-用法)
+    * [配置文件](#配置文件)
+    * [更多特性](#更多特性)
+        * [读音功能（experimental）](#读音功能experimental)
 * [🎈 提升体验技巧](#-提升体验技巧)
     * [NeoVim插件kd_translate.nvim](#neovim插件kd_translatenvim)
     * [使用tmux的悬浮窗口显示结果](#使用tmux的悬浮窗口显示结果)
@@ -34,6 +40,7 @@
 
 ## :ballot_box_with_check: 特性
 
+- 极速响应，超低延迟 ⚡
 - 单文件运行，多平台兼容，无需安装任何依赖。Windows运行截图：
 
     <img src="https://raw.githubusercontent.com/Karmenzind/i/master/kd/win_terminal.png">
@@ -46,21 +53,20 @@
 
     ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/longtext.png)
 
-- 极速响应，超低延迟 ⚡
 - 灵活的配置项，支持修改代理、配色等
-- 其他小功能：
-    - 多次查询相同词汇会出现提醒并加入生词本
-
-        ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/high_freq.png)
-
+- 支持`-s`[朗读单词](#读音功能experimental) 📢
+- 其他小功能（[详见下文](#-用法)）：
     - 支持纯英文模式，只显示英译/英文例句
 
         ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/en_only.png)
 
+    - 多次查询相同词汇会出现提醒并加入生词本
+
+        ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/high_freq.png)
+
     - `kd --update`命令一键更新版本
 
 > 更多功能正在开发中 👽
-
 
 ## 🚀 安装和升级
 
@@ -82,10 +88,10 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Karmenzind/kd/master/scr
 # （如有需要，可以将路径/usr/bin/kd改成/usr/local/bin/kd）
 # Linux amd64 (x86-64)
 sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_linux_amd64 && chmod +x /usr/bin/kd'
-# MacOS arm64 (即M1/M2/M3芯片的架构)
+# MacOS arm64 (即M1/M2/M3/M4芯片架构)
 sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_arm64 && chmod +x /usr/bin/kd'
 # MacOS amd64 (x86-64)
-sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_arm64 && chmod +x /usr/bin/kd'
+sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_macos_amd64 && chmod +x /usr/bin/kd'
 # Linux arm64
 sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/kd/releases/latest/download/kd_linux_arm64 && chmod +x /usr/bin/kd'
 ```
@@ -93,7 +99,9 @@ sudo sh -c 'curl --create-dirs -L -o /usr/bin/kd https://github.com/Karmenzind/k
 
 #### ArchLinux
 
-ArchLinux推荐直接通过[AUR](https://aur.archlinux.org/packages/kd)安装/更新，例如：`yay -S kd`
+[![AUR Version](https://img.shields.io/aur/version/kd-bin)](https://aur.archlinux.org/packages/kd-bin)
+
+ArchLinux推荐直接通过[AUR](https://aur.archlinux.org/packages/kd-bin)安装/更新，例如：`yay -S kd-bin`
 
 ### Windows
 
@@ -135,10 +143,10 @@ mv kd /usr/bin/kd
     - MacOS: `rm -rfv ~/.config/kd.toml ~/Library/Caches/kdcache`
     - Win: `rm ~\kd.toml ~\kdcache`
 
-如果通过AUR安装，则直接通过AUR管理工具卸载，例如：`yay -Rs kd`
+如果通过AUR安装，则直接通过AUR管理工具卸载，例如：`yay -Rs kd-bin`
 </pre></details>
 
-## :gear: 用法和配置
+## ⚙️ 用法
 
 直接执行`kd <text>`查单词、词组（如`kd abandon`、`kd leave me alone`）
 
@@ -146,26 +154,42 @@ mv kd /usr/bin/kd
 
 完整用法如下：
 
+> 此处可能更新不及时，以实际命令输出为准
+
 ```
 ❯ kd --help
 NAME:
    kd - A crystal clean command-line dictionary.
 
 USAGE:
-   kd [global options] [arguments...]
+   kd [global options]
+
+VERSION:
+   v0.0.14
+
+AUTHOR:
+   kmz <valesail7@gmail.com>
 
 GLOBAL OPTIONS:
-   --nocache, -n                        don't use cached result 不使用本地词库，查询网络结果
-   --theme value, -T value              choose the color theme for current query 选择颜色主题，仅当前查询生效 (default: temp)
-   --server                             start server foreground 在前台启动服务端
-   --daemon                             ensure/start the daemon process 启动守护进程
-   --update                             check and update kd client 更新kd的可执行文件
-   --generate-config                    generate config sample 生成配置文件，默认地址为~/.config/kd.toml
-   --edit-config                        edit configuration file with the default editor 用默认编辑器打开配置文件
-   --help, -h                           show help
-   --version, -v                        print the version
+   --text TEXT, -t TEXT     translate long query TEXT with e.g. --text="Long time ago" 翻译长句
+   --json                   output as JSON
+   --nocache, -n            don't use cached result 不使用本地词库，查询网络结果
+   --theme value, -T value  choose the color theme for current query 选择颜色主题，仅当前查询生效 (default: temp)
+   --force, -f              forcely update (only after --update) 强制更新（仅搭配--update）
+   --speak, -s              (experimental) read the word with speaker program 单词朗读
+   --daemon                 ensure/start the daemon process 启动守护进程
+   --update                 check and update kd client 更新kd的可执行文件
+   --generate-config        generate config sample 生成配置文件，Linux/Mac默认地址为~/.config/kd.toml，Win为~\kd.toml
+   --edit-config            edit configuration file with the default editor 用默认编辑器打开配置文件
+   --help, -h               show help
+   --version, -v            print the version
 ```
 
+说明：
+
+- JSON模式直接输出数据库中raw data，key为简写，暂不打算优化为易读形式
+
+### 配置文件
 
 📁 配置文件地址：Linux/MacOS为~/.config/kd.toml，Windows为~/kd.toml
 
@@ -208,6 +232,22 @@ freq_alert = false
   # 日志级别，支持：DEBUG/INFO/WARN/PANIC/FATAL
   level = "WARN"
 ```
+
+### 更多特性
+
+#### 读音功能（experimental）
+
+⚠️ 此功能需要访问Google。目前处于实验阶段，请斟酌使用
+
+单词前加speak参数，例如 `kd -s abandon`
+
+**Windows**
+
+- 默认会调用系统默认音频播放程序（如Media Player），会弹出窗口，体验不佳
+- 如果要实现命令行直接播放声音，无弹窗干扰，可安装以下之一：
+    - mpv，可通过Chocolatey（ `choco install mpvio` ）或参考 https://mpv.io/installation/
+    - ffmpeg，可通过Chocolatey（ `choco install ffmpeg` ）或Winget（ `winget install ffmpeg` ）安装
+
 
 ## 🎈 提升体验技巧
 
@@ -253,6 +293,10 @@ fi
 - `temp` 暂定的默认配色
 
     ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/theme_default.png)
+
+- `canvas` 适合浅色背景
+
+    ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/theme_canvas.png)
 
 - `wudao` 复刻Wudao Dict的配色，鲜明易读
 

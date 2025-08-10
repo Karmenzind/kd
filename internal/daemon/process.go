@@ -98,7 +98,7 @@ func FindServerProcess() (*process.Process, error) {
 			// cmdSlice, _ := p.CmdlineSlice()
 			// zap.S().Debugf("Found process kd with CMD slice: %s", cmdSlice)
 			if strings.Contains(cmd, " --server") {
-				zap.S().Debugf("Found process %+v Cmd: `%s`", p, cmd)
+				zap.S().Debugf("Found deamon process %+v Cmd: `%s`", p, cmd)
 				return p, nil
 			}
 		}
@@ -121,9 +121,10 @@ func StartDaemonProcess() error {
 		return err
 	}
 	var p *process.Process
-	for i := 0; i < 3; i++ {
+	var err_ error
+	for range 3 {
 		time.Sleep(time.Second)
-		p, err_ := FindServerProcess()
+		p, err_ = FindServerProcess()
 		if err_ != nil {
 			zap.S().Warnf("Failed finding daemon process: %s", err_)
 		}

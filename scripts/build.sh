@@ -49,8 +49,7 @@ do_build() {
         -o ${targetfile} \
         -ldflags="-s -w" \
         -tags urfave_cli_no_docs \
-        -mod=vendor \
-        cmd/kd.go
+        cmd/kd/kd.go
 	local ret=$?
 	set +x
 

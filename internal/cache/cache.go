@@ -114,7 +114,8 @@ func UpdateLongTextCache(r *model.Result) (err error) {
 		if err != nil {
 			return err
 		}
-	} else {
+	} 
+	if m == nil {
 		m = map[string]LongTextData{}
 	}
 	now := time.Now().Unix()

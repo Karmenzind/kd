@@ -54,8 +54,18 @@ func QueryDaemon(addr string, r *model.Result) error {
 	zap.S().Debugf("Sending msg: %s", j)
 	fmt.Fprint(conn, string(j)+"\n")
 
-	message, _ := bufio.NewReader(conn).ReadBytes('\n')
+	var message []byte
+
+	for range 3 { // XXX (k): <2025-07-30 23:01>
+		message, _ = bufio.NewReader(conn).ReadBytes('\n')
+		if len(message) > 0 {
+			break
+		}
+	}
 	zap.S().Debugf("Message from server: %q", string(message))
+	if len(message) == 0 {
+		return fmt.Errorf("daemon返回结果为空")
+	}
 
 	dr := r.ToDaemonResponse()
 	if err = json.Unmarshal(message, &dr); err != nil {

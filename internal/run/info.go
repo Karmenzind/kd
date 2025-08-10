@@ -1,6 +1,7 @@
 package run
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -12,9 +13,10 @@ import (
 
 var Info *model.RunInfo
 
-var CACHE_ROOT_PATH string  // kdCache目录完整路径
-var CACHE_WORDS_PATH string // 放word缓存文件的目录完整路径
-var CACHE_RUN_PATH string   // 存放运行信息
+var CACHE_ROOT_PATH string      // kdCache目录完整路径
+var CACHE_WORDS_PATH string     // 放word缓存文件的目录完整路径
+var CACHE_AUDIO_DIR_PATH string // 放word缓存文件的目录完整路径
+var CACHE_RUN_PATH string       // 存放运行信息
 var CACHE_STAT_DIR_PATH string
 
 // -----------------------------------------------------------------------------
@@ -54,6 +56,21 @@ func init() {
 
 	CACHE_ROOT_PATH = getCacheRootPath()
 	CACHE_WORDS_PATH = filepath.Join(CACHE_ROOT_PATH, "words")
+	CACHE_AUDIO_DIR_PATH = filepath.Join(CACHE_ROOT_PATH, "audio")
 	CACHE_STAT_DIR_PATH = filepath.Join(CACHE_ROOT_PATH, "stat")
 	CACHE_RUN_PATH = filepath.Join(CACHE_ROOT_PATH, "run")
+
+	for _, directory := range []string{
+		CACHE_ROOT_PATH,
+		CACHE_WORDS_PATH,
+		CACHE_STAT_DIR_PATH,
+		CACHE_RUN_PATH,
+		CACHE_AUDIO_DIR_PATH,
+	} {
+		err := os.MkdirAll(directory, os.ModePerm)
+		if err != nil {
+			d.EchoFatal(fmt.Sprintf("Failed to create %s", directory))
+		}
+	}
+
 }

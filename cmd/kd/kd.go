@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -16,6 +17,7 @@ import (
 	"github.com/Karmenzind/kd/internal/daemon"
 	"github.com/Karmenzind/kd/internal/query"
 	"github.com/Karmenzind/kd/internal/run"
+	"github.com/Karmenzind/kd/internal/tts"
 	"github.com/Karmenzind/kd/internal/update"
 	"github.com/Karmenzind/kd/logger"
 	"github.com/Karmenzind/kd/pkg"
@@ -25,7 +27,7 @@ import (
 	// "github.com/kyokomi/emoji/v2"
 )
 
-var VERSION = "v0.0.14.dev"
+var VERSION = "v0.0.14"
 
 func showPrompt() {
 	exename, err := pkg.GetExecutableBasename()
@@ -41,13 +43,16 @@ func showPrompt() {
 var um = map[string]string{
 	"text":            "translate long query `TEXT` with e.g. --text=\"Long time ago\" 翻译长句",
 	"nocache":         "don't use cached result 不使用本地词库，查询网络结果",
+	"force":           "forcely update (only after --update) 强制更新（仅搭配--update）",
 	"theme":           "choose the color theme for current query 选择颜色主题，仅当前查询生效",
+	"json":            "output as JSON",
 	"init":            "initialize shell completion 初始化部分设置，例如shell的自动补全",
 	"server":          "start server foreground 在前台启动服务端",
 	"daemon":          "ensure/start the daemon process 启动守护进程",
 	"stop":            "stop the daemon process 停止守护进程",
 	"restart":         "restart the daemon process 重新启动守护进程",
 	"update":          "check and update kd client 更新kd的可执行文件",
+	"speak":           "(experimental) read the word with speaker program 单词朗读",
 	"generate-config": "generate config sample 生成配置文件，Linux/Mac默认地址为~/.config/kd.toml，Win为~\\kd.toml",
 	"edit-config":     "edit configuration file with the default editor 用默认编辑器打开配置文件",
 	"status":          "show running status 展示运行信息",
@@ -299,10 +304,12 @@ func main() {
 
 		Authors: []*cli.Author{{Name: "kmz", Email: "valesail7@gmail.com"}},
 		Flags: []cli.Flag{
-			&cli.BoolFlag{Name: "text", Aliases: []string{"t"}, Hidden: true, Usage: um["text"]},
+			&cli.BoolFlag{Name: "text", Aliases: []string{"t"}, DisableDefaultText: true, Usage: um["text"]},
+			&cli.BoolFlag{Name: "json", DisableDefaultText: true, Usage: um["json"]},
 			&cli.BoolFlag{Name: "nocache", Aliases: []string{"n"}, DisableDefaultText: true, Usage: um["nocache"]},
 			&cli.StringFlag{Name: "theme", Aliases: []string{"T"}, DefaultText: "temp", Usage: um["theme"]},
-			&cli.BoolFlag{Name: "force", Aliases: []string{"f"}, DisableDefaultText: true, Hidden: true},
+			&cli.BoolFlag{Name: "force", Aliases: []string{"f"}, DisableDefaultText: true, Usage: um["force"]},
+			&cli.BoolFlag{Name: "speak", Aliases: []string{"s"}, DisableDefaultText: true, Usage: um["speak"]},
 
 			// BoolFlags as commands
 			// &cli.BoolFlag{Name: "init", DisableDefaultText: true, Hidden: true, Usage: um["init"]},
@@ -314,10 +321,10 @@ func main() {
 			&cli.BoolFlag{Name: "generate-config", DisableDefaultText: true, Action: flagGenerateConfig, Usage: um["generate-config"]},
 			&cli.BoolFlag{Name: "edit-config", DisableDefaultText: true, Action: flagEditConfig, Usage: um["edit-config"]},
 			&cli.BoolFlag{Name: "status", DisableDefaultText: true, Hidden: true, Action: flagStatus, Usage: um["status"]},
-			&cli.BoolFlag{Name: "log-to-stream", DisableDefaultText: true, Hidden: true, Action: flagStatus, Usage: um["log-to-stream"]},
+			&cli.BoolFlag{Name: "log-to-stream", DisableDefaultText: true, Hidden: true, Usage: um["log-to-stream"]},
 		},
 		Action: func(cCtx *cli.Context) error {
-			// 除了--text外，其他的BoolFlag都当subcommand用
+			// 这里BoolFlag都当subcommand用
 			if !cCtx.Bool("update") {
 				defer checkAndNoticeUpdate()
 			}
@@ -349,15 +356,33 @@ func main() {
 				qstr := strings.Join(cCtx.Args().Slice(), " ")
 
 				if r, err := internal.Query(qstr, cCtx.Bool("nocache"), cCtx.Bool("text")); err == nil {
+					if cCtx.Bool("json") {
+						if j, jsonErr := json.Marshal(r); jsonErr == nil {
+							fmt.Println(string(j))
+							return nil
+						} else {
+							return fmt.Errorf("转化JSON失败：%s", jsonErr)
+						}
+					}
+
 					if cfg.FreqAlert {
 						if h := <-r.History; h > 3 {
 							d.EchoWarn(fmt.Sprintf("本月第%d次查询`%s`", h, r.Query))
 						}
 					}
 					if r.Found {
-						err = pkg.OutputResult(query.PrettyFormat(r, cfg.EnglishOnly), cfg.Paging, cfg.PagerCommand)
-						if err != nil {
+						if err = pkg.OutputResult(query.PrettyFormat(r, cfg.EnglishOnly), cfg.Paging, cfg.PagerCommand); err != nil {
 							d.EchoFatal(err.Error())
+						}
+						if cCtx.Bool("speak") {
+							if cCtx.Bool("text") {
+								d.EchoWarn("读音功能暂不支持长文本模式")
+							} else {
+								if err = tts.Speak(qstr); err != nil {
+									d.EchoWarn("发音功能报错：%s", err)
+									zap.S().Warnf("Failed to read the word. Error: %s", err)
+								}
+							}
 						}
 					} else {
 						if r.Prompt != "" {
