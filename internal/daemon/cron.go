@@ -15,8 +15,14 @@ import (
 	"github.com/Karmenzind/kd/internal/update"
 	"github.com/Karmenzind/kd/pkg"
 	d "github.com/Karmenzind/kd/pkg/decorate"
+	"github.com/Karmenzind/kd/pkg/ip"
 	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
+)
+
+const (
+	DATA_ZIP_URL_CN     = "https://gitee.com/void_kmz/kd/releases/download/v0.0.1/kd_data.zip"
+	DATA_ZIP_URL_GLOBAL = "https://raw.githubusercontent.com/Karmenzind/static/main/kd/kd_data.zip"
 )
 
 func InitCron() {
@@ -39,12 +45,12 @@ func cronEnsureDaemonJsonFile() {
 		} else {
 			ri := run.Info
 			run.Info.SetOSInfo()
-			if !(ri.StartTime == di.StartTime &&
-				ri.PID == di.PID &&
-				ri.Port == di.Port &&
-				ri.ExeName == di.ExeName &&
-				ri.ExePath == di.ExePath &&
-				ri.Version == di.Version) {
+			if ri.StartTime != di.StartTime ||
+				ri.PID != di.PID ||
+				ri.Port != di.Port ||
+				ri.ExeName != di.ExeName ||
+				ri.ExePath != di.ExePath ||
+				ri.Version != di.Version {
 				zap.S().Warn("DaemonInfo from json is different from current run.Info")
 				needUpdate = true
 			}
@@ -80,7 +86,7 @@ func cronCheckUpdate() {
 		// TODO (k): <2024-01-01> 改成检查文件Stat来判断时长
 		<-ticker.C
 
-		for i := 0; i < 3; i++ {
+		for range 3 {
 			tag, err := update.GetLatestTag()
 			if err == nil {
 				zap.S().Infof("Got latest tag: %q", tag)
@@ -93,7 +99,15 @@ func cronCheckUpdate() {
 	}
 }
 
-const DATA_ZIP_URL = "https://gitee.com/void_kmz/kd/releases/download/v0.0.1/kd_data.zip"
+func getZipDownloadUrl() string {
+	if info, err := ip.GetIPInfo(); err == nil {
+		zap.S().Infof("Got IP info: %+v", info)
+		if !info.IsCN() {
+			return DATA_ZIP_URL_GLOBAL
+		}
+	}
+	return DATA_ZIP_URL_CN
+}
 
 func cronUpdateDataZip() {
 	ticker := time.NewTicker(3 * time.Second)
@@ -133,9 +147,9 @@ func cronUpdateDataZip() {
 			var err error
 			// if need to download
 			if need2Dl {
-				zap.S().Debugf("Start downloading %s", DATA_ZIP_URL)
-				err = downloadDataZip(zipPath)
-				if err != nil {
+				dlUrl := getZipDownloadUrl()
+				zap.S().Infof("Download url: %s", dlUrl)
+				if err = downloadDataZip(dlUrl, zipPath); err != nil {
 					zap.S().Warnf("Failed to download zip file: %s", err)
 					continue
 				}
@@ -184,12 +198,13 @@ func checksumZIP(zipPath string) bool {
 }
 
 // download and checksum
-func downloadDataZip(savePath string) (err error) {
-	err = pkg.DownloadFile(savePath, DATA_ZIP_URL)
+func downloadDataZip(url string, savePath string) (err error) {
+	zap.S().Debugf("Start downloading %s", url)
+	err = pkg.DownloadFile(savePath, url)
 	if err != nil {
-		zap.S().Warnf("Failed to download %s: %v", DATA_ZIP_URL, err)
+		zap.S().Warnf("Failed to download %s: %v", url, err)
 	}
-	zap.S().Info("Downloaded %s: %s", DATA_ZIP_URL)
+	zap.S().Info("Downloaded %s: %s", url)
 	return
 }
 
@@ -289,7 +304,7 @@ func parseDBAndInsert(tempDBPath string) (err error) {
 			// 	continue
 			// }
 			_ = now
-			fmt.Println(query)
+			fmt.Println(string(query))
 			time.Sleep(100 * time.Microsecond)
 			success++
 			// zap.S().Debugf("Inserted into %s: %s", table, success)
