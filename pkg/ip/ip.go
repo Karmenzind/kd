@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type IPInfo struct {
@@ -24,8 +25,9 @@ func (i *IPInfo) IsCN() bool {
 }
 
 // public IP information
-func getIPInfo() (*IPInfo, error) {
-	resp, err := http.Get("https://ipinfo.io/json")
+func GetIPInfo() (*IPInfo, error) {
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get("https://ipinfo.io/json")
 	if err != nil {
 		return nil, err
 	}

@@ -58,7 +58,7 @@ var Error = fc.New(fc.FgRed, fc.Italic).SprintFunc()
 var ErrorBg = fc.New(fc.BgRed, fc.FgBlack, fc.Italic, fc.Faint).SprintFunc()
 
 // Theme
-type ColorStringFunc func(a ...interface{}) string
+type ColorStringFunc func(a ...any) string
 
 var Text, Title, Nation, Line, Pron, Property, Idx, Addi, Para,
 	CollinsPara, Eg, EgPref, EgEn, EgCh,
