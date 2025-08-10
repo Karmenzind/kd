@@ -23,6 +23,7 @@ jobs:
         run: |
           go mod tidy
           brew install filosottile/musl-cross/musl-cross
+          brew install upx
 
       - name: "Build"
         run: |
@@ -68,7 +69,8 @@ jobs:
                 gcc-multilib \
                 musl-dev \
                 musl-tools \
-                bash
+                bash \
+                upx
           go mod tidy
 
       - name: "Install dependencies"

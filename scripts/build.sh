@@ -6,44 +6,39 @@ PROJECT_DIR=$(dirname $CURDIR)
 cd $PROJECT_DIR
 
 targetdir=${PROJECT_DIR}/build
+tmpdir=$(mktemp -d)
 mkdir -p $targetdir
 
-get_os_type() {
-    local os_type="$(uname -s)"
-    case "$os_type" in
-        Darwin)
-            echo "darwin"
-            ;;
-        Linux)
-            echo "linux"
-            ;;
-        MINGW*|MSYS*|CYGWIN*)
-            echo "windows"
-            ;;
-    esac
+echook() {
+    echo -e "\033[32m$1\033[0m"
+}
+
+echoerr() {
+    echo -e "\033[31m$@\033[0m"
 }
 
 do_build() {
     local os=$1
     local arch=$2
     local targetfile=$3
+
     local ldflags="-s -w"
-
-    [[ -z $os ]] && os=$(get_os_type)
-    [[ -z $arch ]] && arch=$(go env GOARCH)
-
     local cgo=1 cc=
 
-    if [[ $targetfile == "" ]] && [[ $os != "" ]] && [[ $arch != "" ]]; then
-        echo
-        echo "≫  Building for $os $arch..."
+    [[ -z "$os" ]] && os=$(go env GOOS)
+    [[ -z "$arch" ]] && arch=$(go env GOARCH)
 
-        local filename=kd_${os}_${arch}
-        [[ $os == "darwin" ]] && filename=kd_macos_${arch}
-
-        local targetfile=${targetdir}/${filename}
-        [[ $os == "windows" ]] && targetfile=${targetfile}.exe
+    local targetfilename=
+    if [[ -z "$targetfile" ]]; then
+        targetfilename=kd_${os}_${arch}
+        [[ $os == "darwin" ]] && targetfilename=kd_macos_${arch}
+        [[ $os == "windows" ]] && targetfilename=${targetfilename}.exe
+        targetfile=${targetdir}/${targetfilename}
+    else
+        targetfilename=$(basename $targetfile)
     fi
+    echo
+    echo "≫  Building for $os $arch... -> ${targetfile}"
 
     case $os in
     windows)
@@ -71,19 +66,31 @@ do_build() {
     echo "Using: GOOS=$os GOARCH=$arch CGO_ENABLED=$cgo CC=$cc"
 
     set -x
+    local targetfiletmp="${tmpdir}/${targetfilename}.tmp"
     GOOS=$os GOARCH=$arch CGO_ENABLED=$cgo CC=$cc go build \
         ${buildopts} \
-        -o ${targetfile} \
+        -o $targetfiletmp \
         -ldflags="${ldflags}" \
         -tags urfave_cli_no_docs \
         cmd/kd/kd.go
-    local ret=$?
+    local buildret=$?
     set +x
 
-    if (($ret == 0)); then
-        echo "    [✔] Finished -> ${targetfile}"
+    if (($buildret == 0)); then
+        echook "    [✔] Finished building -> ${targetfiletmp}"
     else
-        echo "    [✘] Failed to build for $os $arch"
+        echoerr "    [✘] Failed to build for $os $arch"
+        return
+    fi
+    [[ -f ${targetfile} ]] && rm -fv ${targetfile}
+    if [[ $os == "darwin" ]]; then
+        mv -v ${targetfiletmp} ${targetfile}
+    else
+        if upx -o ${targetfile} ${targetfiletmp}; then
+            echook "    [✔] Finished compression -> ${targetfile}"
+        else
+            echoerr "    [✘] Failed to compress for $os $arch"
+        fi
     fi
 }
 
@@ -104,10 +111,9 @@ build_all() {
 case $1 in
 "")
     echo ">>> Building for current workspace..."
-    # do_build '' '' ${PROJECT_DIR}/kd
+    do_build '' '' ${PROJECT_DIR}/build/kd
     # do_build '' '' /usr/bin/kd
-    do_build '' '' /usr/local/bin/kd
-    exit
+    # do_build '' '' /usr/local/bin/kd
     ;;
 -a | --all)
     build_all
@@ -116,3 +122,6 @@ case $1 in
     do_build $*
     ;;
 esac
+
+[[ -d ${tmpdir} ]] && rm -rf $tmpdir && echo "Removed cache dir"
+echo 'DONE :)'
