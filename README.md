@@ -55,6 +55,7 @@
 
 - 灵活的配置项，支持修改代理、配色等
 - 支持`-s`[朗读单词](#读音功能experimental) 📢
+- 支持`--fzf`使用 fzf 交互式选择单词（需要先安装 [fzf](https://github.com/junegunn/fzf)）🔍
 - 其他小功能（[详见下文](#-用法)）：
     - 支持纯英文模式，只显示英译/英文例句
 
@@ -177,6 +178,7 @@ GLOBAL OPTIONS:
    --theme value, -T value  choose the color theme for current query 选择颜色主题，仅当前查询生效 (default: temp)
    --force, -f              forcely update (only after --update) 强制更新（仅搭配--update）
    --speak, -s              (experimental) read the word with speaker program 单词朗读
+   --fzf                    interactive word selection with fzf 使用 fzf 交互式选择单词
    --daemon                 ensure/start the daemon process 启动守护进程
    --update                 check and update kd client 更新kd的可执行文件
    --generate-config        generate config sample 生成配置文件，Linux/Mac默认地址为~/.config/kd.toml，Win为~\kd.toml
