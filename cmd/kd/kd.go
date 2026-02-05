@@ -46,6 +46,7 @@ var um = map[string]string{
 	"theme":           "choose the color theme for current query 选择颜色主题，仅当前查询生效",
 	"json":            "output as JSON",
 	"fzf":             "interactive word selection with fzf 使用 fzf 交互式选择单词",
+	"preview-mode":    "(internal) compact output for fzf preview 用于 fzf 预览的紧凑输出",
 	"init":            "initialize shell completion 初始化部分设置，例如shell的自动补全",
 	"server":          "start server foreground 在前台启动服务端",
 	"daemon":          "ensure/start the daemon process 启动守护进程",
@@ -311,6 +312,7 @@ func main() {
 			&cli.BoolFlag{Name: "force", Aliases: []string{"f"}, DisableDefaultText: true, Usage: um["force"]},
 			&cli.BoolFlag{Name: "speak", Aliases: []string{"s"}, DisableDefaultText: true, Usage: um["speak"]},
 			&cli.BoolFlag{Name: "fzf", DisableDefaultText: true, Usage: um["fzf"]},
+			&cli.BoolFlag{Name: "preview-mode", DisableDefaultText: true, Hidden: true, Usage: um["preview-mode"]},
 
 			// BoolFlags as commands
 			// &cli.BoolFlag{Name: "init", DisableDefaultText: true, Hidden: true, Usage: um["init"]},
@@ -420,6 +422,16 @@ func main() {
 						} else {
 							return fmt.Errorf("转化JSON失败：%s", jsonErr)
 						}
+					}
+
+					// Preview mode: use compact format without decorations
+					if cCtx.Bool("preview-mode") {
+						if r.Found {
+							fmt.Println(query.PreviewFormat(r))
+						} else {
+							fmt.Println("未找到释义")
+						}
+						return nil
 					}
 
 					if cfg.FreqAlert {

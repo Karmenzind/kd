@@ -104,7 +104,15 @@ func buildFzfArgs(cfg *config.FzfConfig) []string {
 	}
 
 	if cfg.Preview {
-		// Basic preview support - can be extended
+		// Get the executable path for preview command
+		exePath, err := exec.LookPath("kd")
+		if err != nil {
+			// Fallback to "kd" if not found in PATH
+			exePath = "kd"
+		}
+		// Use preview-mode flag for compact output
+		previewCmd := fmt.Sprintf("%s --preview-mode {}", exePath)
+		args = append(args, "--preview", previewCmd)
 		args = append(args, "--preview-window", "right:50%:wrap")
 	} else {
 		args = append(args, "--preview-window", "hidden")

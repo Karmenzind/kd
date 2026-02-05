@@ -15,6 +15,69 @@ var normalSentence = regexp.MustCompile("^[A-Za-z]+ ")
 
 var nationMap = map[string]string{"英": "EN", "美": "US"}
 
+// PreviewFormat returns a compact format suitable for fzf preview window
+func PreviewFormat(r *model.Result) string {
+	if r.Output != "" {
+		return r.Output
+	}
+	s := []string{}
+
+	// Title with pronunciation
+	title := r.Keyword
+	if title == "" {
+		title = r.Query
+	}
+
+	pronStr := ""
+	for nation, v := range r.Pronounce {
+		v = strings.Trim(v, "[]")
+		pronStr += fmt.Sprintf("%s %s / ", nation, v)
+	}
+	if pronStr != "" {
+		title = fmt.Sprintf("%s  [%s]", title, strings.Trim(pronStr, "/ "))
+	}
+	s = append(s, title)
+
+	// Paraphrase (limit to 5 items)
+	count := 0
+	for _, para := range r.Paraphrase {
+		if para == "" || count >= 5 {
+			continue
+		}
+		s = append(s, para)
+		count++
+	}
+
+	// Collins rank if available
+	if r.Collins.Star > 0 || r.Collins.ViaRank != "" {
+		rankParts := []string{}
+		if r.Collins.Star > 0 {
+			rankParts = append(rankParts, strings.Repeat("★", r.Collins.Star))
+		}
+		if r.Collins.ViaRank != "" {
+			rankParts = append(rankParts, r.Collins.ViaRank)
+		}
+		s = append(s, strings.Join(rankParts, " "))
+	}
+
+	// One example if available
+	if len(r.Examples) > 0 {
+		s = append(s, "")
+		for _, egs := range r.Examples {
+			if len(egs) > 0 && len(egs[0]) > 0 {
+				s = append(s, "≫  "+egs[0][0])
+				if len(egs[0]) > 1 {
+					s = append(s, "   "+egs[0][1])
+				}
+				break
+			}
+		}
+	}
+
+	r.Output = strings.Join(s, "\n")
+	return r.Output
+}
+
 func PrettyFormat(r *model.Result, onlyEN bool) string {
 	egPref := d.EgPref("≫  ")
 	if r.Output != "" {
