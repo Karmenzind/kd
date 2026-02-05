@@ -14,27 +14,27 @@
 
 <!-- vim-markdown-toc GitLab -->
 
-* [:ballot_box_with_check: 特性](#ballot_box_with_check-特性)
-* [🚀 安装和升级](#-安装和升级)
-    * [Linux/MacOS](#linuxmacos)
-        * [ArchLinux](#archlinux)
-    * [Windows](#windows)
-    * [其他平台](#其他平台)
-    * [卸载](#卸载)
-* [⚙️ 用法](#-用法)
-    * [配置文件](#配置文件)
-    * [更多特性](#更多特性)
-        * [读音功能（experimental）](#读音功能experimental)
-* [🎈 提升体验技巧](#-提升体验技巧)
-    * [NeoVim插件kd_translate.nvim](#neovim插件kd_translatenvim)
-    * [使用tmux的悬浮窗口显示结果](#使用tmux的悬浮窗口显示结果)
-    * [通过systemd管理daemon进程](#通过systemd管理daemon进程)
-    * [生词本](#生词本)
-* [🎨 颜色主题](#-颜色主题)
-* [❓ 常见问题和解决方法](#-常见问题和解决方法)
-    * [设置less为Pager后显示异常](#设置less为pager后显示异常)
-    * [MacOS弹出“无法打开”提醒](#macos弹出无法打开提醒)
-* [📝 进度和计划](#-进度和计划)
+- [:ballot\_box\_with\_check: 特性](#ballot_box_with_check-特性)
+- [🚀 安装和升级](#-安装和升级)
+  - [Linux/MacOS](#linuxmacos)
+    - [ArchLinux](#archlinux)
+  - [Windows](#windows)
+  - [其他平台](#其他平台)
+  - [卸载](#卸载)
+- [⚙️ 用法](#️-用法)
+  - [配置文件](#配置文件)
+  - [更多特性](#更多特性)
+    - [读音功能（experimental）](#读音功能experimental)
+- [🎈 提升体验技巧](#-提升体验技巧)
+  - [NeoVim插件kd\_translate.nvim](#neovim插件kd_translatenvim)
+  - [使用tmux的悬浮窗口显示结果](#使用tmux的悬浮窗口显示结果)
+  - [通过systemd管理daemon进程](#通过systemd管理daemon进程)
+  - [生词本](#生词本)
+- [🎨 颜色主题](#-颜色主题)
+- [❓ 常见问题和解决方法](#-常见问题和解决方法)
+  - [设置less为Pager后显示异常](#设置less为pager后显示异常)
+  - [MacOS弹出“无法打开”提醒](#macos弹出无法打开提醒)
+- [📝 进度和计划](#-进度和计划)
 
 <!-- vim-markdown-toc -->
 
@@ -131,8 +131,8 @@ Invoke-WebRequest -uri 'https://github.com/Karmenzind/kd/releases/latest/downloa
 
 ```bash
 go mod tidy
-CGO_ENABLED=1 go build -o kd cmd/kd.go
-mv kd /usr/bin/kd
+CGO_ENABLED=1 go build -o build/kd ./cmd/kd
+mv build/kd /usr/bin/kd
 ```
 
 ### 卸载
@@ -233,6 +233,24 @@ freq_alert = false
   path = ""
   # 日志级别，支持：DEBUG/INFO/WARN/PANIC/FATAL
   level = "WARN"
+
+# fzf 交互式选择配置（需先安装 fzf）
+[fzf]
+  # fzf 窗口高度
+  height = "40%"
+  # 输入提示符
+  prompt = "选择单词 >"
+  # 反向显示（输入框在顶部）
+  reverse = true
+  # 显示边框
+  border = true
+  # 信息显示方式：inline/default/hidden
+  info = "default"
+  # 是否启用预览
+  preview = false
+  # 自定义额外参数（会追加到上述参数后，优先级低）
+  # 例如：custom_args = ["--color", "fg:green", "--bind", "ctrl-/:toggle-preview"]
+  custom_args = []
 ```
 
 ### 更多特性
