@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -10,6 +11,9 @@ import (
 	"github.com/Karmenzind/kd/internal/cache"
 	"go.uber.org/zap"
 )
+
+// ErrUserCancelled is returned when user cancels fzf selection
+var ErrUserCancelled = errors.New("user cancelled")
 
 // CheckFzfExists checks if fzf is available in PATH
 func CheckFzfExists() error {
@@ -59,7 +63,7 @@ func FzfInteractiveQuery() (string, error) {
 		// User cancelled (Ctrl-C or ESC)
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if exitErr.ExitCode() == 130 {
-				return "", fmt.Errorf("已取消")
+				return "", ErrUserCancelled
 			}
 		}
 		zap.S().Warnf("fzf error: %s, stderr: %s", err, errBuf.String())

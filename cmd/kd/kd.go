@@ -242,7 +242,7 @@ func checkAndNoticeUpdate() {
 
 func basicCheck() {
 	if runtime.GOOS != "windows" {
-		if os.Geteuid() == 0 && os.Getenv("KD_ENABLE_ROOT") != "1"{
+		if os.Geteuid() == 0 && os.Getenv("KD_ENABLE_ROOT") != "1" {
 			d.EchoWrong("不支持Root用户")
 			os.Exit(1)
 		}
@@ -354,6 +354,10 @@ func main() {
 				}
 				selected, err := internal.FzfInteractiveQuery()
 				if err != nil {
+					// User cancelled, exit silently
+					if err == internal.ErrUserCancelled {
+						return nil
+					}
 					d.EchoError(err.Error())
 					return err
 				}
