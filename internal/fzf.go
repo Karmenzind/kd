@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/Karmenzind/kd/config"
 	"github.com/Karmenzind/kd/internal/cache"
 	"go.uber.org/zap"
 )
@@ -41,15 +42,11 @@ func FzfInteractiveQuery() (string, error) {
 	// Prepare fzf input
 	input := strings.Join(words, "\n")
 
+	// Build fzf arguments from config
+	args := buildFzfArgs(&config.Cfg.Fzf)
+
 	// Run fzf
-	cmd := exec.Command("fzf",
-		"--height", "40%",
-		"--reverse",
-		"--border",
-		"--prompt", "选择单词 > ",
-		"--preview-window", "hidden",
-		"--info", "inline",
-	)
+	cmd := exec.Command("fzf", args...)
 
 	cmd.Stdin = strings.NewReader(input)
 	var outBuf bytes.Buffer
@@ -75,4 +72,44 @@ func FzfInteractiveQuery() (string, error) {
 	}
 
 	return selected, nil
+}
+
+// buildFzfArgs builds fzf command arguments from config
+func buildFzfArgs(cfg *config.FzfConfig) []string {
+	args := []string{}
+
+	// Apply simple options first
+	if cfg.Height != "" {
+		args = append(args, "--height", cfg.Height)
+	}
+
+	if cfg.Reverse {
+		args = append(args, "--reverse")
+	}
+
+	if cfg.Border {
+		args = append(args, "--border")
+	}
+
+	if cfg.Prompt != "" {
+		args = append(args, "--prompt", cfg.Prompt)
+	}
+
+	if cfg.Info != "" {
+		args = append(args, "--info", cfg.Info)
+	}
+
+	if cfg.Preview {
+		// Basic preview support - can be extended
+		args = append(args, "--preview-window", "right:50%:wrap")
+	} else {
+		args = append(args, "--preview-window", "hidden")
+	}
+
+	// Append custom args (low priority - as additional options)
+	if len(cfg.CustomArgs) > 0 {
+		args = append(args, cfg.CustomArgs...)
+	}
+
+	return args
 }
