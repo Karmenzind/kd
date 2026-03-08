@@ -41,7 +41,7 @@ func showPrompt() {
 }
 
 var um = map[string]string{
-	"text":            "translate long query `TEXT` with e.g. --text=\"Long time ago\" 翻译长句",
+	"text":            "translate long query with e.g. --text Long time ago 翻译长句",
 	"nocache":         "don't use cached result 不使用本地词库，查询网络结果",
 	"force":           "forcely update (only after --update) 强制更新（仅搭配--update）",
 	"theme":           "choose the color theme for current query 选择颜色主题，仅当前查询生效",
