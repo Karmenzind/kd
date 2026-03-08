@@ -40,6 +40,7 @@ type Config struct {
 	HTTPProxy    string `toml:"http_proxy"`
 	ClearScreen  bool   `toml:"clear_screen" default:"false"`
 	FreqAlert    bool   `toml:"freq_alert" default:"false"`
+	Brief        bool   `toml:"brief" default:"false"`
 	// MaxCached    uint   `default:"10000" toml:"max_cached"`
 
 	Logging LoggerConfig `toml:"logging"`

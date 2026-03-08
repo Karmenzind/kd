@@ -53,6 +53,8 @@ var um = map[string]string{
 	"restart":         "restart the daemon process 重新启动守护进程",
 	"update":          "check and update kd client 更新kd的可执行文件",
 	"speak":           "(experimental) read the word with speaker program 单词朗读",
+	"brief":           "brief output (omits English explanations and examples) 精简输出(省略英语解释和例句)",
+	"no-brief":        "disable brief output 禁用精简输出",
 	"generate-config": "generate config sample 生成配置文件，Linux/Mac默认地址为~/.config/kd.toml，Win为~\\kd.toml",
 	"edit-config":     "edit configuration file with the default editor 用默认编辑器打开配置文件",
 	"status":          "show running status 展示运行信息",
@@ -310,6 +312,8 @@ func main() {
 			&cli.StringFlag{Name: "theme", Aliases: []string{"T"}, DefaultText: "temp", Usage: um["theme"]},
 			&cli.BoolFlag{Name: "force", Aliases: []string{"f"}, DisableDefaultText: true, Usage: um["force"]},
 			&cli.BoolFlag{Name: "speak", Aliases: []string{"s"}, DisableDefaultText: true, Usage: um["speak"]},
+			&cli.BoolFlag{Name: "brief", Aliases: []string{"b"}, DisableDefaultText: true, Usage: um["brief"]},
+			&cli.BoolFlag{Name: "no-brief", DisableDefaultText: true, Usage: um["no-brief"]},
 
 			// BoolFlags as commands
 			// &cli.BoolFlag{Name: "init", DisableDefaultText: true, Hidden: true, Usage: um["init"]},
@@ -371,7 +375,14 @@ func main() {
 						}
 					}
 					if r.Found {
-						if err = pkg.OutputResult(query.PrettyFormat(r, cfg.EnglishOnly), cfg.Paging, cfg.PagerCommand); err != nil {
+						brief := cfg.Brief
+						if cCtx.Bool("brief") {
+							brief = true
+						}
+						if cCtx.Bool("no-brief") {
+							brief = false
+						}
+						if err = pkg.OutputResult(query.PrettyFormat(r, cfg.EnglishOnly, brief), cfg.Paging, cfg.PagerCommand); err != nil {
 							d.EchoFatal(err.Error())
 						}
 						if cCtx.Bool("speak") {
