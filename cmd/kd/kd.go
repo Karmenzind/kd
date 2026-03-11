@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"os/user"
 	"runtime"
 	"strings"
 
@@ -27,7 +26,7 @@ import (
 	// "github.com/kyokomi/emoji/v2"
 )
 
-var VERSION = "v0.0.14"
+var VERSION = "v0.0.15.dev"
 
 func showPrompt() {
 	exename, err := pkg.GetExecutableBasename()
@@ -46,6 +45,8 @@ var um = map[string]string{
 	"force":           "forcely update (only after --update) 强制更新（仅搭配--update）",
 	"theme":           "choose the color theme for current query 选择颜色主题，仅当前查询生效",
 	"json":            "output as JSON",
+	"fzf":             "interactive word selection with fzf 使用 fzf 交互式选择单词",
+	"preview-mode":    "(internal) compact output for fzf preview 用于 fzf 预览的紧凑输出",
 	"init":            "initialize shell completion 初始化部分设置，例如shell的自动补全",
 	"server":          "start server foreground 在前台启动服务端",
 	"daemon":          "ensure/start the daemon process 启动守护进程",
@@ -242,7 +243,7 @@ func checkAndNoticeUpdate() {
 
 func basicCheck() {
 	if runtime.GOOS != "windows" {
-		if u, _ := user.Current(); u.Username == "root" {
+		if os.Geteuid() == 0 && os.Getenv("KD_ENABLE_ROOT") != "1" {
 			d.EchoWrong("不支持Root用户")
 			os.Exit(1)
 		}
@@ -310,6 +311,8 @@ func main() {
 			&cli.StringFlag{Name: "theme", Aliases: []string{"T"}, DefaultText: "temp", Usage: um["theme"]},
 			&cli.BoolFlag{Name: "force", Aliases: []string{"f"}, DisableDefaultText: true, Usage: um["force"]},
 			&cli.BoolFlag{Name: "speak", Aliases: []string{"s"}, DisableDefaultText: true, Usage: um["speak"]},
+			&cli.BoolFlag{Name: "fzf", DisableDefaultText: true, Usage: um["fzf"]},
+			&cli.BoolFlag{Name: "preview-mode", DisableDefaultText: true, Hidden: true, Usage: um["preview-mode"]},
 
 			// BoolFlags as commands
 			// &cli.BoolFlag{Name: "init", DisableDefaultText: true, Hidden: true, Usage: um["init"]},
@@ -346,6 +349,62 @@ func main() {
 			}
 			d.ApplyTheme(cfg.Theme)
 
+			// Handle fzf mode
+			if cCtx.Bool("fzf") {
+				if err := internal.CheckFzfExists(); err != nil {
+					d.EchoFatal(err.Error())
+				}
+				selected, err := internal.FzfInteractiveQuery()
+				if err != nil {
+					// User cancelled, exit silently
+					if err == internal.ErrUserCancelled {
+						return nil
+					}
+					d.EchoError(err.Error())
+					return err
+				}
+				if cfg.ClearScreen {
+					pkg.ClearScreen()
+				}
+				if r, err := internal.Query(selected, cCtx.Bool("nocache"), false); err == nil {
+					if cCtx.Bool("json") {
+						if j, jsonErr := json.Marshal(r); jsonErr == nil {
+							fmt.Println(string(j))
+							return nil
+						} else {
+							return fmt.Errorf("转化JSON失败：%s", jsonErr)
+						}
+					}
+
+					if cfg.FreqAlert {
+						if h := <-r.History; h > 3 {
+							d.EchoWarn(fmt.Sprintf("本月第%d次查询`%s`", h, r.Query))
+						}
+					}
+					if r.Found {
+						if err = pkg.OutputResult(query.PrettyFormat(r, cfg.EnglishOnly), cfg.Paging, cfg.PagerCommand); err != nil {
+							d.EchoFatal(err.Error())
+						}
+						if cCtx.Bool("speak") {
+							if err = tts.Speak(selected); err != nil {
+								d.EchoWarn("发音功能报错：%s", err)
+								zap.S().Warnf("Failed to read the word. Error: %s", err)
+							}
+						}
+					} else {
+						if r.Prompt != "" {
+							d.EchoWrong(r.Prompt)
+						} else {
+							fmt.Println("Not found", d.Yellow(":("))
+						}
+					}
+				} else {
+					d.EchoError(err.Error())
+					zap.S().Errorf("%+v", err)
+				}
+				return nil
+			}
+
 			if cCtx.Args().Len() > 0 {
 				zap.S().Debugf("Recieved Arguments (len: %d): %+v", cCtx.Args().Len(), cCtx.Args().Slice())
 				// emoji.Printf("Test emoji:\n:accept: :inbox_tray: :information: :us: :uk:  🗣  :lips: :eyes: :balloon: \n")
@@ -363,6 +422,16 @@ func main() {
 						} else {
 							return fmt.Errorf("转化JSON失败：%s", jsonErr)
 						}
+					}
+
+					// Preview mode: use compact format without decorations
+					if cCtx.Bool("preview-mode") {
+						if r.Found {
+							fmt.Println(query.PreviewFormat(r))
+						} else {
+							fmt.Println("未找到释义")
+						}
+						return nil
 					}
 
 					if cfg.FreqAlert {

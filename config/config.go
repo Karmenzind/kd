@@ -21,14 +21,24 @@ var CONFIG_PATH string
 
 type LoggerConfig struct {
 	Enable           bool   `default:"true" toml:"enable"`
-	Path             string `toml:"path"`
-	Level            string `default:"warn" toml:"level"`
+	Path             string `toml:"path" env:"KD_LOG_PATH"`
+	Level            string `default:"warn" toml:"level" env:"KD_LOG_LEVEL"`
 	Stderr           bool   `default:"false" toml:"stderr"`
 	RedirectToStream bool   `default:"false" toml:"redirect_to_stream"`
 }
 
+type FzfConfig struct {
+	Height     string   `default:"40%" toml:"height"`
+	Prompt     string   `default:"选择单词 > " toml:"prompt"`
+	Reverse    bool     `default:"true" toml:"reverse"`
+	Border     bool     `default:"true" toml:"border"`
+	Info       string   `default:"default" toml:"info"`
+	Preview    bool     `default:"false" toml:"preview"`
+	CustomArgs []string `toml:"custom_args"`
+}
+
 type Config struct {
-	// FIXME (k): <2025-06-12 01:08> 
+	// FIXME (k): <2025-06-12 01:08>
 	Debug bool `default:"false" toml:"debug"`
 
 	// Modules      []string
@@ -43,6 +53,7 @@ type Config struct {
 	// MaxCached    uint   `default:"10000" toml:"max_cached"`
 
 	Logging LoggerConfig `toml:"logging"`
+	Fzf     FzfConfig    `toml:"fzf"`
 
 	FileExists bool  `toml:"-"`
 	ModTime    int64 `toml:"-"`

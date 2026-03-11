@@ -94,3 +94,44 @@ func saveCachedRow(query string, isEN bool, detail []byte) error {
 	}
 	return err
 }
+
+// GetAllWords returns all words from both en and ch tables
+func GetAllWords() ([]string, error) {
+	var words []string
+
+	// Query from en table
+	rows, err := LiteDB.Query("SELECT query FROM en ORDER BY query")
+	if err != nil {
+		zap.S().Warnf("Failed to query en table: %s", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var word string
+		if err := rows.Scan(&word); err != nil {
+			zap.S().Warnf("Failed to scan row: %s", err)
+			continue
+		}
+		words = append(words, word)
+	}
+
+	// Query from ch table
+	rows, err = LiteDB.Query("SELECT query FROM ch ORDER BY query")
+	if err != nil {
+		zap.S().Warnf("Failed to query ch table: %s", err)
+		return words, nil // return en words even if ch query fails
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var word string
+		if err := rows.Scan(&word); err != nil {
+			zap.S().Warnf("Failed to scan row: %s", err)
+			continue
+		}
+		words = append(words, word)
+	}
+
+	return words, nil
+}

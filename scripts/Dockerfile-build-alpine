@@ -1,0 +1,18 @@
+# vim:set noet sts=0 sw=8 ts=8 ft=dockerfile:
+# test building
+FROM golang:1.23-alpine
+
+RUN apk update && \
+    apk add --no-cache \
+    	gcc \
+        bash \
+	musl-dev \
+        build-base \
+        mingw-w64-gcc \
+	clang
+
+# Your build commands here, e.g.
+WORKDIR /app
+COPY . /app
+
+CMD bash scripts/build.sh -a

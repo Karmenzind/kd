@@ -23,10 +23,14 @@ jobs:
           go-version-file: go.mod
 
       - name: "Install dependencies"
-        run: go mod tidy
+        run: |
+          go mod tidy
+          brew install filosottile/musl-cross/musl-cross
+          brew install upx
 
       - name: "Build"
         run: |
+          bash scripts/build.sh linux arm64
           bash scripts/build.sh darwin arm64
           bash scripts/build.sh darwin amd64
 
@@ -78,7 +82,7 @@ jobs:
           mode: "COMMIT"
           failOnError: true
 
-      - name: echo changelog
+      - name: "echo changelog"
         run: echo "${{steps.build_changelog.outputs.changelog}}"
 
       - name: "Set up Go"
@@ -87,16 +91,20 @@ jobs:
           check-latest: true
           go-version-file: go.mod
 
-      - name: "Install system dependencies"
-        run: sudo apt-get install -y gcc-mingw-w64-x86-64  gcc-aarch64-linux-gnu
-
       - name: "Install dependencies"
-        run: go mod tidy
+        run: |
+          sudo apt-get install -y \
+                gcc-mingw-w64-x86-64 \
+                gcc-multilib \
+                musl-dev \
+                musl-tools \
+                bash \
+                upx
+          go mod tidy
 
       - name: "Build"
         run: |
           bash scripts/build.sh linux amd64
-          bash scripts/build.sh linux arm64
           bash scripts/build.sh windows amd64
 
       - name: "Save artifacts"

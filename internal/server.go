@@ -87,15 +87,13 @@ func handleClient(conn net.Conn) {
 		zap.S().Warnf("Failed to run FetchOnline with %+v. Error: %s", r, err)
 		var errmsg string
 		if strings.Contains(err.Error(), "proxyconnect") {
-			// errmsg = fmt.Sprintf("代理连接异常（%q）", err.Error())
 			errmsg = "代理连接异常，请求失败：" + err.Error()
 		} else {
 			errmsg = fmt.Sprintf("在线查询失败（%v）", err.Error())
 		}
 		reply, _ = json.Marshal(model.DaemonResponse{Error: errmsg})
 	} else {
-		reply, err = json.Marshal(r.ToDaemonResponse())
-		if err != nil {
+		if reply, err = json.Marshal(r.ToDaemonResponse()); err != nil {
 			zap.S().Errorf("[daemon] Failed to marshal response:", err)
 			reply, _ = json.Marshal(model.DaemonResponse{Error: fmt.Sprintf("序列化查询结果失败：%s", err)})
 		}
