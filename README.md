@@ -171,12 +171,14 @@ AUTHOR:
    kmz <valesail7@gmail.com>
 
 GLOBAL OPTIONS:
-   --text TEXT, -t TEXT     translate long query TEXT with e.g. --text="Long time ago" 翻译长句
+   --text, -t               translate long query with e.g. --text Long time ago 翻译长句
    --json                   output as JSON
    --nocache, -n            don't use cached result 不使用本地词库，查询网络结果
    --theme value, -T value  choose the color theme for current query 选择颜色主题，仅当前查询生效 (default: temp)
    --force, -f              forcely update (only after --update) 强制更新（仅搭配--update）
    --speak, -s              (experimental) read the word with speaker program 单词朗读
+   --brief, -b              brief output (omits English explanations and examples) 精简输出(省略英语解释和例句)
+   --no-brief               disable brief output 禁用精简输出
    --daemon                 ensure/start the daemon process 启动守护进程
    --update                 check and update kd client 更新kd的可执行文件
    --generate-config        generate config sample 生成配置文件，Linux/Mac默认地址为~/.config/kd.toml，Win为~\kd.toml
@@ -206,6 +208,9 @@ pager_command = "less -RF"  # Linux默认
 
 # 结果中只显示英文（英译、英文例句等）
 english_only = false
+
+# 精简输出，去除英语解释和例句（可使用 --no-brief 参数临时关闭）
+brief = false
 
 # 颜色主题，支持：temp/wudao
 theme = "temp"

@@ -15,7 +15,7 @@ var normalSentence = regexp.MustCompile("^[A-Za-z]+ ")
 
 var nationMap = map[string]string{"英": "EN", "美": "US"}
 
-func PrettyFormat(r *model.Result, onlyEN bool) string {
+func PrettyFormat(r *model.Result, onlyEN bool, brief bool) string {
 	egPref := d.EgPref("≫  ")
 	if r.Output != "" {
 		return r.Output
@@ -75,6 +75,10 @@ func PrettyFormat(r *model.Result, onlyEN bool) string {
 		}
 	}
 
+	if brief {
+		r.Output = strings.Join(s, "\n")
+		return r.Output
+	}
 	// cutoff := strings.Repeat("–", cutoffLength())
 	cutoff := strings.Repeat("⸺", cutoffLength())
 
