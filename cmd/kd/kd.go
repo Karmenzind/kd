@@ -359,7 +359,7 @@ func main() {
 
 				qstr := strings.Join(cCtx.Args().Slice(), " ")
 
-				if r, err := internal.Query(qstr, cCtx.Bool("nocache"), cCtx.Bool("text")); err == nil {
+				if r, err := internal.Query(qstr, cCtx.Bool("nocache"), cCtx.Bool("text"), cfg.Source); err == nil {
 					if cCtx.Bool("json") {
 						if j, jsonErr := json.Marshal(r); jsonErr == nil {
 							fmt.Println(string(j))

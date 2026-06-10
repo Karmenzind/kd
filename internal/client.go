@@ -64,7 +64,7 @@ var (
 	longRegex  = regexp.MustCompile("^[a-zA-Z0-9\u4e00-\u9fa5\u3000-\u303F]")
 )
 
-func Query(query string, noCache bool, longText bool) (r *model.Result, err error) {
+func Query(query string, noCache bool, longText bool, source string) (r *model.Result, err error) {
 	// TODO (k): <2024-01-02> regexp
 	query = str.Simplify(query)
 	if !longText {
@@ -120,7 +120,7 @@ func Query(query string, noCache bool, longText bool) (r *model.Result, err erro
 	}
 
 	if <-daemonRunning {
-		err = QueryDaemon(r)
+		err = q.QueryDaemon(fmt.Sprintf("localhost:%d", run.SERVER_PORT), r, source)
 		if err == nil && r.Found && inNotFound {
 			go cache.RemoveNotFound(r.Query)
 		}
@@ -129,10 +129,4 @@ func Query(query string, noCache bool, longText bool) (r *model.Result, err erro
 	}
 
 	return r, err
-}
-
-func QueryDaemon(r *model.Result) error {
-	addr := fmt.Sprintf("localhost:%d", run.SERVER_PORT)
-	err := q.QueryDaemon(addr, r)
-	return err
 }

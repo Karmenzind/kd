@@ -27,10 +27,17 @@ type LoggerConfig struct {
 	RedirectToStream bool   `default:"false" toml:"redirect_to_stream"`
 }
 
+type LLMConfig struct {
+	BaseUrl string `toml:"base_url"`
+	Model   string `toml:"model"`
+	ApiKey  string `toml:"api_key"`
+}
+
 type Config struct {
-	// FIXME (k): <2025-06-12 01:08> 
+	// FIXME (k): <2025-06-12 01:08>
 	Debug bool `default:"false" toml:"debug"`
 
+	Source       string `toml:"source" default:"youdao"`
 	// Modules      []string
 	EnableEmoji  bool   `default:"true" toml:"enable_emoji"`
 	Paging       bool   `default:"true" toml:"paging"`
@@ -44,6 +51,8 @@ type Config struct {
 	// MaxCached    uint   `default:"10000" toml:"max_cached"`
 
 	Logging LoggerConfig `toml:"logging"`
+
+	LLM LLMConfig `toml:"llm"`
 
 	FileExists bool  `toml:"-"`
 	ModTime    int64 `toml:"-"`

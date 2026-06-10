@@ -38,13 +38,13 @@ func FetchCached(r *model.Result) (err error) {
 	return
 }
 
-func QueryDaemon(addr string, r *model.Result) error {
+func QueryDaemon(addr string, r *model.Result, querySource string) error {
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		d.EchoFatal("与守护进程通信失败，请尝试执行`kd --daemon`，如果无法解决问题，请提交issue并上传日志")
 		return err
 	}
-	q := model.TCPQuery{Action: "query", B: r.BaseResult}
+	q := model.TCPQuery{Action: "query-" + querySource, B: r.BaseResult}
 	var j []byte
 	j, err = json.Marshal(q)
 	if err != nil {

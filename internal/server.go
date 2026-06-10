@@ -83,14 +83,22 @@ func handleClient(conn net.Conn) {
 	r.Initialize()
 
 	var reply []byte
-	if err = query.FetchOnline(r); err != nil {
-		zap.S().Warnf("Failed to run FetchOnline with %+v. Error: %s", r, err)
+	switch q.Action {
+	case "query-youdao":
+		err = query.FetchOnline(r)
+	case "query-llm":
+		err = query.FetchLLM(r)
+	default:
+		err = fmt.Errorf("未知的操作类型: %s", q.Action)
+	}
+	if err != nil {
+		zap.S().Warnf("Failed to fetch with %+v. Error: %s", r, err)
 		var errmsg string
 		if strings.Contains(err.Error(), "proxyconnect") {
 			// errmsg = fmt.Sprintf("代理连接异常（%q）", err.Error())
 			errmsg = "代理连接异常，请求失败：" + err.Error()
 		} else {
-			errmsg = fmt.Sprintf("在线查询失败（%v）", err.Error())
+			errmsg = fmt.Sprintf("查询失败（%v）", err.Error())
 		}
 		reply, _ = json.Marshal(model.DaemonResponse{Error: errmsg})
 	} else {
