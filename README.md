@@ -55,6 +55,7 @@
 
 - 灵活的配置项，支持修改代理、配色等
 - 支持`-s`[朗读单词](#读音功能experimental) 📢
+- 支持使用LLM作为翻译后端 🤖
 - 其他小功能（[详见下文](#-用法)）：
     - 支持纯英文模式，只显示英译/英文例句
 
@@ -228,6 +229,9 @@ enable_emoji = true
 # 是否开启频率提醒：本月第X次查询xxx
 freq_alert = false
 
+# 翻译来源，目前可选 youdao / llm
+source = "youdao"
+
 # 日志配置
 [logging]
   # 开启日志记录（程序异常时会记录关键信息，不建议关闭）
@@ -236,6 +240,15 @@ freq_alert = false
   path = ""
   # 日志级别，支持：DEBUG/INFO/WARN/PANIC/FATAL
   level = "WARN"
+
+# 对于LLM翻译的配置，设置 source = "llm" 时必需
+[llm]
+  # 接入api服务的baseurl，使用时会在后面追加"/chat/completions"
+  base_url = "https://api.deepseek.com"
+  # 使用的模型名称
+  model = "deepseek-v4-flash"
+  # api key
+  api_key = "sk-***"
 ```
 
 ### 更多特性
