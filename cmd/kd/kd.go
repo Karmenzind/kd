@@ -245,8 +245,10 @@ func checkAndNoticeUpdate() {
 func basicCheck() {
 	if runtime.GOOS != "windows" {
 		if u, _ := user.Current(); u.Username == "root" {
-			d.EchoWrong("不支持Root用户")
-			os.Exit(1)
+			if os.Getenv("KD_ALLOW_ROOT") != "1" {
+				d.EchoWrong("不支持Root用户。如确认需要，请设置环境变量 KD_ALLOW_ROOT=1")
+				os.Exit(1)
+			}
 		}
 	}
 
