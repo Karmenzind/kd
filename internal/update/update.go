@@ -113,19 +113,20 @@ func GetCachedLatestTag() (tag string) {
 	return
 }
 
-func getBinaryURL() string {
-	var os, arch string
-	if runtime.GOOS == "darwin" {
-		os = "macos"
-	} else {
-		os = runtime.GOOS
+func binaryURLFor(goos, goarch string) string {
+	artifactOS := goos
+	if goos == "darwin" {
+		artifactOS = "macos"
 	}
-	arch = runtime.GOARCH
-	url := fmt.Sprintf("%skd_%s_%s", LATEST_RELEASE_URL, os, arch)
-	if os == "windows" {
+	url := fmt.Sprintf("%skd_%s_%s", LATEST_RELEASE_URL, artifactOS, goarch)
+	if goos == "windows" {
 		url += ".exe"
 	}
 	return url
+}
+
+func getBinaryURL() string {
+	return binaryURLFor(runtime.GOOS, runtime.GOARCH)
 }
 
 func GetNewerVersion(currentTag string) (tag string, err error) {
@@ -156,7 +157,7 @@ func UpdateBinary(currentTag string) (err error) {
 		return nil
 	}
 
-	d.EchoRun(fmt.Sprintf("Start downloading: %s", url))
+	d.EchoRun("Start downloading: %s", url)
 	// TODO (k): <2023-12-31> 调用curl
 	err = pkg.DownloadFileWithProgress(tmpPath, url)
 	if err != nil {
@@ -173,7 +174,7 @@ func UpdateBinary(currentTag string) (err error) {
 	if runtime.GOOS != "windows" {
 		err = pkg.AddExecutablePermission(exepath)
 		if err != nil {
-			d.EchoWrong(fmt.Sprintf("修改权限失败，请手动执行`chmod +x %s`", exepath))
+			d.EchoWrong("修改权限失败，请手动执行`chmod +x %s`", exepath)
 		}
 	}
 	return

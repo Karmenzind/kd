@@ -36,6 +36,7 @@
 - not found和索引都加入服务端缓存，benchmark比较直接查本地和tcp通信的速度
 - AUR收尾工作
 - move default log to cache dir
+- 调研 Windows 新版 coreutils 与 kd 的兼容性（pager、shell、路径和命令探测），视结果做针对性优化或在 README 中补充使用建议
 
 # BUG
 

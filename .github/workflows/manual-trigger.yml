@@ -1,119 +1,41 @@
-name: Mannual Trigger Workflow
+name: Manual Trigger Workflow
 
 on:
   workflow_dispatch:
-    # inputs:
-    #   branch_name:
-    #     description: 'Branch name to checkout'
-    #     required: true
-    #     default: 'dev'
-    #
+
 jobs:
-  mac-part:
-    runs-on: macos-latest
+  build:
+    runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
-      - name: "Set up Go"
+      - name: Set up Go
         uses: actions/setup-go@v5
         with:
           check-latest: true
           go-version-file: go.mod
 
-      - name: "Install dependencies"
-        run: go mod tidy
+      - name: Build all targets
+        run: bash scripts/build.sh --all
 
-      - name: "Build"
-        run: |
-          bash scripts/build.sh darwin arm64
-          bash scripts/build.sh darwin amd64
-
-      - name: "Save artifacts"
+      - name: Save macOS artifacts
         uses: actions/upload-artifact@v4
         with:
           name: macos
-          path: build
+          path: build/kd_macos_*
           if-no-files-found: error
           retention-days: 7
           overwrite: true
 
-      - name: Test
-        run: test -n "${{ secrets.GITEE_TOKEN }}" && echo "not empty"
-
-      # - name: Test upload file to exist release
-      #   uses: nicennnnnnnlee/action-gitee-release@v1.0.5
-      #   continue-on-error: true
-      #   with:
-      #     gitee_owner: void_kmz
-      #     gitee_repo: kd
-      #     gitee_token: ${{ secrets.GITEE_TOKEN }}
-      #     gitee_upload_retry_times:  3
-      #     # gitee_tag_name: "sync-test"
-      #     gitee_release_id: 443048
-      #     # gitee_release_name: "sync from github (test version)"
-      #     # gitee_release_body: "测试同步release\nFrom $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-      #     gitee_target_commitish: master
-      #     gitee_files: build/*
-      #     # gitee_files: |
-      #     #   build/kd_macos_arm64
-      #     #   build/kd_macos_amd64
-
-  linux-part:
-    # needs: mac-part
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: "Build Changelog"
-        id: build_changelog
-        uses: mikepenz/release-changelog-builder-action@v5
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-        with:
-          mode: "COMMIT"
-          failOnError: true
-
-      - name: echo changelog
-        run: echo "${{steps.build_changelog.outputs.changelog}}"
-
-      - name: "Set up Go"
-        uses: actions/setup-go@v5
-        with:
-          check-latest: true
-          go-version-file: go.mod
-
-      - name: "Install system dependencies"
-        run: sudo apt-get install -y gcc-mingw-w64-x86-64  gcc-aarch64-linux-gnu
-
-      - name: "Install dependencies"
-        run: go mod tidy
-
-      - name: "Build"
-        run: |
-          bash scripts/build.sh linux amd64
-          bash scripts/build.sh linux arm64
-          bash scripts/build.sh windows amd64
-
-      - name: "Save artifacts"
+      - name: Save Linux and Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-and-win
-          path: build
+          path: |
+            build/kd_linux_*
+            build/kd_windows_*
           if-no-files-found: error
           retention-days: 7
           overwrite: true
-
-      # - name: Test upload file to exist release
-      #   uses: nicennnnnnnlee/action-gitee-release@v1.0.5
-      #   with:
-      #     gitee_owner: void_kmz
-      #     gitee_repo: kd
-      #     gitee_token: ${{ secrets.GITEE_TOKEN }}
-      #     gitee_release_id: "release-beta"
-      #     gitee_upload_retry_times:  3
-      #     gitee_files: build/*

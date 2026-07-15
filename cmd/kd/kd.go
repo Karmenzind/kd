@@ -32,7 +32,7 @@ var VERSION = "v0.0.14"
 func showPrompt() {
 	exename, err := pkg.GetExecutableBasename()
 	if err != nil {
-		d.EchoFatal(err.Error())
+		d.EchoFatal("%s", err)
 	}
 	fmt.Printf(`%[1]s <text>	查单词、词组
 %[1]s -t <text>	查长句
@@ -80,14 +80,14 @@ func flagDaemon(*cli.Context, bool) (err error) {
 		return
 	}
 	if err := daemon.StartDaemonProcess(); err != nil {
-		d.EchoFatal(err.Error())
+		d.EchoFatal("%s", err)
 	}
 	return
 }
 
 func flagStop(*cli.Context, bool) (err error) {
 	if err = daemon.KillDaemonIfRunning(); err != nil {
-		d.EchoFatal(err.Error())
+		d.EchoFatal("%s", err)
 	}
 	return
 }
@@ -109,7 +109,7 @@ func flagUpdate(ctx *cli.Context, _ bool) (err error) {
 	if !doUpdate {
 		ver, err = update.GetNewerVersion(VERSION)
 		if err != nil {
-			d.EchoError(err.Error())
+			d.EchoError("%s", err)
 			return
 		}
 		if ver != "" {
@@ -153,9 +153,9 @@ func flagGenerateConfig(*cli.Context, bool) (err error) {
 	}
 	conf, err := config.GenerateDefaultConfig()
 	if err != nil {
-		d.EchoFatal(err.Error())
+		d.EchoFatal("%s", err)
 	}
-	d.EchoRun("以下默认配置将会被写入配置文件，路径为" + config.CONFIG_PATH)
+	d.EchoRun("以下默认配置将会被写入配置文件，路径为%s", config.CONFIG_PATH)
 	fmt.Println(conf)
 	if !pkg.AskYN("是否继续？") {
 		d.EchoFine("已取消")
@@ -237,7 +237,7 @@ func checkAndNoticeUpdate() {
 			if run.Info.GetOSInfo().Distro == "arch" {
 				prompt += "。ArchLinux推荐通过AUR安装/升级"
 			}
-			d.EchoWeakNotice(prompt)
+			d.EchoWeakNotice("%s", prompt)
 		}
 	}
 }
@@ -265,11 +265,14 @@ func basicCheck() {
 
 func main() {
 	basicCheck()
+	if err := run.EnsureCacheDirs(); err != nil {
+		d.EchoFatal("%s", err)
+	}
 	if err := config.InitConfig(); err != nil {
 		if !pkg.HasAnyFlag("status", "edit-config", "generate-config") { // XXX (k): <2024-10-18 22:35> 可能不够
-			d.EchoFatal(err.Error())
+			d.EchoFatal("%s", err)
 		}
-		d.EchoWarn(err.Error())
+		d.EchoWarn("%s", err)
 	}
 	cfg := config.Cfg
 	d.ApplyConfig(cfg.EnableEmoji)
@@ -278,7 +281,7 @@ func main() {
 	if cfg.Logging.Enable {
 		l, err := logger.InitLogger(&cfg.Logging)
 		if err != nil {
-			d.EchoFatal(err.Error())
+			d.EchoFatal("%s", err)
 		}
 		defer func() {
 			if r := recover(); r != nil {
@@ -293,7 +296,7 @@ func main() {
 	zap.S().Debugf("Got run info: %+v", run.Info)
 
 	if err := cache.InitDB(); err != nil {
-		d.EchoFatal(err.Error())
+		d.EchoFatal("%s", err)
 	}
 	defer cache.LiteDB.Close()
 	defer core.WG.Wait()
@@ -373,7 +376,7 @@ func main() {
 
 					if cfg.FreqAlert {
 						if h := <-r.History; h > 3 {
-							d.EchoWarn(fmt.Sprintf("本月第%d次查询`%s`", h, r.Query))
+							d.EchoWarn("本月第%d次查询`%s`", h, r.Query)
 						}
 					}
 					if r.Found {
@@ -385,7 +388,7 @@ func main() {
 							brief = false
 						}
 						if err = pkg.OutputResult(query.PrettyFormat(r, cfg.EnglishOnly, brief), cfg.Paging, cfg.PagerCommand); err != nil {
-							d.EchoFatal(err.Error())
+							d.EchoFatal("%s", err)
 						}
 						if cCtx.Bool("speak") {
 							if cCtx.Bool("text") {
@@ -399,13 +402,13 @@ func main() {
 						}
 					} else {
 						if r.Prompt != "" {
-							d.EchoWrong(r.Prompt)
+							d.EchoWrong("%s", r.Prompt)
 						} else {
 							fmt.Println("Not found", d.Yellow(":("))
 						}
 					}
 				} else {
-					d.EchoError(err.Error())
+					d.EchoError("%s", err)
 					zap.S().Errorf("%+v", err)
 				}
 			} else {
@@ -417,6 +420,7 @@ func main() {
 
 	if err := app.Run(os.Args); err != nil {
 		zap.S().Errorf("APP stopped: %s", err)
-		d.EchoError(err.Error())
+		d.EchoError("%s", err)
+		os.Exit(1)
 	}
 }

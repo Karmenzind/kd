@@ -130,7 +130,7 @@ Invoke-WebRequest -uri 'https://github.com/Karmenzind/kd/releases/latest/downloa
 
 ```bash
 go mod tidy
-CGO_ENABLED=1 go build -o kd cmd/kd.go
+go build -o kd ./cmd/kd
 mv kd /usr/bin/kd
 ```
 
@@ -350,4 +350,3 @@ sudo xattr -r -d com.apple.quarantine <kd文件所在路径>
 - 支持通过fzf补全
 - Vim插件，浮窗显示查词结果
 - 离线词库周期更新
-

@@ -1,59 +1,25 @@
 name: release-tags
 
 on:
-  # push:
-  #   branches: [ "main" ]
-  # pull_request:
-  #   branches: [ "main" ]
   push:
     tags:
       - "*"
 
 jobs:
-  mac-part:
-    if: startsWith(github.ref, 'refs/tags/')
-    runs-on: macos-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          check-latest: true
-          go-version-file: go.mod
-
-      - name: Install dependencies
-        run: go mod tidy
-
-      - name: Build
-        run: |
-          bash scripts/build.sh darwin arm64
-          bash scripts/build.sh darwin amd64
-
-      - name: Release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          overwrite: true
-          file_glob: true
-          file: build/*
-
-  linux-part:
-    if: startsWith(github.ref, 'refs/tags/')
+  release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: "Build Changelog"
+      - name: Build changelog
         id: build_changelog
         uses: mikepenz/release-changelog-builder-action@v5
         env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          mode: "COMMIT"
+          mode: COMMIT
           failOnError: true
 
       - name: Set up Go
@@ -62,30 +28,13 @@ jobs:
           check-latest: true
           go-version-file: go.mod
 
-      - name: Install system dependencies
-        run: sudo apt-get install -y gcc-mingw-w64-x86-64  gcc-aarch64-linux-gnu
-
-      - name: Install dependencies
-        run: go mod tidy
-
-      - name: Build
-        run: |
-          bash scripts/build.sh linux amd64
-          bash scripts/build.sh linux arm64
-          bash scripts/build.sh windows amd64
-
-      # - name: echo changelog
-      #   run: echo ${{steps.build_changelog.outputs.changelog}}
+      - name: Build all targets
+        run: bash scripts/build.sh --all
 
       - name: Release
         uses: softprops/action-gh-release@v1
-        # if: startsWith(github.ref, 'refs/tags/')
         with:
-          body: ${{steps.build_changelog.outputs.changelog}}
+          body: ${{ steps.build_changelog.outputs.changelog }}
           fail_on_unmatched_files: true
           prerelease: false
           files: build/*
-
-      # - name: info
-      #   run: echo ${{ steps.Release.outputs.url }} ${{ steps.Release.outputs.upload_url }} ${{ steps.Release.outputs.id }}
-

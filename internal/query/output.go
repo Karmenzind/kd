@@ -122,6 +122,9 @@ func PrettyFormat(r *model.Result, onlyEN bool, brief bool) string {
 			s = append(s, piece)
 
 			for _, ePair := range i.ExampleLists {
+				if len(ePair) == 0 {
+					continue
+				}
 				var eRepr string
 				if onlyEN {
 					eRepr = ePair[0]
@@ -155,12 +158,18 @@ func PrettyFormat(r *model.Result, onlyEN bool, brief bool) string {
 }
 
 func displayExample(item []string, tab string, onlyEN bool, isEN bool) string {
+	if len(item) == 0 {
+		return ""
+	}
 	var r string
 	switch tab {
 	case "bi":
 		if onlyEN {
 			r = d.EgEn(item[0])
 		} else {
+			if len(item) < 2 {
+				return ""
+			}
 			var rh string
 			if len(item) >= 3 && strings.ToLower(item[2]) != "youdao" {
 				rh = d.EgCh(item[1]) + d.EgCh(item[2])
@@ -173,15 +182,24 @@ func displayExample(item []string, tab string, onlyEN bool, isEN bool) string {
 		}
 	case "au":
 		// TODO 增加来源渲染
+		if len(item) < 2 {
+			return ""
+		}
 		r = fmt.Sprintf("%s (%s)", d.EgEn(item[0]), d.EgCh(item[1]))
 	case "or":
 		if onlyEN {
 			if isEN {
 				r = d.EgEn(item[0])
 			} else {
+				if len(item) < 2 {
+					return ""
+				}
 				r = d.EgEn(item[1])
 			}
 		} else {
+			if len(item) < 2 {
+				return ""
+			}
 			r = fmt.Sprintf("%s %s", d.EgEn(item[0]), d.EgCh(item[1]))
 		}
 	}

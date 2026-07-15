@@ -16,8 +16,8 @@ import (
 	"github.com/Karmenzind/kd/pkg"
 	d "github.com/Karmenzind/kd/pkg/decorate"
 	"github.com/Karmenzind/kd/pkg/ip"
-	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
+	_ "modernc.org/sqlite"
 )
 
 const (
@@ -266,7 +266,7 @@ func applyTempDB(dbPath, tempDBPath string) error {
 func parseDBAndInsert(tempDBPath string) (err error) {
 	now := time.Now()
 	var tempDB *sql.DB
-	tempDB, err = sql.Open("sqlite3", tempDBPath)
+	tempDB, err = sql.Open("sqlite", tempDBPath)
 	if err != nil {
 		zap.S().Errorf("Failed to open db %s: %s", tempDBPath, err)
 		return
@@ -320,7 +320,7 @@ func parseDBAndInsert(tempDBPath string) (err error) {
 func parseDBAndInsertOffsetVersion(tempDBPath string) (err error) {
 	now := time.Now()
 	var tempDB *sql.DB
-	tempDB, err = sql.Open("sqlite3", tempDBPath)
+	tempDB, err = sql.Open("sqlite", tempDBPath)
 	if err != nil {
 		zap.S().Errorf("Failed to open db %s: %s", tempDBPath, err)
 		return

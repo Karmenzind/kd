@@ -2,30 +2,23 @@ package cache
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
+	_ "modernc.org/sqlite"
 )
 
 var DB_FILENAME = "kd_data.db"
 
 var LiteDB *sql.DB
 
-func InitDB() error {
-	var err error
+const sqliteDriverName = "sqlite"
 
-	dbPath := filepath.Join(CACHE_ROOT_PATH, DB_FILENAME)
-
-	LiteDB, err = sql.Open("sqlite3", dbPath)
-	if err != nil {
-		zap.S().Errorf("Failed to open litedb: %s", err)
-		return err
-	}
-
-	sqlStmt := `
+const schema = `
 CREATE TABLE IF NOT EXISTS en (
     query text NOT NULL UNIQUE PRIMARY KEY,
     detail text NOT NULL,
@@ -35,14 +28,32 @@ CREATE TABLE IF NOT EXISTS ch (
     query text NOT NULL UNIQUE PRIMARY KEY,
     detail text NOT NULL,
     update_time datetime NOT NULL) WITHOUT ROWID;
-    `
-	_, err = LiteDB.Exec(sqlStmt)
+`
 
+func initDBAtPath(dbPath string) (*sql.DB, error) {
+	db, err := sql.Open(sqliteDriverName, dbPath)
 	if err != nil {
-		zap.S().Errorf("Failed to create table", err)
+		zap.S().Errorf("Failed to open litedb: %s", err)
+		return nil, err
+	}
+
+	_, err = db.Exec(schema)
+	if err != nil {
+		db.Close()
+		zap.S().Errorf("Failed to create tables: %s", err)
+		return nil, err
+	}
+	return db, nil
+}
+
+func InitDB() error {
+	dbPath := filepath.Join(CACHE_ROOT_PATH, DB_FILENAME)
+	db, err := initDBAtPath(dbPath)
+	if err != nil {
 		return err
 	}
-	return err
+	LiteDB = db
+	return nil
 }
 
 func getCachedRow(query string, isEN bool) ([]byte, error) {
@@ -58,15 +69,57 @@ func getCachedRow(query string, isEN bool) ([]byte, error) {
 		zap.S().Warnf("Failed to query %s: %s", query, row.Err())
 		return []byte{}, row.Err()
 	}
-	var updateTime time.Time
+	var updateValue any
 	var detail []byte
 
-	err = row.Scan(&detail, &updateTime)
+	err = row.Scan(&detail, &updateValue)
 	if err != nil {
 		return []byte{}, err
 	}
-	zap.S().Debugf("Got %s with detail length %d update time: %s", query, len(detail), updateTime)
+	if updateTime, timeErr := parseDatabaseTime(updateValue); timeErr == nil {
+		zap.S().Debugf("Got %s with detail length %d update time: %s", query, len(detail), updateTime)
+	} else {
+		zap.S().Debugf("Got %s with detail length %d and unrecognized update time %q", query, len(detail), updateValue)
+	}
 	return detail, nil
+}
+
+func parseDatabaseTime(value any) (time.Time, error) {
+	if value == nil {
+		return time.Time{}, errors.New("database time is nil")
+	}
+	if parsed, ok := value.(time.Time); ok {
+		return parsed, nil
+	}
+
+	var text string
+	switch value := value.(type) {
+	case string:
+		text = value
+	case []byte:
+		text = string(value)
+	default:
+		return time.Time{}, fmt.Errorf("unsupported database time type %T", value)
+	}
+	text = strings.TrimSpace(text)
+	fields := strings.Fields(text)
+	if len(fields) == 4 {
+		if parsed, err := time.Parse("2006-01-02 15:04:05.999999999 -0700", strings.Join(fields[:3], " ")); err == nil {
+			return parsed, nil
+		}
+	}
+	for _, layout := range []string{
+		time.RFC3339Nano,
+		"2006-01-02 15:04:05.999999999-07:00",
+		"2006-01-02 15:04:05.999999999 -0700 MST",
+		"2006-01-02 15:04:05.999999999",
+		"2006-01-02 15:04:05",
+	} {
+		if parsed, err := time.Parse(layout, text); err == nil {
+			return parsed, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("unsupported database time %q", text)
 }
 
 func saveCachedRow(query string, isEN bool, detail []byte) error {
@@ -82,6 +135,7 @@ func saveCachedRow(query string, isEN bool, detail []byte) error {
 		zap.S().Warnf("Failed to open transaction for %s: %s", query, err)
 		return err
 	}
+	defer tx.Rollback()
 	sql := fmt.Sprintf("INSERT OR REPLACE INTO %s (query, detail, update_time) VALUES(?, ?, ?)", table)
 	_, err = tx.Exec(sql, query, detail, time.Now())
 	if err != nil {
