@@ -28,7 +28,7 @@ type LoggerConfig struct {
 }
 
 type Config struct {
-	// FIXME (k): <2025-06-12 01:08> 
+	// FIXME (k): <2025-06-12 01:08>
 	Debug bool `default:"false" toml:"debug"`
 
 	// Modules      []string
@@ -86,15 +86,16 @@ func (c *Config) CheckAndApply() (err error) {
 
 var Cfg = Config{}
 
-func getConfigPath() string {
-	var p string
-	dirname, _ := os.UserHomeDir()
-	if runtime.GOOS == "windows" {
-		p = filepath.Join(dirname, "kd.toml")
-	} else {
-		p = filepath.Join(dirname, ".config", "kd.toml")
+func configPathFor(goos, home string) string {
+	if goos == "windows" {
+		return filepath.Join(home, "kd.toml")
 	}
-	return p
+	return filepath.Join(home, ".config", "kd.toml")
+}
+
+func getConfigPath() string {
+	home, _ := os.UserHomeDir()
+	return configPathFor(runtime.GOOS, home)
 }
 
 // func getDaemonCreatetime() int64 {

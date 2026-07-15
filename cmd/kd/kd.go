@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"os/user"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -15,6 +17,7 @@ import (
 	"github.com/Karmenzind/kd/internal/cache"
 	"github.com/Karmenzind/kd/internal/core"
 	"github.com/Karmenzind/kd/internal/daemon"
+	"github.com/Karmenzind/kd/internal/model"
 	"github.com/Karmenzind/kd/internal/query"
 	"github.com/Karmenzind/kd/internal/run"
 	"github.com/Karmenzind/kd/internal/tts"
@@ -32,7 +35,7 @@ var VERSION = "v0.0.14"
 func showPrompt() {
 	exename, err := pkg.GetExecutableBasename()
 	if err != nil {
-		d.EchoFatal(err.Error())
+		d.EchoFatal("%s", err)
 	}
 	fmt.Printf(`%[1]s <text>	查单词、词组
 %[1]s -t <text>	查长句
@@ -80,14 +83,14 @@ func flagDaemon(*cli.Context, bool) (err error) {
 		return
 	}
 	if err := daemon.StartDaemonProcess(); err != nil {
-		d.EchoFatal(err.Error())
+		d.EchoFatal("%s", err)
 	}
 	return
 }
 
 func flagStop(*cli.Context, bool) (err error) {
 	if err = daemon.KillDaemonIfRunning(); err != nil {
-		d.EchoFatal(err.Error())
+		d.EchoFatal("%s", err)
 	}
 	return
 }
@@ -109,7 +112,7 @@ func flagUpdate(ctx *cli.Context, _ bool) (err error) {
 	if !doUpdate {
 		ver, err = update.GetNewerVersion(VERSION)
 		if err != nil {
-			d.EchoError(err.Error())
+			d.EchoError("%s", err)
 			return
 		}
 		if ver != "" {
@@ -144,6 +147,33 @@ func flagUpdate(ctx *cli.Context, _ bool) (err error) {
 	return err
 }
 
+func writeConfigFile(path, content string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return fmt.Errorf("创建配置目录失败: %w", err)
+	}
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		return fmt.Errorf("写入配置文件失败: %w", err)
+	}
+	return nil
+}
+
+func ensureDefaultConfigFile(path string) (bool, error) {
+	if _, err := os.Stat(path); err == nil {
+		return false, nil
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return false, fmt.Errorf("检查配置文件失败: %w", err)
+	}
+
+	content, err := config.GenerateDefaultConfig()
+	if err != nil {
+		return false, fmt.Errorf("生成默认配置失败: %w", err)
+	}
+	if err := writeConfigFile(path, content); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func flagGenerateConfig(*cli.Context, bool) (err error) {
 	if pkg.IsPathExists(config.CONFIG_PATH) {
 		if !pkg.AskYN(fmt.Sprintf("配置文件%s已经存在，是否覆盖？", config.CONFIG_PATH)) {
@@ -153,30 +183,32 @@ func flagGenerateConfig(*cli.Context, bool) (err error) {
 	}
 	conf, err := config.GenerateDefaultConfig()
 	if err != nil {
-		d.EchoFatal(err.Error())
+		d.EchoFatal("%s", err)
 	}
-	d.EchoRun("以下默认配置将会被写入配置文件，路径为" + config.CONFIG_PATH)
+	d.EchoRun("以下默认配置将会被写入配置文件，路径为%s", config.CONFIG_PATH)
 	fmt.Println(conf)
 	if !pkg.AskYN("是否继续？") {
 		d.EchoFine("已取消")
 		return
 	}
 
-	os.WriteFile(config.CONFIG_PATH, []byte(conf), os.ModePerm)
+	if err = writeConfigFile(config.CONFIG_PATH, conf); err != nil {
+		return err
+	}
 	d.EchoOkay("已经写入配置文件")
 	return
 }
 
-func flagEditConfig(ctx *cli.Context, b bool) error {
+func flagEditConfig(*cli.Context, bool) error {
 	var err error
 	var cmd *exec.Cmd
 	p := config.CONFIG_PATH
-	if !pkg.IsPathExists(p) {
-		d.EchoRun("检测到配置文件不存在")
-		err = flagGenerateConfig(ctx, b)
-		if err != nil || !pkg.IsPathExists(p) {
-			return err
-		}
+	created, err := ensureDefaultConfigFile(p)
+	if err != nil {
+		return err
+	}
+	if created {
+		d.EchoOkay("配置文件不存在，已生成默认配置：%s", p)
 	}
 	switch runtime.GOOS {
 	case "linux", "darwin":
@@ -214,20 +246,71 @@ func flagEditConfig(ctx *cli.Context, b bool) error {
 	return err
 }
 
-func flagStatus(*cli.Context, bool) error {
-	di, _ := daemon.GetDaemonInfo()
+type daemonStatus struct {
+	Running bool
+	PID     int
+	Port    string
+}
+
+func findRunningDaemon() (int, bool, error) {
+	p, err := daemon.FindServerProcess()
+	if err != nil {
+		return 0, false, err
+	}
+	if p == nil {
+		return 0, false, nil
+	}
+	return int(p.Pid), true, nil
+}
+
+func resolveDaemonStatus(
+	find func() (int, bool, error),
+	loadInfo func() (*model.RunInfo, error),
+) (daemonStatus, error) {
+	pid, running, err := find()
+	if err != nil {
+		return daemonStatus{}, fmt.Errorf("查询守护进程状态失败: %w", err)
+	}
+	status := daemonStatus{Running: running, PID: pid}
+	if !running {
+		return status, nil
+	}
+
+	info, err := loadInfo()
+	if err == nil && info != nil && info.PID == pid {
+		status.Port = info.Port
+	}
+	return status, nil
+}
+
+func writeStatus(out io.Writer, status daemonStatus) error {
 	d.EchoRun("运行和相关配置信息如下：")
-	fmt.Printf("    版本：%s\n", VERSION)
-	fmt.Printf("    Daemon端口：%s\n", di.Port)
-	fmt.Printf("    Daemon PID：%d\n", di.PID)
-	fmt.Printf("    配置文件地址：%s\n", config.CONFIG_PATH)
-	fmt.Printf("    数据文件目录：%s\n", cache.CACHE_ROOT_PATH)
-	fmt.Printf("    Log地址：%s\n", logger.LOG_FILE)
+	fmt.Fprintf(out, "    版本：%s\n", VERSION)
+	if status.Running {
+		fmt.Fprintln(out, "    Daemon状态：运行中")
+		fmt.Fprintf(out, "    Daemon PID：%d\n", status.PID)
+		if status.Port != "" {
+			fmt.Fprintf(out, "    Daemon端口：%s\n", status.Port)
+		}
+	} else {
+		fmt.Fprintln(out, "    Daemon状态：未运行")
+	}
+	fmt.Fprintf(out, "    配置文件地址：%s\n", config.CONFIG_PATH)
+	fmt.Fprintf(out, "    数据文件目录：%s\n", cache.CACHE_ROOT_PATH)
+	fmt.Fprintf(out, "    Log地址：%s\n", logger.LOG_FILE)
 	kdpath, err := pkg.GetExecutablePath()
 	if err == nil {
-		fmt.Printf("    Binary地址：%s\n", kdpath)
+		fmt.Fprintf(out, "    Binary地址：%s\n", kdpath)
 	}
 	return err
+}
+
+func flagStatus(*cli.Context, bool) error {
+	status, err := resolveDaemonStatus(findRunningDaemon, daemon.GetDaemonInfo)
+	if err != nil {
+		return err
+	}
+	return writeStatus(os.Stdout, status)
 }
 
 func checkAndNoticeUpdate() {
@@ -237,7 +320,7 @@ func checkAndNoticeUpdate() {
 			if run.Info.GetOSInfo().Distro == "arch" {
 				prompt += "。ArchLinux推荐通过AUR安装/升级"
 			}
-			d.EchoWeakNotice(prompt)
+			d.EchoWeakNotice("%s", prompt)
 		}
 	}
 }
@@ -265,20 +348,27 @@ func basicCheck() {
 
 func main() {
 	basicCheck()
+	if err := run.EnsureCacheDirs(); err != nil {
+		d.EchoFatal("%s", err)
+	}
 	if err := config.InitConfig(); err != nil {
 		if !pkg.HasAnyFlag("status", "edit-config", "generate-config") { // XXX (k): <2024-10-18 22:35> 可能不够
-			d.EchoFatal(err.Error())
+			d.EchoFatal("%s", err)
 		}
-		d.EchoWarn(err.Error())
+		d.EchoWarn("%s", err)
 	}
 	cfg := config.Cfg
 	d.ApplyConfig(cfg.EnableEmoji)
 	run.Info.Version = VERSION
 
 	if cfg.Logging.Enable {
-		l, err := logger.InitLogger(&cfg.Logging)
+		component := "client"
+		if pkg.HasAnyFlag("server") {
+			component = "server"
+		}
+		l, err := logger.InitLogger(&cfg.Logging, component)
 		if err != nil {
-			d.EchoFatal(err.Error())
+			d.EchoFatal("%s", err)
 		}
 		defer func() {
 			if r := recover(); r != nil {
@@ -293,7 +383,7 @@ func main() {
 	zap.S().Debugf("Got run info: %+v", run.Info)
 
 	if err := cache.InitDB(); err != nil {
-		d.EchoFatal(err.Error())
+		d.EchoFatal("%s", err)
 	}
 	defer cache.LiteDB.Close()
 	defer core.WG.Wait()
@@ -373,7 +463,7 @@ func main() {
 
 					if cfg.FreqAlert {
 						if h := <-r.History; h > 3 {
-							d.EchoWarn(fmt.Sprintf("本月第%d次查询`%s`", h, r.Query))
+							d.EchoWarn("本月第%d次查询`%s`", h, r.Query)
 						}
 					}
 					if r.Found {
@@ -385,7 +475,7 @@ func main() {
 							brief = false
 						}
 						if err = pkg.OutputResult(query.PrettyFormat(r, cfg.EnglishOnly, brief), cfg.Paging, cfg.PagerCommand); err != nil {
-							d.EchoFatal(err.Error())
+							d.EchoFatal("%s", err)
 						}
 						if cCtx.Bool("speak") {
 							if cCtx.Bool("text") {
@@ -399,13 +489,13 @@ func main() {
 						}
 					} else {
 						if r.Prompt != "" {
-							d.EchoWrong(r.Prompt)
+							d.EchoWrong("%s", r.Prompt)
 						} else {
 							fmt.Println("Not found", d.Yellow(":("))
 						}
 					}
 				} else {
-					d.EchoError(err.Error())
+					d.EchoError("%s", err)
 					zap.S().Errorf("%+v", err)
 				}
 			} else {
@@ -417,6 +507,7 @@ func main() {
 
 	if err := app.Run(os.Args); err != nil {
 		zap.S().Errorf("APP stopped: %s", err)
-		d.EchoError(err.Error())
+		d.EchoError("%s", err)
+		os.Exit(1)
 	}
 }

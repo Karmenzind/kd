@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/Karmenzind/kd/internal/model"
@@ -86,42 +87,88 @@ type LongTextData struct {
 	CreateTS int64  `json:"c"`
 }
 
-func GetLongTextCache(r *model.Result) (err error) {
-	var m map[string]LongTextData
-	if pkg.IsPathExists(LONG_TEXT_CACHE_FILE) {
-		err = pkg.LoadJson(LONG_TEXT_CACHE_FILE, &m)
-		if err != nil {
-			return err
-		}
-		if res, ok := m[r.Query]; ok {
-			r.MachineTrans = res.Result
-			zap.S().Debugf("Got cached '%s'", r.Query)
-			(&res).AccessTS = time.Now().Unix()
-			m[r.Query] = res
-			go pkg.SaveJson(LONG_TEXT_CACHE_FILE, &m)
-			return
-		} else {
-			return fmt.Errorf("no cache for %s", r.Query)
-		}
+var longTextCacheMu sync.Mutex
+
+func loadLongTextCache(path string) (map[string]LongTextData, error) {
+	body, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return make(map[string]LongTextData), nil
 	}
-	return fmt.Errorf("cache file not found")
+	if err != nil {
+		return nil, err
+	}
+	if len(bytes.TrimSpace(body)) == 0 {
+		return make(map[string]LongTextData), nil
+	}
+
+	cacheData := make(map[string]LongTextData)
+	if err := json.Unmarshal(body, &cacheData); err != nil {
+		return nil, err
+	}
+	if cacheData == nil { // Preserve compatibility with files containing JSON null.
+		cacheData = make(map[string]LongTextData)
+	}
+	return cacheData, nil
+}
+
+func saveLongTextCache(path string, cacheData map[string]LongTextData) (err error) {
+	body, err := json.Marshal(cacheData)
+	if err != nil {
+		return err
+	}
+
+	temp, err := os.CreateTemp(filepath.Dir(path), ".long_text_results-*.tmp")
+	if err != nil {
+		return err
+	}
+	tempPath := temp.Name()
+	defer func() {
+		temp.Close()
+		os.Remove(tempPath)
+	}()
+
+	if err = temp.Chmod(0o600); err != nil {
+		return err
+	}
+	if _, err = temp.Write(body); err != nil {
+		return err
+	}
+	if err = temp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tempPath, path)
+}
+
+func GetLongTextCache(r *model.Result) (err error) {
+	longTextCacheMu.Lock()
+	defer longTextCacheMu.Unlock()
+
+	m, err := loadLongTextCache(LONG_TEXT_CACHE_FILE)
+	if err != nil {
+		return err
+	}
+	res, ok := m[r.Query]
+	if !ok {
+		return fmt.Errorf("no cache for %s", r.Query)
+	}
+	r.MachineTrans = res.Result
+	zap.S().Debugf("Got cached '%s'", r.Query)
+	res.AccessTS = time.Now().Unix()
+	m[r.Query] = res
+	return saveLongTextCache(LONG_TEXT_CACHE_FILE, m)
 }
 
 func UpdateLongTextCache(r *model.Result) (err error) {
-	var m map[string]LongTextData
-	if pkg.IsPathExists(LONG_TEXT_CACHE_FILE) {
-		err = pkg.LoadJson(LONG_TEXT_CACHE_FILE, &m)
-		if err != nil {
-			return err
-		}
-	} 
-	if m == nil {
-		m = map[string]LongTextData{}
+	longTextCacheMu.Lock()
+	defer longTextCacheMu.Unlock()
+
+	m, err := loadLongTextCache(LONG_TEXT_CACHE_FILE)
+	if err != nil {
+		return err
 	}
 	now := time.Now().Unix()
-	m[r.Query] = LongTextData{r.MachineTrans, now, now}
-	err = pkg.SaveJson(LONG_TEXT_CACHE_FILE, m)
-	return err
+	m[r.Query] = LongTextData{Result: r.MachineTrans, AccessTS: now, CreateTS: now}
+	return saveLongTextCache(LONG_TEXT_CACHE_FILE, m)
 }
 
 //  -----------------------------------------------------------------------------

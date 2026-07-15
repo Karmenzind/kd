@@ -26,7 +26,7 @@ func ensureDaemon(running chan bool) {
 		d.EchoRun("未找到守护进程，正在启动...")
 		err = daemon.StartDaemonProcess()
 		if err != nil {
-			d.EchoFatal(err.Error())
+			d.EchoFatal("%s", err)
 		}
 	} else {
 		var warn string
@@ -50,7 +50,7 @@ func ensureDaemon(running chan bool) {
 			// }
 		}
 		if warn != "" {
-			d.EchoWarn(warn + "，建议执行`kd --restart`重启")
+			d.EchoWarn("%s，建议执行`kd --restart`重启", warn)
 		}
 	}
 	running <- true
@@ -64,12 +64,17 @@ var (
 	longRegex  = regexp.MustCompile("^[a-zA-Z0-9\u4e00-\u9fa5\u3000-\u303F]")
 )
 
-func Query(query string, noCache bool, longText bool) (r *model.Result, err error) {
-	// TODO (k): <2024-01-02> regexp
+func normalizeQuery(query string, longText bool) string {
 	query = str.Simplify(query)
 	if !longText {
 		query = strings.ToLower(query)
 	}
+	return query
+}
+
+func Query(query string, noCache bool, longText bool) (r *model.Result, err error) {
+	// TODO (k): <2024-01-02> regexp
+	query = normalizeQuery(query, longText)
 
 	r = buildResult(query, longText)
 	r.History = make(chan int, 1)

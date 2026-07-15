@@ -89,7 +89,7 @@ func OutputResult(out string, paging bool, pagerCmd string) error {
 				// err = pager.Run()
 				return err
 			}
-			d.EchoWarn(fmt.Sprintf("pager command `%s` not found", program))
+			d.EchoWarn("pager command `%s` not found", program)
 		}
 	}
 	fmt.Println(out)

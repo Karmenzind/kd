@@ -14,20 +14,22 @@ import (
 )
 
 func main() {
+	if err := run.EnsureCacheDirs(); err != nil {
+		d.EchoFatal("%s", err)
+	}
 	if err := config.InitConfig(); err != nil {
 		if !pkg.HasAnyFlag("status", "edit-config", "generate-config") { // XXX (k): <2024-10-18 22:35> 可能不够
-			d.EchoFatal(err.Error())
+			d.EchoFatal("%s", err)
 		}
-		d.EchoWarn(err.Error())
+		d.EchoWarn("%s", err)
 	}
 	cfg := config.Cfg
 	d.ApplyConfig(cfg.EnableEmoji)
 
-
 	if cfg.Logging.Enable {
-		l, err := logger.InitLogger(&cfg.Logging)
+		l, err := logger.InitLogger(&cfg.Logging, "client")
 		if err != nil {
-			d.EchoFatal(err.Error())
+			d.EchoFatal("%s", err)
 		}
 		defer func() {
 			if r := recover(); r != nil {
@@ -41,7 +43,7 @@ func main() {
 	zap.S().Debugf("Got configuration: %+v", cfg)
 	zap.S().Debugf("Got run info: %+v", run.Info)
 
-	if err := tts.Speak("abandon") ; err != nil {
+	if err := tts.Speak("abandon"); err != nil {
 		log.Printf("Error: %s", err)
 	}
 }

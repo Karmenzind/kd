@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"errors"
-	"fmt"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -130,7 +129,7 @@ func StartDaemonProcess() error {
 		}
 		if p != nil {
 			zap.S().Infof("Started daemon process.")
-			d.EchoOkay(fmt.Sprintf("成功启动守护进程，PID：%d", p.Pid))
+			d.EchoOkay("成功启动守护进程，PID：%d", p.Pid)
 			return nil
 		}
 		d.EchoRun("正在检查运行结果，稍等...")

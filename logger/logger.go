@@ -49,8 +49,16 @@ func buildLogger(logCfg *config.LoggerConfig, options ...zap.Option) (*zap.Logge
 	return cfg.Build(options...)
 }
 
-func InitLogger(logCfg *config.LoggerConfig) (*zap.Logger, error) {
-	l, err := buildLogger(logCfg)
+func componentField(component string) zap.Option {
+	return zap.Fields(zap.String("component", component))
+}
+
+func InitLogger(logCfg *config.LoggerConfig, components ...string) (*zap.Logger, error) {
+	component := "client"
+	if len(components) > 0 && components[0] != "" {
+		component = components[0]
+	}
+	l, err := buildLogger(logCfg, componentField(component))
 	if err != nil {
 		log.Panicln(err)
 	}

@@ -16,8 +16,8 @@ import (
 	"github.com/Karmenzind/kd/pkg"
 	d "github.com/Karmenzind/kd/pkg/decorate"
 	"github.com/Karmenzind/kd/pkg/ip"
-	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
+	_ "modernc.org/sqlite"
 )
 
 const (
@@ -157,7 +157,7 @@ func cronUpdateDataZip() {
 			if err = decompressDBZip(tempDBPath, zipPath); err != nil {
 				zap.S().Warnf("Failed: %s. Current invalid file will be removed.", err)
 				if errDel := os.Remove(zipPath); errDel != nil {
-					zap.S().Warnf("Failed to remove file: %s", err)
+					zap.S().Warnf("Failed to remove invalid archive: %s", errDel)
 				} else {
 					zap.S().Infof("Removed invalid zip file")
 				}
@@ -216,7 +216,16 @@ func decompressDBZip(tempDBPath, zipPath string) (err error) {
 	}
 	defer a.Close()
 
-	f := a.File[0]
+	var f *zip.File
+	for _, candidate := range a.File {
+		if !candidate.FileInfo().IsDir() {
+			f = candidate
+			break
+		}
+	}
+	if f == nil {
+		return fmt.Errorf("archive %s contains no database file", zipPath)
+	}
 	dstFile, err := os.OpenFile(tempDBPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 	if err != nil {
 		zap.S().Warnf("Failed to open file %s to write", tempDBPath, err)
@@ -266,7 +275,7 @@ func applyTempDB(dbPath, tempDBPath string) error {
 func parseDBAndInsert(tempDBPath string) (err error) {
 	now := time.Now()
 	var tempDB *sql.DB
-	tempDB, err = sql.Open("sqlite3", tempDBPath)
+	tempDB, err = sql.Open("sqlite", tempDBPath)
 	if err != nil {
 		zap.S().Errorf("Failed to open db %s: %s", tempDBPath, err)
 		return
@@ -320,7 +329,7 @@ func parseDBAndInsert(tempDBPath string) (err error) {
 func parseDBAndInsertOffsetVersion(tempDBPath string) (err error) {
 	now := time.Now()
 	var tempDB *sql.DB
-	tempDB, err = sql.Open("sqlite3", tempDBPath)
+	tempDB, err = sql.Open("sqlite", tempDBPath)
 	if err != nil {
 		zap.S().Errorf("Failed to open db %s: %s", tempDBPath, err)
 		return

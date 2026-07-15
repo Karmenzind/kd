@@ -26,26 +26,29 @@ var SERVER_PORT = 19707
 
 var cacheDirname = "kdcache"
 
-func getCacheRootPath() string {
-	var target string
-	userdir, _ := os.UserHomeDir()
-	switch runtime.GOOS {
+func cacheRootPathFor(goos, home string) string {
+	switch goos {
 	case "linux", "windows":
-		target = filepath.Join(userdir, ".cache", cacheDirname)
+		return filepath.Join(home, ".cache", cacheDirname)
 	case "darwin":
-		target = filepath.Join(userdir, "Library/Caches", cacheDirname)
+		return filepath.Join(home, "Library", "Caches", cacheDirname)
 	default:
-		d.EchoWarn("检测到架构为%s，此平台尚未进行测试，如出现问题请通过issue反馈", runtime.GOOS)
-		target = filepath.Join(userdir, ".cache", cacheDirname)
+		return filepath.Join(home, ".cache", cacheDirname)
 	}
-	return target
+}
 
+func getCacheRootPath() string {
+	home, _ := os.UserHomeDir()
+	if runtime.GOOS != "linux" && runtime.GOOS != "windows" && runtime.GOOS != "darwin" {
+		d.EchoWarn("检测到架构为%s，此平台尚未进行测试，如出现问题请通过issue反馈", runtime.GOOS)
+	}
+	return cacheRootPathFor(runtime.GOOS, home)
 }
 
 func init() {
 	exepath, err := os.Executable()
 	if err != nil {
-		d.EchoFatal(err.Error())
+		d.EchoFatal("%s", err)
 	}
 	Info = &model.RunInfo{
 		PID:       os.Getpid(),
@@ -59,18 +62,23 @@ func init() {
 	CACHE_AUDIO_DIR_PATH = filepath.Join(CACHE_ROOT_PATH, "audio")
 	CACHE_STAT_DIR_PATH = filepath.Join(CACHE_ROOT_PATH, "stat")
 	CACHE_RUN_PATH = filepath.Join(CACHE_ROOT_PATH, "run")
+}
 
-	for _, directory := range []string{
+func ensureDirectories(directories ...string) error {
+	for _, directory := range directories {
+		if err := os.MkdirAll(directory, os.ModePerm); err != nil {
+			return fmt.Errorf("create directory %s: %w", directory, err)
+		}
+	}
+	return nil
+}
+
+func EnsureCacheDirs() error {
+	return ensureDirectories(
 		CACHE_ROOT_PATH,
 		CACHE_WORDS_PATH,
 		CACHE_STAT_DIR_PATH,
 		CACHE_RUN_PATH,
 		CACHE_AUDIO_DIR_PATH,
-	} {
-		err := os.MkdirAll(directory, os.ModePerm)
-		if err != nil {
-			d.EchoFatal(fmt.Sprintf("Failed to create %s", directory))
-		}
-	}
-
+	)
 }

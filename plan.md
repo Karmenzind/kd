@@ -1,7 +1,6 @@
 # master plan
 
 ## wip
-- 下载audio增加timeout
 - 读文件加锁
 - 指定port
 - release增加version，aur判断此文件
@@ -9,11 +8,8 @@
 - -t查询本地缓存增加清理，例如保留最近1000条
 
 ## short-term
-- logger加上server/client标识
-- edit时候文件不存在，自动创建
 - 重启改为signal
 - 多source直接嵌套进列表
-- 记录pid/port，先检查这两个
 - 预留一个接口调用，获取重要信息
 - 用代理爬词库
 - use hash as cache file's name for long query
@@ -36,21 +32,7 @@
 - not found和索引都加入服务端缓存，benchmark比较直接查本地和tcp通信的速度
 - AUR收尾工作
 - move default log to cache dir
-
-# BUG
-
-- `--status` shows port and pid of dead daemon
-- disable pager on Debian/MacOS
-
-```
-panic: assignment to entry in nil map
-
-goroutine 27 [running]:
-github.com/Karmenzind/kd/internal/cache.UpdateLongTextCache(0xc000294400)
-        /home/runner/work/kd/kd/internal/cache/cache.go:121 +0x10c
-created by github.com/Karmenzind/kd/internal/query.FetchOnline in goroutine 26
-        /home/runner/work/kd/kd/internal/query/online.go:114 +0x1a8
-```
+- 调研 Windows 新版 coreutils 与 kd 的兼容性（pager、shell、路径和命令探测），视结果做针对性优化或在 README 中补充使用建议
 
 ## Risk
 - 实际文件名 不改的时候的process_name，增加同时校验kd和当前文件名

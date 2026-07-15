@@ -124,14 +124,20 @@ Invoke-WebRequest -uri 'https://github.com/Karmenzind/kd/releases/latest/downloa
 
 **自行编译**
 
-其他暂未支持的平台，可创建issue反馈需求。也可以自己动手安装最新Go环境，clone此项目，然后执行以下流程编译安装：
+其他暂未支持的平台，可创建issue反馈需求。也可以自己动手安装最新Go环境，clone此项目后编译。SQLite 使用纯 Go 的 `modernc.org/sqlite`，请保持 `CGO_ENABLED=0`，无需安装C编译器：
 
-> 此处为类unix环境，具体命令根据平台修改
+类 Unix 环境：
 
 ```bash
-go mod tidy
-CGO_ENABLED=1 go build -o kd cmd/kd.go
+CGO_ENABLED=0 go build -mod=readonly -o kd ./cmd/kd
 mv kd /usr/bin/kd
+```
+
+Windows PowerShell：
+
+```powershell
+$env:CGO_ENABLED = "0"
+go build -mod=readonly -o kd.exe ./cmd/kd
 ```
 
 ### 卸载
@@ -141,7 +147,7 @@ mv kd /usr/bin/kd
 2. 删除配置文件和缓存目录
     - Linux: `rm -rfv ~/.config/kd.toml ~/.cache/kdcache`
     - MacOS: `rm -rfv ~/.config/kd.toml ~/Library/Caches/kdcache`
-    - Win: `rm ~\kd.toml ~\kdcache`
+    - Win（PowerShell）: `Remove-Item -Force ~\kd.toml; Remove-Item -Recurse -Force ~\.cache\kdcache`
 
 如果通过AUR安装，则直接通过AUR管理工具卸载，例如：`yay -Rs kd-bin`
 </pre></details>
@@ -350,4 +356,3 @@ sudo xattr -r -d com.apple.quarantine <kd文件所在路径>
 - 支持通过fzf补全
 - Vim插件，浮窗显示查词结果
 - 离线词库周期更新
-

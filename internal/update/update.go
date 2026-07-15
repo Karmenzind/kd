@@ -32,19 +32,10 @@ type GithubTag struct {
 }
 
 func CompareVersions(v1, v2 string) int {
-	v1 = strings.TrimPrefix(v1, "v")
-	v2 = strings.TrimPrefix(v2, "v")
-
-	pattern := regexp.MustCompile(`(\d+).(\d+).(\d+)`)
-	matches1 := pattern.FindStringSubmatch(v1)
-	matches2 := pattern.FindStringSubmatch(v2)
-
-	version1 := make([]int, 3)
-	version2 := make([]int, 3)
-
-	for i := 1; i <= 3; i++ {
-		version1[i-1], _ = strconv.Atoi(matches1[i])
-		version2[i-1], _ = strconv.Atoi(matches2[i])
+	version1, ok1 := parseVersion(v1)
+	version2, ok2 := parseVersion(v2)
+	if !ok1 || !ok2 {
+		return 0
 	}
 
 	for i := 0; i < 3; i++ {
@@ -55,6 +46,26 @@ func CompareVersions(v1, v2 string) int {
 		}
 	}
 	return 0
+}
+
+var versionPattern = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$`)
+
+func parseVersion(value string) ([3]int, bool) {
+	value = strings.TrimPrefix(strings.TrimSpace(value), "v")
+	matches := versionPattern.FindStringSubmatch(value)
+	if len(matches) != 4 {
+		return [3]int{}, false
+	}
+
+	var version [3]int
+	for i := range version {
+		part, err := strconv.Atoi(matches[i+1])
+		if err != nil {
+			return [3]int{}, false
+		}
+		version[i] = part
+	}
+	return version, true
 }
 
 var LATEST_TAG_FILE = filepath.Join(cache.CACHE_ROOT_PATH, "latest_tag")
@@ -113,19 +124,20 @@ func GetCachedLatestTag() (tag string) {
 	return
 }
 
-func getBinaryURL() string {
-	var os, arch string
-	if runtime.GOOS == "darwin" {
-		os = "macos"
-	} else {
-		os = runtime.GOOS
+func binaryURLFor(goos, goarch string) string {
+	artifactOS := goos
+	if goos == "darwin" {
+		artifactOS = "macos"
 	}
-	arch = runtime.GOARCH
-	url := fmt.Sprintf("%skd_%s_%s", LATEST_RELEASE_URL, os, arch)
-	if os == "windows" {
+	url := fmt.Sprintf("%skd_%s_%s", LATEST_RELEASE_URL, artifactOS, goarch)
+	if goos == "windows" {
 		url += ".exe"
 	}
 	return url
+}
+
+func getBinaryURL() string {
+	return binaryURLFor(runtime.GOOS, runtime.GOARCH)
 }
 
 func GetNewerVersion(currentTag string) (tag string, err error) {
@@ -156,7 +168,7 @@ func UpdateBinary(currentTag string) (err error) {
 		return nil
 	}
 
-	d.EchoRun(fmt.Sprintf("Start downloading: %s", url))
+	d.EchoRun("Start downloading: %s", url)
 	// TODO (k): <2023-12-31> 调用curl
 	err = pkg.DownloadFileWithProgress(tmpPath, url)
 	if err != nil {
@@ -173,7 +185,7 @@ func UpdateBinary(currentTag string) (err error) {
 	if runtime.GOOS != "windows" {
 		err = pkg.AddExecutablePermission(exepath)
 		if err != nil {
-			d.EchoWrong(fmt.Sprintf("修改权限失败，请手动执行`chmod +x %s`", exepath))
+			d.EchoWrong("修改权限失败，请手动执行`chmod +x %s`", exepath)
 		}
 	}
 	return

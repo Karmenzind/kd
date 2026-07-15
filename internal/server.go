@@ -1,8 +1,6 @@
 package internal
 
 import (
-	"bufio"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -57,51 +55,44 @@ func StartServer() (err error) {
 }
 
 func handleClient(conn net.Conn) {
+	handleClientWithFetcher(conn, query.FetchOnline)
+}
+
+func handleClientWithFetcher(conn net.Conn, fetch func(*model.Result) error) {
 	defer conn.Close()
-	var err error
-
-	recv, err := bufio.NewReader(conn).ReadBytes('\n')
-	// zap.S().Debugf("Received `%+v` Error `%+v`", recv, err)
-	if err == io.EOF {
-		zap.S().Debugf("Connection closed by client.")
-		d.EchoWarn("Connection closed by client")
-		return
-	} else if err != nil {
-		d.EchoWrong(fmt.Sprintf("Error reading: %#v\n", err))
-		zap.S().Errorf("Error reading: %#v", err)
-		// FIXME (k): <2024-01-02> reply
-		return
-	}
-
-	zap.S().Debugf("Received: %q", recv)
-	q := model.TCPQuery{}
-	err = json.Unmarshal(recv, &q)
-	if err != nil {
-		zap.S().Errorf("[daemon] Failed to marshal request:", err)
-	}
-	r := q.GetResult()
-	r.Initialize()
-
-	var reply []byte
-	if err = query.FetchOnline(r); err != nil {
-		zap.S().Warnf("Failed to run FetchOnline with %+v. Error: %s", r, err)
-		var errmsg string
-		if strings.Contains(err.Error(), "proxyconnect") {
-			// errmsg = fmt.Sprintf("代理连接异常（%q）", err.Error())
-			errmsg = "代理连接异常，请求失败：" + err.Error()
-		} else {
-			errmsg = fmt.Sprintf("在线查询失败（%v）", err.Error())
+	reader := model.NewProtocolReader(conn)
+	for {
+		q := model.TCPQuery{}
+		err := reader.Read(&q)
+		if err == io.EOF {
+			return
 		}
-		reply, _ = json.Marshal(model.DaemonResponse{Error: errmsg})
-	} else {
-		reply, err = json.Marshal(r.ToDaemonResponse())
 		if err != nil {
-			zap.S().Errorf("[daemon] Failed to marshal response:", err)
-			reply, _ = json.Marshal(model.DaemonResponse{Error: fmt.Sprintf("序列化查询结果失败：%s", err)})
+			_ = model.WriteProtocolMessage(conn, model.DaemonResponse{Error: fmt.Sprintf("无效daemon请求：%s", err)})
+			if strings.Contains(err.Error(), "decode protocol message") || strings.Contains(err.Error(), "empty protocol message") {
+				continue
+			}
+			return
+		}
+		if q.B == nil {
+			_ = model.WriteProtocolMessage(conn, model.DaemonResponse{Error: "无效daemon请求：缺少查询内容"})
+			continue
+		}
+
+		r := q.GetResult()
+		r.Initialize()
+		response := r.ToDaemonResponse()
+		if err = fetch(r); err != nil {
+			zap.S().Warnf("Failed to fetch online result: %s", err)
+			errmsg := fmt.Sprintf("在线查询失败（%v）", err)
+			if strings.Contains(err.Error(), "proxyconnect") {
+				errmsg = "代理连接异常，请求失败：" + err.Error()
+			}
+			response = &model.DaemonResponse{Error: errmsg}
+		}
+		if err = model.WriteProtocolMessage(conn, response); err != nil {
+			zap.S().Warnf("Failed to send daemon response: %s", err)
+			return
 		}
 	}
-
-	zap.S().Debugf("Sending to client: %q", reply)
-	conn.Write(append(reply, '\n'))
-	conn.Close()
 }

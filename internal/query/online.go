@@ -22,21 +22,17 @@ import (
 
 var ydCliLegacy = &http.Client{Timeout: 5 * time.Second}
 var ydCli = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}, Timeout: 5 * time.Second}
+var youdaoLegacyBaseURL = "http://dict.youdao.com/w"
 
 func requestYoudao(r *model.Result) (body []byte, err error) {
+	return requestYoudaoWith(ydCliLegacy, youdaoLegacyBaseURL, r)
+}
+
+func requestYoudaoWith(cli *http.Client, baseURL string, r *model.Result) (body []byte, err error) {
 	var req *http.Request
 	var url string
-	var cli *http.Client
-	useNewApi := false
 	q := strings.ReplaceAll(r.Query, " ", "%20")
-	if useNewApi {
-		cli = ydCli
-		url = fmt.Sprintf("https://dict.youdao.com/result?word=%s&lang=en", q)
-	} else {
-		cli = ydCliLegacy
-		url = fmt.Sprintf("http://dict.youdao.com/w/%s/#keyfrom=dict2.top", q)
-		// url = fmt.Sprintf("http://dict.youdao.com/search?q=%s", q)
-	}
+	url = fmt.Sprintf("%s/%s/#keyfrom=dict2.top", strings.TrimRight(baseURL, "/"), q)
 	req, err = http.NewRequest("GET", url, nil)
 	if err != nil {
 		zap.S().Errorf("Failed to create request: %s", err)
@@ -64,8 +60,11 @@ func requestYoudao(r *model.Result) (body []byte, err error) {
 		return
 	}
 	zap.S().Debugf("[http-get] query '%s' Resp len: %d Status: %v", url, len(body), resp.Status)
-	if resp.StatusCode != 200 {
-		zap.S().Debugf("[http-get] detail: header %+v", url, len(body), resp.Header)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("youdao returned %s", resp.Status)
+	}
+	if len(body) == 0 {
+		return nil, fmt.Errorf("youdao returned an empty response")
 	}
 	if config.Cfg.Debug {
 		htmlDir := filepath.Join(run.CACHE_ROOT_PATH, "html")
