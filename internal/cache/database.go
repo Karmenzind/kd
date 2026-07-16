@@ -148,3 +148,39 @@ func saveCachedRow(query string, isEN bool, detail []byte) error {
 	}
 	return err
 }
+
+func GetCachedWordList(isEN bool) ([]string, error) {
+	var table string
+	if isEN {
+		table = "en"
+	} else {
+		table = "ch"
+	}
+
+	sqlStr := fmt.Sprintf("SELECT query FROM %s ORDER BY query ASC", table)
+
+	rows, err := LiteDB.Query(sqlStr)
+	if err != nil {
+		zap.S().Errorf("Failed to query all words from %s: %v", table, err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var words []string
+	for rows.Next() {
+		var word string
+		if err := rows.Scan(&word); err != nil {
+			zap.S().Warnf("Failed to scan row from %s: %v", table, err)
+			continue
+		}
+		words = append(words, word)
+	}
+
+	if err = rows.Err(); err != nil {
+		zap.S().Errorf("Row iteration error for %s: %v", table, err)
+		return nil, err
+	}
+
+	zap.S().Debugf("Got %d cached words from %s", len(words), table)
+	return words, nil
+}

@@ -59,6 +59,8 @@ var um = map[string]string{
 	"edit-config":     "edit configuration file with the default editor 用默认编辑器打开配置文件",
 	"status":          "show running status 展示运行信息",
 	"log-to-stream":   "redirect logging output to stdout&stderr (for debugging or server mode)",
+	"all-en":          "list all English words 列出所有英文单词",
+	"all-ch":          "list all Chinese words 列出所有中文词条",
 }
 
 //  -----------------------------------------------------------------------------
@@ -230,6 +232,43 @@ func flagStatus(*cli.Context, bool) error {
 	return err
 }
 
+func listAllLocalQueries(isEN bool) error {
+	tableName := "ch"
+	if isEN {
+		tableName = "en"
+	}
+
+	words, err := cache.GetCachedWordList(isEN)
+	if err != nil {
+		zap.S().Errorf("Failed to read all %s queries: %s", tableName, err)
+		d.EchoError(fmt.Sprintf("读取本地缓存失败: %s", err))
+		return err
+	}
+
+	if len(words) == 0 {
+		fmt.Fprintln(os.Stderr, d.Yellow("本地暂无任何缓存数据。"))
+		return nil
+	}
+
+	var sb strings.Builder
+	for _, word := range words {
+		fmt.Fprintf(&sb, "%s\n", word)
+	}
+
+	if err = pkg.OutputResult(sb.String(), config.Cfg.Paging, config.Cfg.PagerCommand); err != nil {
+		d.EchoFatal(err.Error())
+	}
+	return nil
+}
+
+func flagAllEn(*cli.Context, bool) error {
+	return listAllLocalQueries(true)
+}
+
+func flagAllCh(*cli.Context, bool) error {
+	return listAllLocalQueries(false)
+}
+
 func checkAndNoticeUpdate() {
 	if ltag := update.GetCachedLatestTag(); ltag != "" {
 		if update.CompareVersions(ltag, VERSION) == 1 {
@@ -331,6 +370,8 @@ func main() {
 			&cli.BoolFlag{Name: "edit-config", DisableDefaultText: true, Action: flagEditConfig, Usage: um["edit-config"]},
 			&cli.BoolFlag{Name: "status", DisableDefaultText: true, Hidden: true, Action: flagStatus, Usage: um["status"]},
 			&cli.BoolFlag{Name: "log-to-stream", DisableDefaultText: true, Hidden: true, Usage: um["log-to-stream"]},
+			&cli.BoolFlag{Name: "all-en", DisableDefaultText: true, Action: flagAllEn, Usage: um["all-en"]},
+			&cli.BoolFlag{Name: "all-ch", DisableDefaultText: true, Action: flagAllCh, Usage: um["all-ch"]},
 		},
 		Action: func(cCtx *cli.Context) error {
 			// 这里BoolFlag都当subcommand用
@@ -338,7 +379,7 @@ func main() {
 				defer checkAndNoticeUpdate()
 			}
 
-			if pkg.HasAnyFlag("init", "server", "daemon", "stop", "restart", "update", "generate-config", "edit-config", "status") {
+			if pkg.HasAnyFlag("init", "server", "daemon", "stop", "restart", "update", "generate-config", "edit-config", "status", "all-en", "all-ch") {
 				return nil
 			}
 
