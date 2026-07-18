@@ -5,7 +5,6 @@ import (
 	"os"
 
 	fc "github.com/fatih/color"
-	gc "github.com/gookit/color"
 )
 
 /*
@@ -44,13 +43,6 @@ var F = fc.New(fc.Faint).SprintfFunc()
 var Info = fc.New(fc.FgWhite).SprintfFunc()
 
 // var Error = fc.Error
-
-//  -----------------------------------------------------------------------------
-//  gookit version
-//  -----------------------------------------------------------------------------
-
-// assignColor
-var a = gc.C256(132)
 
 var Warn = fc.New(fc.FgYellow, fc.Italic).SprintFunc()
 var WarnBg = fc.New(fc.BgYellow, fc.FgBlack, fc.Italic, fc.Faint).SprintFunc()

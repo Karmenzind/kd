@@ -1,14 +1,20 @@
-:stars: a crystal clear command-line dictionary, written in Go, supported Linux/Win/Mac
+# kd
 
-**Go语言实现的简洁好用的命令行词典，跨平台、易于安装、持续维护更新**
+> 2026-07: 近期处于活跃开发阶段，欢迎通过Issue提出建议
+
+:stars: A crystal-clear terminal-native command-line dictionary for Linux, macOS and Windows.
+
+**Go 语言实现的简洁好用的命令行词典，原生面向终端，跨平台、易于安装、持续维护更新**
+
+kd 专注于简洁、高效、丝滑的查询功能，不会发展成集成式的 AI 工具、Agent 或 GUI 应用；现阶段也不会引入 TUI。
+
+保持清晰的边界，把有限的精力持续投入到命令行体验本身，是 kd 的长期设计原则。
 
 [![GitHub Release](https://img.shields.io/github/v/release/karmenzind/kd)](https://github.com/Karmenzind/kd/releases)
 
 <!-- <img src="https://raw.githubusercontent.com/Karmenzind/i/master/kd/kd_demo.gif" width="700" align="center"> -->
 
 ![](https://raw.githubusercontent.com/Karmenzind/i/master/kd/kd_demo.gif)
-
-本项目受[无道词典](https://github.com/ChestnutHeng/Wudao-dict)启发，在复刻Wudao核心功能的基础上增加了更丰富的特性。我是Wudao的多年用户，日常工作生活重度依赖随手`wd abandon`，但可惜这个项目已经很久未更新，且存在一些可以优化的地方，所以忍不住重写了一个，选择Go是为了方便地解决安装和跨平台问题。
 
 **TOC**
 
@@ -35,12 +41,14 @@
     * [设置less为Pager后显示异常](#设置less为pager后显示异常)
     * [MacOS弹出“无法打开”提醒](#macos弹出无法打开提醒)
 * [📝 进度和计划](#-进度和计划)
+* [Thanks to](#thanks-to)
 
 <!-- vim-markdown-toc -->
 
 ## :ballot_box_with_check: 特性
 
 - 极速响应，超低延迟 ⚡
+- 慢查询会在交互式终端显示查询词和真实查询阶段；快速查询不会闪现加载提示
 - 单文件运行，多平台兼容，无需安装任何依赖。Windows运行截图：
 
     <img src="https://raw.githubusercontent.com/Karmenzind/i/master/kd/win_terminal.png">
@@ -171,7 +179,7 @@ USAGE:
    kd [global options]
 
 VERSION:
-   v0.0.14
+   v0.1.0
 
 AUTHOR:
    kmz <valesail7@gmail.com>
@@ -196,6 +204,7 @@ GLOBAL OPTIONS:
 说明：
 
 - JSON模式直接输出数据库中raw data，key为简写，暂不打算优化为易读形式
+- 查询进度仅用于交互式终端，并在正式结果输出前自动清除。现代终端显示完整动画，能力不明确或较旧的终端会降级为ASCII提示；JSON、管道和重定向输出不会混入动态状态
 
 ### 配置文件
 
@@ -356,3 +365,9 @@ sudo xattr -r -d com.apple.quarantine <kd文件所在路径>
 - 支持通过fzf补全
 - Vim插件，浮窗显示查词结果
 - 离线词库周期更新
+
+
+## Thanks to
+
+- 本项目受[无道词典](https://github.com/ChestnutHeng/Wudao-dict)启发，在复刻Wudao核心功能的基础上增加了更丰富的特性。我是Wudao的多年用户，日常工作生活重度依赖随手`wd abandon`，但可惜这个项目已经很久未更新，且存在一些可以优化的地方，所以忍不住重写了一个，选择Go是为了方便地解决安装和跨平台问题。
+- 不吝创建Issue、提出建议和意见的各位，让我从这个纯兴趣项目中学到很多，非常感激。

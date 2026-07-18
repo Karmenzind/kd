@@ -51,3 +51,15 @@
 如果没有你所使用的平台/架构，请提交issue反馈
 
 如果下载受阻，请前往gitee备份页面
+
+
+## Others
+
+按这个顺序推进：
+
+- 稳定 daemon、协议和测试；
+- 完善 stdin、plain/json 输出和退出码；
+- 增加 fish、zsh、bash、PowerShell completion；
+- 增加 history 或生词本；
+- 在本地数据浏览场景提供可选 fzf 集成；
+- 最后再扩展 LLM source 和语言能力。

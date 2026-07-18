@@ -3,8 +3,10 @@ package cache
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -170,6 +172,46 @@ func TestDatabaseSupportsMultipleOpenHandles(t *testing.T) {
 	}
 	if string(got) != "visible" {
 		t.Fatalf("second handle detail = %q, want visible", got)
+	}
+}
+
+func TestDatabaseSupportsConcurrentReads(t *testing.T) {
+	useTestDB(t)
+
+	const workers = 8
+	for worker := range workers {
+		query := fmt.Sprintf("concurrent-%d", worker)
+		value := []byte(fmt.Sprintf("value-%d", worker))
+		if err := saveCachedRow(query, true, value); err != nil {
+			t.Fatalf("seed %q: %v", query, err)
+		}
+	}
+
+	start := make(chan struct{})
+	errorsByWorker := make(chan error, workers)
+	var wg sync.WaitGroup
+	for worker := range workers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-start
+			query := fmt.Sprintf("concurrent-%d", worker)
+			want := []byte(fmt.Sprintf("value-%d", worker))
+			got, err := getCachedRow(query, true)
+			if err != nil {
+				errorsByWorker <- fmt.Errorf("read %q: %w", query, err)
+				return
+			}
+			if !reflect.DeepEqual(got, want) {
+				errorsByWorker <- fmt.Errorf("read %q = %q, want %q", query, got, want)
+			}
+		}()
+	}
+	close(start)
+	wg.Wait()
+	close(errorsByWorker)
+	for err := range errorsByWorker {
+		t.Error(err)
 	}
 }
 
