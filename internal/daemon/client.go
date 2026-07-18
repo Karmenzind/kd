@@ -8,19 +8,21 @@ import (
 
 	"github.com/Karmenzind/kd/internal/model"
 	"github.com/Karmenzind/kd/internal/run"
-	d "github.com/Karmenzind/kd/pkg/decorate"
+	"go.uber.org/zap"
 )
 
 // EnsureReady verifies the daemon through the TCP ping endpoint and starts it
 // when necessary. Runtime metadata is never treated as proof of availability.
-func EnsureReady() error {
+func EnsureReady(onStarting ...func()) error {
 	status := CheckDaemonStatus(DefaultAddress())
 	if status.State != StateRunning {
-		d.EchoRun("未找到守护进程，正在启动...")
-		return StartDaemonProcess()
+		if len(onStarting) > 0 && onStarting[0] != nil {
+			onStarting[0]()
+		}
+		return startDaemonProcess(false)
 	}
 	if status.Ping != nil && run.Info.Version != status.Ping.Version {
-		d.EchoWarn(
+		zap.S().Warnf(
 			"正在运行的守护程序版本（%s）与当前程序（%s）不一致，建议执行`kd --restart`重启",
 			status.Ping.Version,
 			run.Info.Version,

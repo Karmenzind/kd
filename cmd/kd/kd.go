@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/Karmenzind/kd/config"
 	"github.com/Karmenzind/kd/internal"
@@ -20,6 +21,7 @@ import (
 	"github.com/Karmenzind/kd/internal/query"
 	"github.com/Karmenzind/kd/internal/run"
 	"github.com/Karmenzind/kd/internal/tts"
+	"github.com/Karmenzind/kd/internal/ui"
 	"github.com/Karmenzind/kd/internal/update"
 	"github.com/Karmenzind/kd/logger"
 	"github.com/Karmenzind/kd/pkg"
@@ -40,6 +42,25 @@ func showPrompt() {
 %[1]s -t <text>	查长句
 %[1]s -h    	查看详细帮助
 `, exename)
+}
+
+func shouldEnableQueryProgress(jsonOutput, logToStream, terminal bool) bool {
+	return terminal && !jsonOutput && !logToStream
+}
+
+type debugProgressDelay struct {
+	ui.Progress
+	delay time.Duration
+}
+
+func (p debugProgressDelay) Start(state ui.State) {
+	p.Progress.Start(state)
+	time.Sleep(p.delay)
+}
+
+func (p debugProgressDelay) Update(state ui.State) {
+	p.Progress.Update(state)
+	time.Sleep(p.delay)
 }
 
 var um = map[string]string{
@@ -430,7 +451,7 @@ func main() {
 		},
 		Action: func(cCtx *cli.Context) error {
 			// 这里BoolFlag都当subcommand用
-			if !cCtx.Bool("update") {
+			if !cCtx.Bool("update") && !cCtx.Bool("json") {
 				defer checkAndNoticeUpdate()
 			}
 
@@ -441,8 +462,14 @@ func main() {
 			if cfg.FileExists {
 				status := daemon.CheckDaemonStatus(daemon.DefaultAddress())
 				if status.State == daemon.StateRunning && status.Ping != nil && cfg.ModTime > status.Ping.StartTime {
-					d.EchoWarn("检测到配置文件发生修改，正在重启守护进程")
-					flagRestart(cCtx, true)
+					if cCtx.Bool("json") {
+						if err := daemon.RestartDaemonQuiet(); err != nil {
+							zap.S().Warnf("Failed to restart daemon after config change: %s", err)
+						}
+					} else {
+						d.EchoWarn("检测到配置文件发生修改，正在重启守护进程")
+						flagRestart(cCtx, true)
+					}
 				}
 			}
 
@@ -454,14 +481,29 @@ func main() {
 			if cCtx.Args().Len() > 0 {
 				zap.S().Debugf("Recieved Arguments (len: %d): %+v", cCtx.Args().Len(), cCtx.Args().Slice())
 				// emoji.Printf("Test emoji:\n:accept: :inbox_tray: :information: :us: :uk:  🗣  :lips: :eyes: :balloon: \n")
-				if cfg.ClearScreen {
+				if cfg.ClearScreen && !cCtx.Bool("json") {
 					pkg.ClearScreen()
 				}
 
 				qstr := strings.Join(cCtx.Args().Slice(), " ")
+				ansi, unicodeOutput := ui.TerminalCapabilities()
+				interactiveTerminal := ui.IsTerminal(os.Stderr) && ui.IsTerminal(os.Stdout)
+				progress := ui.NewProgress(cCtx.Context, ui.Options{
+					Writer:   os.Stderr,
+					Enabled:  shouldEnableQueryProgress(cCtx.Bool("json"), cCtx.Bool("log-to-stream"), interactiveTerminal),
+					Terminal: interactiveTerminal,
+					ANSI:     ansi,
+					Unicode:  unicodeOutput,
+				})
+				if interactiveTerminal && os.Getenv("KD_DEBUG_PROGRESS") == "1" {
+					progress = debugProgressDelay{Progress: progress, delay: 1200 * time.Millisecond}
+				}
+				progress.Start(ui.State{Query: qstr, Phase: ui.PhaseStarting})
+				defer progress.Stop()
 
-				if r, err := internal.Query(qstr, cCtx.Bool("nocache"), cCtx.Bool("text")); err == nil {
+				if r, err := internal.QueryWithProgress(qstr, cCtx.Bool("nocache"), cCtx.Bool("text"), progress); err == nil {
 					if cCtx.Bool("json") {
+						progress.Stop()
 						if j, jsonErr := json.Marshal(r); jsonErr == nil {
 							fmt.Println(string(j))
 							return nil
@@ -470,11 +512,7 @@ func main() {
 						}
 					}
 
-					if cfg.FreqAlert {
-						if h := <-r.History; h > 3 {
-							d.EchoWarn("本月第%d次查询`%s`", h, r.Query)
-						}
-					}
+					var formatted string
 					if r.Found {
 						brief := cfg.Brief
 						if cCtx.Bool("brief") {
@@ -483,7 +521,18 @@ func main() {
 						if cCtx.Bool("no-brief") {
 							brief = false
 						}
-						if err = pkg.OutputResult(query.PrettyFormat(r, cfg.EnglishOnly, brief), cfg.Paging, cfg.PagerCommand); err != nil {
+						progress.Update(ui.State{Query: r.Query, Phase: ui.PhaseFormatting})
+						formatted = query.PrettyFormat(r, cfg.EnglishOnly, brief)
+					}
+					progress.Stop()
+
+					if cfg.FreqAlert {
+						if h := <-r.History; h > 3 {
+							d.EchoWarn("本月第%d次查询`%s`", h, r.Query)
+						}
+					}
+					if r.Found {
+						if err = pkg.OutputResult(formatted, cfg.Paging, cfg.PagerCommand); err != nil {
 							d.EchoFatal("%s", err)
 						}
 						if cCtx.Bool("speak") {
@@ -504,6 +553,7 @@ func main() {
 						}
 					}
 				} else {
+					progress.Stop()
 					d.EchoError("%s", err)
 					zap.S().Errorf("%+v", err)
 				}

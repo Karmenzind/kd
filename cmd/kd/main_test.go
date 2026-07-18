@@ -106,3 +106,24 @@ func TestCLISmoke(t *testing.T) {
 		}
 	})
 }
+
+func TestShouldEnableQueryProgress(t *testing.T) {
+	for _, tt := range []struct {
+		name        string
+		jsonOutput  bool
+		logToStream bool
+		terminal    bool
+		want        bool
+	}{
+		{name: "interactive query", terminal: true, want: true},
+		{name: "redirected", terminal: false},
+		{name: "JSON", jsonOutput: true, terminal: true},
+		{name: "log stream", logToStream: true, terminal: true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := shouldEnableQueryProgress(tt.jsonOutput, tt.logToStream, tt.terminal); got != tt.want {
+				t.Fatalf("shouldEnableQueryProgress(%v, %v, %v) = %v, want %v", tt.jsonOutput, tt.logToStream, tt.terminal, got, tt.want)
+			}
+		})
+	}
+}

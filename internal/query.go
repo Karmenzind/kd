@@ -10,6 +10,7 @@ import (
 	"github.com/Karmenzind/kd/internal/daemon"
 	"github.com/Karmenzind/kd/internal/model"
 	q "github.com/Karmenzind/kd/internal/query"
+	"github.com/Karmenzind/kd/internal/ui"
 	"github.com/Karmenzind/kd/pkg/str"
 	"go.uber.org/zap"
 )
@@ -31,6 +32,13 @@ func normalizeQuery(query string, longText bool) string {
 }
 
 func Query(query string, noCache bool, longText bool) (r *model.Result, err error) {
+	return QueryWithProgress(query, noCache, longText, ui.NopProgress())
+}
+
+func QueryWithProgress(query string, noCache bool, longText bool, progress ui.Progress) (r *model.Result, err error) {
+	if progress == nil {
+		progress = ui.NopProgress()
+	}
 	// TODO (k): <2024-01-02> regexp
 	query = normalizeQuery(query, longText)
 
@@ -38,7 +46,12 @@ func Query(query string, noCache bool, longText bool) (r *model.Result, err erro
 	r.History = make(chan int, 1)
 
 	daemonReady := make(chan error, 1)
-	go func() { daemonReady <- daemon.EnsureReady() }()
+	go func() {
+		daemonReady <- daemon.EnsureReady(func() {
+			progress.Update(ui.State{Query: query, Phase: ui.PhaseStarting})
+		})
+	}()
+	progress.Update(ui.State{Query: query, Phase: ui.PhaseLocal})
 
 	if !longText {
 		core.WG.Add(1)
@@ -82,9 +95,11 @@ func Query(query string, noCache bool, longText bool) (r *model.Result, err erro
 		}
 	}
 
+	progress.Update(ui.State{Query: query, Phase: ui.PhaseRemote})
 	if err = <-daemonReady; err != nil {
 		return r, fmt.Errorf("守护进程启动失败: %w", err)
 	}
+	progress.Update(ui.State{Query: query, Phase: ui.PhaseRemote})
 	err = daemon.QueryDaemon(daemon.DefaultAddress(), r)
 	if err == nil && r.Found && inNotFound {
 		go cache.RemoveNotFound(r.Query)

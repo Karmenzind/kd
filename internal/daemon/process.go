@@ -77,12 +77,18 @@ func FindServerProcess() (*process.Process, error) {
 }
 
 func StartDaemonProcess() error {
+	return startDaemonProcess(true)
+}
+
+func startDaemonProcess(announce bool) error {
 	ping, err := startDaemon(DefaultAddress(), DaemonStartTimeout, launchDaemonProcess)
 	if err != nil {
 		return err
 	}
 	zap.S().Info("Started or reused daemon process")
-	d.EchoOkay("守护进程已就绪，PID：%d", ping.PID)
+	if announce {
+		d.EchoOkay("守护进程已就绪，PID：%d", ping.PID)
+	}
 	return nil
 }
 
@@ -168,11 +174,17 @@ func WaitDaemonReady(addr string, timeout time.Duration, exited <-chan error) (*
 }
 
 func KillDaemonIfRunning() error {
+	return killDaemonIfRunning(true)
+}
+
+func killDaemonIfRunning(announce bool) error {
 	if runtime.GOOS == "linux" {
 		if yes, _ := systemd.ServiceIsActive(SYSTEMD_UNIT_NAME, true); yes {
-			d.EchoWarn("检测到daemon作为systemd unit运行，将使用systemctl停止，再次启动需执行systemctl start --user %s", SYSTEMD_UNIT_NAME)
+			if announce {
+				d.EchoWarn("检测到daemon作为systemd unit运行，将使用systemctl停止，再次启动需执行systemctl start --user %s", SYSTEMD_UNIT_NAME)
+			}
 			_, err := systemd.StopService(SYSTEMD_UNIT_NAME, true)
-			if err == nil {
+			if err == nil && announce {
 				d.EchoOkay("已经通过systemd停止kd-server服务")
 			}
 			return err
@@ -180,7 +192,9 @@ func KillDaemonIfRunning() error {
 	}
 	ping, err := PingDaemon(DefaultAddress())
 	if errors.Is(err, ErrDaemonNotRunning) {
-		d.EchoOkay("未发现守护进程，无需停止")
+		if announce {
+			d.EchoOkay("未发现守护进程，无需停止")
+		}
 		return nil
 	}
 	if err != nil {
@@ -193,7 +207,9 @@ func KillDaemonIfRunning() error {
 	for time.Now().Before(deadline) {
 		if _, err := PingDaemon(DefaultAddress()); errors.Is(err, ErrDaemonNotRunning) {
 			zap.S().Info("Stopped daemon process")
-			d.EchoOkay("守护进程已经停止")
+			if announce {
+				d.EchoOkay("守护进程已经停止")
+			}
 			return nil
 		}
 		time.Sleep(DaemonRetryInterval)
@@ -230,21 +246,31 @@ func SendHUP2Daemon() error {
 }
 
 func RestartDaemon() error {
+	return restartDaemon(true)
+}
+
+func RestartDaemonQuiet() error {
+	return restartDaemon(false)
+}
+
+func restartDaemon(announce bool) error {
 	var err error
 	if runtime.GOOS == "linux" {
 		if yes, _ := systemd.ServiceIsActive(SYSTEMD_UNIT_NAME, true); yes {
 			zap.S().Debugf("Found systemd unit: %s", SYSTEMD_UNIT_NAME)
-			d.EchoWarn("检测到daemon存在相应systemd unit，将使用systemctl重启")
+			if announce {
+				d.EchoWarn("检测到daemon存在相应systemd unit，将使用systemctl重启")
+			}
 			_, err = systemd.RestartService(SYSTEMD_UNIT_NAME, true)
-			if err == nil {
+			if err == nil && announce {
 				d.EchoOkay("已经通过systemctl重启daemon服务")
 			}
 			return err
 		}
 	}
-	err = KillDaemonIfRunning()
+	err = killDaemonIfRunning(announce)
 	if err == nil {
-		err = StartDaemonProcess()
+		err = startDaemonProcess(announce)
 	}
 	return err
 }
