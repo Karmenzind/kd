@@ -74,6 +74,11 @@ func TestConfigValidation(t *testing.T) {
 			config: Config{Logging: LoggerConfig{Level: "WARNING"}},
 			level:  "warn",
 		},
+		{
+			name:    "audio cache limit overflow",
+			config:  Config{AudioCacheMaxSizeMB: ^uint64(0)},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -91,7 +96,7 @@ func TestConfigValidation(t *testing.T) {
 
 func TestGenerateDefaultConfig(t *testing.T) {
 	originalCfg := Cfg
-	Cfg = Config{Theme: "temp", Paging: true, EnableEmoji: true}
+	Cfg = Config{Theme: "temp", Paging: true, EnableEmoji: true, AudioCacheMaxSizeMB: 2048}
 	t.Cleanup(func() { Cfg = originalCfg })
 
 	got, err := GenerateDefaultConfig()
@@ -103,7 +108,9 @@ func TestGenerateDefaultConfig(t *testing.T) {
 			t.Fatalf("generated config contains internal field %q:\n%s", unexpected, got)
 		}
 	}
-	if !strings.Contains(got, `theme = "temp"`) || !strings.Contains(got, "[logging]") {
+	if !strings.Contains(got, `theme = "temp"`) ||
+		!strings.Contains(got, "audio_cache_max_size_mb = 2048") ||
+		!strings.Contains(got, "[logging]") {
 		t.Fatalf("generated config is missing expected settings:\n%s", got)
 	}
 }
@@ -131,6 +138,9 @@ func TestMissingConfigUsesDefaults(t *testing.T) {
 	if !Cfg.Logging.Enable || Cfg.Logging.Level != "warn" {
 		t.Fatalf("logging defaults = %+v", Cfg.Logging)
 	}
+	if Cfg.AudioCacheMaxSizeMB != 2048 {
+		t.Fatalf("AudioCacheMaxSizeMB = %d, want 2048", Cfg.AudioCacheMaxSizeMB)
+	}
 }
 
 func TestGeneratedConfigRoundTrip(t *testing.T) {
@@ -142,11 +152,12 @@ func TestGeneratedConfigRoundTrip(t *testing.T) {
 	})
 
 	Cfg = Config{
-		Paging:       true,
-		PagerCommand: "less -RF",
-		EnglishOnly:  true,
-		Theme:        "wudao",
-		Brief:        true,
+		Paging:              true,
+		PagerCommand:        "less -RF",
+		EnglishOnly:         true,
+		Theme:               "wudao",
+		Brief:               true,
+		AudioCacheMaxSizeMB: 0,
 		Logging: LoggerConfig{
 			Enable: true,
 			Level:  "info",
@@ -175,6 +186,9 @@ func TestGeneratedConfigRoundTrip(t *testing.T) {
 	}
 	if !Cfg.EnableEmoji {
 		t.Fatal("omitted enable_emoji did not recover its default")
+	}
+	if Cfg.AudioCacheMaxSizeMB != 0 {
+		t.Fatalf("AudioCacheMaxSizeMB = %d, want explicit zero", Cfg.AudioCacheMaxSizeMB)
 	}
 }
 

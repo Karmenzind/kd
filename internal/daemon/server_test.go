@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -332,7 +333,7 @@ func TestServerInitializationFailureLeavesNoRuntime(t *testing.T) {
 	if !errors.Is(err, ErrDaemonInit) {
 		t.Fatalf("serveListener() error = %v", err)
 	}
-	if _, statErr := os.Stat(runtimePath); !errors.Is(statErr, os.ErrNotExist) {
+	if _, statErr := os.Stat(runtimePath); !errors.Is(statErr, os.ErrNotExist) && !errors.Is(statErr, syscall.ENOTDIR) {
 		t.Fatalf("runtime file exists after init failure: %v", statErr)
 	}
 }

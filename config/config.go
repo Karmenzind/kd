@@ -32,15 +32,16 @@ type Config struct {
 	Debug bool `default:"false" toml:"debug"`
 
 	// Modules      []string
-	EnableEmoji  bool   `default:"true" toml:"enable_emoji"`
-	Paging       bool   `default:"true" toml:"paging"`
-	PagerCommand string `toml:"pager_command"`
-	EnglishOnly  bool   `default:"false" toml:"english_only"`
-	Theme        string `default:"temp" toml:"theme"`
-	HTTPProxy    string `toml:"http_proxy"`
-	ClearScreen  bool   `toml:"clear_screen" default:"false"`
-	FreqAlert    bool   `toml:"freq_alert" default:"false"`
-	Brief        bool   `toml:"brief" default:"false"`
+	EnableEmoji         bool   `default:"true" toml:"enable_emoji"`
+	Paging              bool   `default:"true" toml:"paging"`
+	PagerCommand        string `toml:"pager_command"`
+	EnglishOnly         bool   `default:"false" toml:"english_only"`
+	Theme               string `default:"temp" toml:"theme"`
+	HTTPProxy           string `toml:"http_proxy"`
+	ClearScreen         bool   `toml:"clear_screen" default:"false"`
+	FreqAlert           bool   `toml:"freq_alert" default:"false"`
+	Brief               bool   `toml:"brief" default:"false"`
+	AudioCacheMaxSizeMB uint64 `toml:"audio_cache_max_size_mb" default:"2048"`
 	// MaxCached    uint   `default:"10000" toml:"max_cached"`
 
 	Logging LoggerConfig `toml:"logging"`
@@ -50,6 +51,10 @@ type Config struct {
 }
 
 func (c *Config) CheckAndApply() (err error) {
+	const maxAudioCacheSizeMB = uint64(^uint64(0)>>1) / (1 << 20)
+	if c.AudioCacheMaxSizeMB > maxAudioCacheSizeMB {
+		return fmt.Errorf("[audio_cache_max_size_mb] 音频缓存上限过大：%d", c.AudioCacheMaxSizeMB)
+	}
 	if c.HTTPProxy != "" {
 		proxyRegex := `^(https?:\/\/)(?:[\w\-\.]+(?::[\w\-\.]*)?@)?(?:\d{1,3}(?:\.\d{1,3}){3}|\[[^\]]+\]|[a-zA-Z0-9\-\.]+):\d{1,5}$`
 		re := regexp.MustCompile(proxyRegex)

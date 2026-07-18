@@ -227,6 +227,9 @@ english_only = false
 # 精简输出，去除英语解释和例句（可使用 --no-brief 参数临时关闭）
 brief = false
 
+# 音频缓存目录大小上限（MiB），默认2048（2 GiB）；设为0时朗读后不保留音频
+audio_cache_max_size_mb = 2048
+
 # 颜色主题，支持：temp/wudao
 theme = "temp"
 
@@ -260,6 +263,10 @@ freq_alert = false
 ⚠️ 此功能需要访问Google。目前处于实验阶段，请斟酌使用
 
 单词前加speak参数，例如 `kd -s abandon`
+
+音频会缓存在kd的cache目录中。每次使用读音功能时，程序最多每天检查一次缓存总大小；超过
+`audio_cache_max_size_mb` 后会优先清理较久未使用的音频。将该值设为`0`可禁用音频缓存，
+但不会禁用本次朗读。
 
 **Windows**
 

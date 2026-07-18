@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -43,7 +44,7 @@ func main() {
 	zap.S().Debugf("Got configuration: %+v", cfg)
 	zap.S().Debugf("Got run info: %+v", run.Info)
 
-	if err := tts.Speak("abandon"); err != nil {
+	if err := tts.Speak(context.Background(), "abandon", cfg.AudioCacheMaxSizeMB); err != nil {
 		log.Printf("Error: %s", err)
 	}
 }

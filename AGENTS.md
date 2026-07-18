@@ -56,7 +56,7 @@ gofmt -w path/to/changed.go
 
 Build with `CGO_ENABLED=0`. On Unix use `CGO_ENABLED=0 go build -o build/kd ./cmd/kd`; in PowerShell set `$env:CGO_ENABLED = "0"` before running the equivalent `go build` command.
 
-Before handing off a Go change, run `gofmt` on changed files and at least `go test ./...`. Run `go vet ./...` for changes beyond documentation. The checked-in `Makefile` and release script assume Unix tools; prefer direct Go commands during cross-platform development on Windows.
+Before handing off a Go change, run `gofmt` on changed files and at least `go test ./...`. Run `go vet ./...` for changes beyond documentation. After a substantial change is pushed, inspect the GitHub Actions CI result across Linux, macOS, and Windows; investigate failures instead of assuming local success covers platform-specific behavior. The checked-in `Makefile` and release script assume Unix tools; prefer direct Go commands during cross-platform development on Windows.
 
 Do not run `go mod tidy` merely as generic validation because it can rewrite module metadata. When dependency metadata intentionally changes, inspect both `go.mod` and `go.sum`. Prefer small, actively maintained libraries with stable APIs; avoid CGO, large transitive dependency trees, heavyweight frameworks, and dependencies that introduce background services.
 
@@ -78,6 +78,7 @@ Package initialization creates user-level runtime directories. On Windows and Li
 
 - SQLite is a local optimization layer, not the source of truth. A missing or corrupt cache, or a recoverable database failure, should degrade to online lookup instead of preventing it.
 - Downloaded data ZIPs are also optional cache inputs. Download or decompression failures must leave the current database untouched and must not stop the daemon or block online queries.
+- TTS audio uses opaque hashed filenames and atomic downloads. Its opportunistic cleanup runs at most once per 24 hours when TTS is used, respects `audio_cache_max_size_mb` (default 2048 MiB), and treats zero as no persistent audio cache; cleanup failures must not block playback.
 - Keep long-text JSON cache updates serialized within the process and replace the cache file atomically. Do not reintroduce asynchronous truncate-and-rewrite behavior that lets readers observe partial files.
 - Keep the schema simple. Do not add tables, indexes, or persistent metadata without a measured or otherwise explicit benefit.
 - Preserve existing database files and cached data where practical. Changes to the SQLite driver, schema, time representation, or serialized formats require compatibility tests using data in the previous format and an explicit migration or fallback when needed.

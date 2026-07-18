@@ -570,7 +570,7 @@ func main() {
 							if cmd.Bool("text") {
 								d.EchoWarn("读音功能暂不支持长文本模式")
 							} else {
-								if err = tts.Speak(qstr); err != nil {
+								if err = tts.Speak(ctx, qstr, cfg.AudioCacheMaxSizeMB); err != nil {
 									d.EchoWarn("发音功能报错：%s", err)
 									zap.S().Warnf("Failed to read the word. Error: %s", err)
 								}

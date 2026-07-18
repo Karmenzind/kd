@@ -1,123 +1,99 @@
 package tts
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"math"
+	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
 
 	"github.com/Karmenzind/kd/internal/run"
-	"github.com/Karmenzind/kd/pkg"
 	d "github.com/Karmenzind/kd/pkg/decorate"
 	"go.uber.org/zap"
 )
 
-var speakerProgram string
+const (
+	audioDownloadTimeout = 5 * time.Second
+	audioPlaybackTimeout = 30 * time.Second
+)
 
-// TODO (k): <2025-02-02 20:23> cached files' loc
-func buildTargetPath(word string) string {
-	// TODO (K): <2025-06-09 22:41> and dir
-	fileName := strings.ReplaceAll(word, " ", "_") + ".mp3"
-	return filepath.Join(run.CACHE_AUDIO_DIR_PATH, fileName)
-}
+var ErrNoSpeaker = errors.New("no suitable audio player found")
 
-// downloadAudio checks if the audio file already exists locally, and if not, downloads it
-func downloadAudio(word, filePath string) error {
-	var err error
-	if _, err = os.Stat(filePath); err == nil {
-		zap.S().Debugw("Audio file already exists", "file", filePath)
+// Speak downloads and plays a word pronunciation. cacheLimitMB is expressed in
+// MiB; zero keeps no audio files after playback.
+func Speak(ctx context.Context, word string, cacheLimitMB uint64) error {
+	if strings.TrimSpace(word) == "" {
+		return errors.New("empty TTS query")
+	}
+	cacheLimit, err := cacheLimitBytes(cacheLimitMB)
+	if err != nil {
 		return err
 	}
 
-	url := buildAudioUrl(word)
-	if err = pkg.DownloadFileWithTimeout(filePath, url, 5*time.Second); err != nil {
-		zap.S().Warnf("Failed to download audio file: %s", err)
-		return err
+	player := findSpeaker(runtime.GOOS, exec.LookPath)
+	if player == "" {
+		return ErrNoSpeaker
 	}
-	zap.S().Infow("Downloaded audio file", "file", filePath)
-	return nil
-}
-
-// find speaker program
-// return the first available program and check list
-func checkSpeaker() string {
-	var checkList []string
-	switch runtime.GOOS {
-	case "linux":
-		// XXX (qk): <2025-06-22 14:25> "aplay" only works with wav
-		checkList = []string{"ffplay", "mpg123", "mpv"}
-	case "darwin":
-		checkList = []string{"afplay", "ffplay", "mpv"}
-	case "windows":
-		checkList = []string{"ffplay", "mpv"}
-	}
-
-	for _, p := range checkList {
-		if _, err := exec.LookPath(p); err == nil {
-			speakerProgram = p
-			break
-		}
-	}
-	if speakerProgram == "" && runtime.GOOS == "windows" {
-		speakerProgram = "system"
+	if player == systemPlayer {
 		d.EchoWarn("推荐安装mpv或ffmpeg支持无弹窗播放声音")
 	}
-	if speakerProgram != "" {
-		zap.S().Debugf("Will use %q as the speaker program", speakerProgram)
+	zap.S().Debugw("Selected TTS player", "player", player)
+
+	defer cleanupAudioCacheAndLog(cacheLimit, time.Now())
+
+	filePath, cached, err := resolveCachedAudio(word)
+	if err != nil {
+		return fmt.Errorf("prepare audio cache: %w", err)
 	}
-	return speakerProgram
-}
-
-// playAudio plays the audio file using the appropriate program based on the operating system
-func playAudio(filePath string) error {
-	var cmd *exec.Cmd
-
-	if runtime.GOOS == "windows" {
-		switch speakerProgram {
-		case "mpv":
-			cmd = exec.Command("mpv", "--no-terminal", filePath)
-		case "ffplay":
-			cmd = exec.Command("ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", filePath)
-		case "system":
-			cmd = exec.Command("powershell", "-c", fmt.Sprintf("start '%s'", filePath))
+	if cacheLimit == 0 {
+		file, createErr := os.CreateTemp(run.CACHE_AUDIO_DIR_PATH, ".audio-uncached-*.mp3")
+		if createErr != nil {
+			return fmt.Errorf("create temporary audio path: %w", createErr)
 		}
-	} else {
-		switch speakerProgram {
-		case "mpv":
-			cmd = exec.Command("mpv", "--really-quiet", filePath)
-		case "afplay", "mpg123", "aplay":
-			cmd = exec.Command(speakerProgram, filePath)
-		case "ffplay":
-			cmd = exec.Command("ffplay", "-nodisp", "-autoexit", filePath)
+		filePath = file.Name()
+		if closeErr := file.Close(); closeErr != nil {
+			os.Remove(filePath)
+			return fmt.Errorf("close temporary audio path: %w", closeErr)
 		}
-	}
-	if cmd == nil {
-		return fmt.Errorf("no suitable audio player found")
+		if removeErr := os.Remove(filePath); removeErr != nil {
+			return fmt.Errorf("prepare temporary audio path: %w", removeErr)
+		}
+		defer os.Remove(filePath)
+		cached = false
 	}
 
-	if output, err := cmd.CombinedOutput(); err != nil {
-		zap.S().Errorf("Error playing audio %s Error: %s Output: %s", filePath, err, string(output))
-		return err
-	} else {
-		zap.S().Infow("Audio played successfully", "file", filePath, "output", output)
+	if !cached {
+		client := &http.Client{Timeout: audioDownloadTimeout}
+		if err := downloadAudio(ctx, word, filePath, client, buildAudioUrl); err != nil {
+			zap.S().Warnw("TTS audio download failed", "audio_id", audioID(word), "error", err)
+			return fmt.Errorf("download audio: %w", err)
+		}
+		zap.S().Infow("Downloaded TTS audio", "audio_id", audioID(word))
 	}
+
+	if err := playAudio(ctx, runtime.GOOS, player, filePath); err != nil {
+		zap.S().Warnw("TTS playback failed", "audio_id", audioID(word), "player", player, "error", err)
+		return fmt.Errorf("play audio: %w", err)
+	}
+	if cacheLimit > 0 {
+		now := time.Now()
+		if err := os.Chtimes(filePath, now, now); err != nil {
+			zap.S().Debugw("Failed to update TTS cache access time", "audio_id", audioID(word), "error", err)
+		}
+	}
+	zap.S().Infow("Played TTS audio", "audio_id", audioID(word), "player", player)
 	return nil
 }
 
-// API
-func Speak(word string) error {
-	var err error
-	checkSpeaker()
-
-	if speakerProgram == "" {
-		return fmt.Errorf("no speaker found")
+func cacheLimitBytes(limitMB uint64) (int64, error) {
+	const bytesPerMiB = uint64(1 << 20)
+	if limitMB > uint64(math.MaxInt64)/bytesPerMiB {
+		return 0, fmt.Errorf("audio cache limit is too large: %d MiB", limitMB)
 	}
-	p := buildTargetPath(word)
-	if err = downloadAudio(word, p); err != nil {
-		return err
-	}
-	return playAudio(p)
+	return int64(limitMB * bytesPerMiB), nil
 }
