@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,7 +27,7 @@ import (
 	"github.com/Karmenzind/kd/logger"
 	"github.com/Karmenzind/kd/pkg"
 	d "github.com/Karmenzind/kd/pkg/decorate"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"go.uber.org/zap"
 	// "github.com/kyokomi/emoji/v2"
 )
@@ -46,6 +47,10 @@ func showPrompt() {
 
 func shouldEnableQueryProgress(jsonOutput, logToStream, terminal bool) bool {
 	return terminal && !jsonOutput && !logToStream
+}
+
+func queryFromCommand(cmd *cli.Command) string {
+	return strings.Join(cmd.Args().Slice(), " ")
 }
 
 type debugProgressDelay struct {
@@ -88,7 +93,7 @@ var um = map[string]string{
 //  cli flag actions
 //  -----------------------------------------------------------------------------
 
-func flagServer(*cli.Context, bool) (err error) {
+func flagServer(context.Context, *cli.Command, bool) (err error) {
 	err = internal.StartServer()
 	if errors.Is(err, daemon.ErrPortOccupied) {
 		return fmt.Errorf("daemon端口已被其他程序占用: %w", err)
@@ -96,7 +101,7 @@ func flagServer(*cli.Context, bool) (err error) {
 	return err
 }
 
-func flagDaemon(*cli.Context, bool) (err error) {
+func flagDaemon(context.Context, *cli.Command, bool) (err error) {
 	err = daemon.StartDaemonProcess()
 	switch {
 	case errors.Is(err, daemon.ErrDaemonStartTimeout):
@@ -115,14 +120,14 @@ func flagDaemon(*cli.Context, bool) (err error) {
 	}
 }
 
-func flagStop(*cli.Context, bool) (err error) {
+func flagStop(context.Context, *cli.Command, bool) (err error) {
 	if err = daemon.KillDaemonIfRunning(); err != nil {
 		return daemonControlError(err)
 	}
 	return
 }
 
-func flagRestart(*cli.Context, bool) error {
+func flagRestart(context.Context, *cli.Command, bool) error {
 	return daemonControlError(daemon.RestartDaemon())
 }
 
@@ -137,12 +142,12 @@ func daemonControlError(err error) error {
 	}
 }
 
-func flagUpdate(ctx *cli.Context, _ bool) (err error) {
+func flagUpdate(_ context.Context, cmd *cli.Command, _ bool) (err error) {
 	var ver string
 	if runtime.GOOS == "linux" && run.Info.GetOSInfo().Distro == "arch" {
 		d.EchoFine("您在使用ArchLinux，推荐直接通过AUR安装/升级（例如`yay -S kd`），更便于维护")
 	}
-	force := ctx.Bool("force")
+	force := cmd.Bool("force")
 	if force {
 		d.EchoRun("开始强制更新")
 	}
@@ -212,7 +217,7 @@ func ensureDefaultConfigFile(path string) (bool, error) {
 	return true, nil
 }
 
-func flagGenerateConfig(*cli.Context, bool) (err error) {
+func flagGenerateConfig(context.Context, *cli.Command, bool) (err error) {
 	if pkg.IsPathExists(config.CONFIG_PATH) {
 		if !pkg.AskYN(fmt.Sprintf("配置文件%s已经存在，是否覆盖？", config.CONFIG_PATH)) {
 			d.EchoFine("已取消")
@@ -237,7 +242,7 @@ func flagGenerateConfig(*cli.Context, bool) (err error) {
 	return
 }
 
-func flagEditConfig(*cli.Context, bool) error {
+func flagEditConfig(context.Context, *cli.Command, bool) error {
 	var err error
 	var cmd *exec.Cmd
 	p := config.CONFIG_PATH
@@ -338,7 +343,7 @@ func writeStatus(out io.Writer, status daemonStatus) error {
 	return err
 }
 
-func flagStatus(*cli.Context, bool) error {
+func flagStatus(context.Context, *cli.Command, bool) error {
 	return writeStatus(os.Stdout, resolveDaemonStatus(daemon.CheckDaemonStatus(daemon.DefaultAddress())))
 }
 
@@ -373,6 +378,56 @@ func basicCheck() {
 	// } else {
 	// 	d.EchoError(err.Error())
 	// }
+}
+
+type boolFlagAction func(context.Context, *cli.Command, bool) error
+
+type cliActions struct {
+	server         boolFlagAction
+	daemon         boolFlagAction
+	stop           boolFlagAction
+	restart        boolFlagAction
+	update         boolFlagAction
+	generateConfig boolFlagAction
+	editConfig     boolFlagAction
+	status         boolFlagAction
+	root           cli.ActionFunc
+}
+
+func newCLICommand(actions cliActions) *cli.Command {
+	stopAfterFirstArg := 1
+	return &cli.Command{
+		Suggest:         true, // XXX
+		Name:            "kd",
+		Version:         VERSION,
+		Usage:           "A crystal clean command-line dictionary.",
+		HideHelpCommand: true,
+		Authors:         []any{"kmz <valesail7@gmail.com>"},
+		StopOnNthArg:    &stopAfterFirstArg,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{Name: "text", Aliases: []string{"t"}, HideDefault: true, Usage: um["text"]},
+			&cli.BoolFlag{Name: "json", HideDefault: true, Usage: um["json"]},
+			&cli.BoolFlag{Name: "nocache", Aliases: []string{"n"}, HideDefault: true, Usage: um["nocache"]},
+			&cli.StringFlag{Name: "theme", Aliases: []string{"T"}, DefaultText: "temp", Usage: um["theme"]},
+			&cli.BoolFlag{Name: "force", Aliases: []string{"f"}, HideDefault: true, Usage: um["force"]},
+			&cli.BoolFlag{Name: "speak", Aliases: []string{"s"}, HideDefault: true, Usage: um["speak"]},
+			&cli.BoolFlag{Name: "brief", Aliases: []string{"b"}, HideDefault: true, Usage: um["brief"]},
+			&cli.BoolFlag{Name: "no-brief", HideDefault: true, Usage: um["no-brief"]},
+
+			// BoolFlags as commands
+			// &cli.BoolFlag{Name: "init", HideDefault: true, Hidden: true, Usage: um["init"]},
+			&cli.BoolFlag{Name: "server", HideDefault: true, Action: actions.server, Hidden: true, Usage: um["server"]},
+			&cli.BoolFlag{Name: "daemon", HideDefault: true, Action: actions.daemon, Usage: um["daemon"]},
+			&cli.BoolFlag{Name: "stop", HideDefault: true, Hidden: true, Action: actions.stop, Usage: um["stop"]},
+			&cli.BoolFlag{Name: "restart", HideDefault: true, Hidden: true, Action: actions.restart, Usage: um["restart"]},
+			&cli.BoolFlag{Name: "update", HideDefault: true, Action: actions.update, Usage: um["update"]},
+			&cli.BoolFlag{Name: "generate-config", HideDefault: true, Action: actions.generateConfig, Usage: um["generate-config"]},
+			&cli.BoolFlag{Name: "edit-config", HideDefault: true, Action: actions.editConfig, Usage: um["edit-config"]},
+			&cli.BoolFlag{Name: "status", HideDefault: true, Action: actions.status, Hidden: true, Usage: um["status"]},
+			&cli.BoolFlag{Name: "log-to-stream", HideDefault: true, Hidden: true, Usage: um["log-to-stream"]},
+		},
+		Action: actions.root,
+	}
 }
 
 func main() {
@@ -418,40 +473,18 @@ func main() {
 	defer cache.LiteDB.Close()
 	defer core.WG.Wait()
 
-	app := &cli.App{
-		Suggest:         true, // XXX
-		Name:            "kd",
-		Version:         VERSION,
-		Usage:           "A crystal clean command-line dictionary.",
-		HideHelpCommand: true,
-		// EnableBashCompletion: true,
-
-		Authors: []*cli.Author{{Name: "kmz", Email: "valesail7@gmail.com"}},
-		Flags: []cli.Flag{
-			&cli.BoolFlag{Name: "text", Aliases: []string{"t"}, DisableDefaultText: true, Usage: um["text"]},
-			&cli.BoolFlag{Name: "json", DisableDefaultText: true, Usage: um["json"]},
-			&cli.BoolFlag{Name: "nocache", Aliases: []string{"n"}, DisableDefaultText: true, Usage: um["nocache"]},
-			&cli.StringFlag{Name: "theme", Aliases: []string{"T"}, DefaultText: "temp", Usage: um["theme"]},
-			&cli.BoolFlag{Name: "force", Aliases: []string{"f"}, DisableDefaultText: true, Usage: um["force"]},
-			&cli.BoolFlag{Name: "speak", Aliases: []string{"s"}, DisableDefaultText: true, Usage: um["speak"]},
-			&cli.BoolFlag{Name: "brief", Aliases: []string{"b"}, DisableDefaultText: true, Usage: um["brief"]},
-			&cli.BoolFlag{Name: "no-brief", DisableDefaultText: true, Usage: um["no-brief"]},
-
-			// BoolFlags as commands
-			// &cli.BoolFlag{Name: "init", DisableDefaultText: true, Hidden: true, Usage: um["init"]},
-			&cli.BoolFlag{Name: "server", DisableDefaultText: true, Action: flagServer, Hidden: true, Usage: um["server"]},
-			&cli.BoolFlag{Name: "daemon", DisableDefaultText: true, Action: flagDaemon, Usage: um["daemon"]},
-			&cli.BoolFlag{Name: "stop", DisableDefaultText: true, Hidden: true, Action: flagStop, Usage: um["stop"]},
-			&cli.BoolFlag{Name: "restart", DisableDefaultText: true, Hidden: true, Action: flagRestart, Usage: um["restart"]},
-			&cli.BoolFlag{Name: "update", DisableDefaultText: true, Action: flagUpdate, Usage: um["update"]},
-			&cli.BoolFlag{Name: "generate-config", DisableDefaultText: true, Action: flagGenerateConfig, Usage: um["generate-config"]},
-			&cli.BoolFlag{Name: "edit-config", DisableDefaultText: true, Action: flagEditConfig, Usage: um["edit-config"]},
-			&cli.BoolFlag{Name: "status", DisableDefaultText: true, Hidden: true, Action: flagStatus, Usage: um["status"]},
-			&cli.BoolFlag{Name: "log-to-stream", DisableDefaultText: true, Hidden: true, Usage: um["log-to-stream"]},
-		},
-		Action: func(cCtx *cli.Context) error {
+	command := newCLICommand(cliActions{
+		server:         flagServer,
+		daemon:         flagDaemon,
+		stop:           flagStop,
+		restart:        flagRestart,
+		update:         flagUpdate,
+		generateConfig: flagGenerateConfig,
+		editConfig:     flagEditConfig,
+		status:         flagStatus,
+		root: func(ctx context.Context, cmd *cli.Command) error {
 			// 这里BoolFlag都当subcommand用
-			if !cCtx.Bool("update") && !cCtx.Bool("json") {
+			if !cmd.Bool("update") && !cmd.Bool("json") {
 				defer checkAndNoticeUpdate()
 			}
 
@@ -462,38 +495,36 @@ func main() {
 			if cfg.FileExists {
 				status := daemon.CheckDaemonStatus(daemon.DefaultAddress())
 				if status.State == daemon.StateRunning && status.Ping != nil && cfg.ModTime > status.Ping.StartTime {
-					if cCtx.Bool("json") {
+					if cmd.Bool("json") {
 						if err := daemon.RestartDaemonQuiet(); err != nil {
 							zap.S().Warnf("Failed to restart daemon after config change: %s", err)
 						}
 					} else {
 						d.EchoWarn("检测到配置文件发生修改，正在重启守护进程")
-						flagRestart(cCtx, true)
+						flagRestart(ctx, cmd, true)
 					}
 				}
 			}
 
-			if cCtx.String("theme") != "" {
-				cfg.Theme = cCtx.String("theme")
+			if cmd.String("theme") != "" {
+				cfg.Theme = cmd.String("theme")
 			}
 			d.ApplyTheme(cfg.Theme)
 
-			if cCtx.Args().Len() > 0 {
-				zap.S().Debugf("Recieved Arguments (len: %d): %+v", cCtx.Args().Len(), cCtx.Args().Slice())
+			if cmd.Args().Len() > 0 {
+				zap.S().Debugf("Recieved Arguments (len: %d): %+v", cmd.Args().Len(), cmd.Args().Slice())
 				// emoji.Printf("Test emoji:\n:accept: :inbox_tray: :information: :us: :uk:  🗣  :lips: :eyes: :balloon: \n")
-				if cfg.ClearScreen && !cCtx.Bool("json") {
+				if cfg.ClearScreen && !cmd.Bool("json") {
 					pkg.ClearScreen()
 				}
 
-				qstr := strings.Join(cCtx.Args().Slice(), " ")
-				ansi, unicodeOutput := ui.TerminalCapabilities()
-				interactiveTerminal := ui.IsTerminal(os.Stderr) && ui.IsTerminal(os.Stdout)
-				progress := ui.NewProgress(cCtx.Context, ui.Options{
-					Writer:   os.Stderr,
-					Enabled:  shouldEnableQueryProgress(cCtx.Bool("json"), cCtx.Bool("log-to-stream"), interactiveTerminal),
-					Terminal: interactiveTerminal,
-					ANSI:     ansi,
-					Unicode:  unicodeOutput,
+				qstr := queryFromCommand(cmd)
+				capabilities := ui.DetectCapabilities(os.Stderr)
+				interactiveTerminal := capabilities.Level != ui.CapabilityPlain && ui.IsTerminal(os.Stdout)
+				progress := ui.NewProgress(ctx, ui.Options{
+					Writer:       os.Stderr,
+					Enabled:      shouldEnableQueryProgress(cmd.Bool("json"), cmd.Bool("log-to-stream"), interactiveTerminal),
+					Capabilities: capabilities,
 				})
 				if interactiveTerminal && os.Getenv("KD_DEBUG_PROGRESS") == "1" {
 					progress = debugProgressDelay{Progress: progress, delay: 1200 * time.Millisecond}
@@ -501,8 +532,8 @@ func main() {
 				progress.Start(ui.State{Query: qstr, Phase: ui.PhaseStarting})
 				defer progress.Stop()
 
-				if r, err := internal.QueryWithProgress(qstr, cCtx.Bool("nocache"), cCtx.Bool("text"), progress); err == nil {
-					if cCtx.Bool("json") {
+				if r, err := internal.QueryWithProgress(qstr, cmd.Bool("nocache"), cmd.Bool("text"), progress); err == nil {
+					if cmd.Bool("json") {
 						progress.Stop()
 						if j, jsonErr := json.Marshal(r); jsonErr == nil {
 							fmt.Println(string(j))
@@ -515,10 +546,10 @@ func main() {
 					var formatted string
 					if r.Found {
 						brief := cfg.Brief
-						if cCtx.Bool("brief") {
+						if cmd.Bool("brief") {
 							brief = true
 						}
-						if cCtx.Bool("no-brief") {
+						if cmd.Bool("no-brief") {
 							brief = false
 						}
 						progress.Update(ui.State{Query: r.Query, Phase: ui.PhaseFormatting})
@@ -535,8 +566,8 @@ func main() {
 						if err = pkg.OutputResult(formatted, cfg.Paging, cfg.PagerCommand); err != nil {
 							d.EchoFatal("%s", err)
 						}
-						if cCtx.Bool("speak") {
-							if cCtx.Bool("text") {
+						if cmd.Bool("speak") {
+							if cmd.Bool("text") {
 								d.EchoWarn("读音功能暂不支持长文本模式")
 							} else {
 								if err = tts.Speak(qstr); err != nil {
@@ -562,9 +593,9 @@ func main() {
 			}
 			return nil
 		},
-	}
+	})
 
-	if err := app.Run(os.Args); err != nil {
+	if err := command.Run(context.Background(), os.Args); err != nil {
 		zap.S().Errorf("APP stopped: %s", err)
 		d.EchoError("%s", err)
 		os.Exit(1)

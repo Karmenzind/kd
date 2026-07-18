@@ -4,14 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
 	"unicode"
-
-	"golang.org/x/term"
 )
 
 type Phase string
@@ -36,13 +32,11 @@ type Progress interface {
 }
 
 type Options struct {
-	Writer   io.Writer
-	Enabled  bool
-	Terminal bool
-	ANSI     bool
-	Unicode  bool
-	Delay    time.Duration
-	Interval time.Duration
+	Writer       io.Writer
+	Enabled      bool
+	Capabilities TerminalCapabilities
+	Delay        time.Duration
+	Interval     time.Duration
 }
 
 type nopProgress struct{}
@@ -56,7 +50,7 @@ func NopProgress() Progress {
 }
 
 func NewProgress(parent context.Context, options Options) Progress {
-	if !options.Enabled || !options.Terminal || options.Writer == nil {
+	if !options.Enabled || options.Capabilities.Level == CapabilityPlain || options.Writer == nil {
 		return NopProgress()
 	}
 	if parent == nil {
@@ -75,32 +69,6 @@ func NewProgress(parent context.Context, options Options) Progress {
 		options:  options,
 		finished: make(chan struct{}),
 	}
-}
-
-func IsTerminal(file *os.File) bool {
-	return file != nil && term.IsTerminal(int(file.Fd()))
-}
-
-func TerminalCapabilities() (ansi, unicodeOutput bool) {
-	return terminalCapabilities(runtime.GOOS, os.Getenv)
-}
-
-func terminalCapabilities(goos string, getenv func(string) string) (ansi, unicodeOutput bool) {
-	if strings.EqualFold(getenv("TERM"), "dumb") {
-		return false, false
-	}
-	if getenv("NO_COLOR") != "" {
-		return false, goos != "windows"
-	}
-	if goos != "windows" {
-		return true, true
-	}
-	modernTerminal := getenv("WT_SESSION") != "" ||
-		getenv("TERM_PROGRAM") != "" ||
-		getenv("ANSICON") != "" ||
-		strings.EqualFold(getenv("ConEmuANSI"), "ON") ||
-		strings.Contains(strings.ToLower(getenv("TERM")), "xterm")
-	return modernTerminal, modernTerminal
 }
 
 type dynamicProgress struct {
@@ -168,7 +136,7 @@ func (p *dynamicProgress) run() {
 	frame := 0
 	for {
 		state := p.currentState()
-		text, width := renderFrame(state, frame, p.options.ANSI, p.options.Unicode)
+		text, width := renderFrame(state, frame, p.options.Capabilities)
 		if err := p.writeFrame(text, width, lastWidth); err != nil {
 			return
 		}
@@ -193,7 +161,7 @@ func (p *dynamicProgress) currentState() State {
 }
 
 func (p *dynamicProgress) writeFrame(frame string, width, previousWidth int) error {
-	if p.options.ANSI {
+	if p.options.Capabilities.ANSI {
 		_, err := fmt.Fprintf(p.options.Writer, "\r\x1b[2K%s", frame)
 		return err
 	}
@@ -206,7 +174,7 @@ func (p *dynamicProgress) writeFrame(frame string, width, previousWidth int) err
 }
 
 func (p *dynamicProgress) clearLine(previousWidth int) error {
-	if p.options.ANSI {
+	if p.options.Capabilities.ANSI {
 		_, err := io.WriteString(p.options.Writer, "\r\x1b[2K")
 		return err
 	}
@@ -217,11 +185,11 @@ func (p *dynamicProgress) clearLine(previousWidth int) error {
 const unicodeSpinner = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
 const asciiSpinner = "|/-\\"
 
-func renderFrame(state State, frame int, ansi, unicodeOutput bool) (string, int) {
+func renderFrame(state State, frame int, capabilities TerminalCapabilities) (string, int) {
 	query := displayQuery(state.Query)
 	phase := phaseText(state)
 	frames := []rune(asciiSpinner)
-	if unicodeOutput {
+	if capabilities.Level == CapabilityEnhanced && capabilities.Unicode {
 		frames = []rune(unicodeSpinner)
 	}
 	marker := string(frames[frame%len(frames)])
@@ -229,7 +197,7 @@ func renderFrame(state State, frame int, ansi, unicodeOutput bool) (string, int)
 	if phase != "" {
 		plain += " · " + phase
 	}
-	if !ansi {
+	if capabilities.Level != CapabilityEnhanced || !capabilities.ANSI {
 		return plain, displayWidth(plain)
 	}
 

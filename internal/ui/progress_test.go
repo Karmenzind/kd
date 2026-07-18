@@ -14,6 +14,11 @@ import (
 	"unicode/utf8"
 )
 
+var (
+	testBasicCapabilities    = TerminalCapabilities{Level: CapabilityBasic}
+	testEnhancedCapabilities = TerminalCapabilities{Level: CapabilityEnhanced, ANSI: true, Unicode: true}
+)
+
 type observedWriter struct {
 	mu     sync.Mutex
 	buffer bytes.Buffer
@@ -52,19 +57,19 @@ func waitForWrite(t *testing.T, writer *observedWriter) {
 
 func TestNewProgressDisabled(t *testing.T) {
 	for _, tt := range []struct {
-		name     string
-		enabled  bool
-		terminal bool
+		name    string
+		enabled bool
+		caps    TerminalCapabilities
 	}{
-		{name: "explicitly disabled", enabled: false, terminal: true},
-		{name: "non terminal", enabled: true, terminal: false},
+		{name: "explicitly disabled", enabled: false, caps: testBasicCapabilities},
+		{name: "plain capability", enabled: true, caps: TerminalCapabilities{Level: CapabilityPlain}},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			var output bytes.Buffer
 			progress := NewProgress(context.Background(), Options{
-				Writer:   &output,
-				Enabled:  tt.enabled,
-				Terminal: tt.terminal,
+				Writer:       &output,
+				Enabled:      tt.enabled,
+				Capabilities: tt.caps,
 			})
 			progress.Update(State{Query: "before", Phase: PhaseLocal})
 			progress.Start(State{Query: "query", Phase: PhaseRemote})
@@ -86,16 +91,19 @@ func TestIsTerminalRejectsRegularFile(t *testing.T) {
 	if IsTerminal(file) {
 		t.Fatal("IsTerminal() = true for a regular file")
 	}
+	if got := DetectCapabilities(file); got.Level != CapabilityPlain {
+		t.Fatalf("DetectCapabilities(regular file) = %+v, want Plain", got)
+	}
 }
 
 func TestProgressFastCompletionHasNoOutput(t *testing.T) {
 	var output bytes.Buffer
 	progress := NewProgress(context.Background(), Options{
-		Writer:   &output,
-		Enabled:  true,
-		Terminal: true,
-		Delay:    100 * time.Millisecond,
-		Interval: 10 * time.Millisecond,
+		Writer:       &output,
+		Enabled:      true,
+		Capabilities: testBasicCapabilities,
+		Delay:        100 * time.Millisecond,
+		Interval:     10 * time.Millisecond,
 	})
 	progress.Start(State{Query: "fast", Phase: PhaseLocal})
 	progress.Stop()
@@ -107,9 +115,9 @@ func TestProgressFastCompletionHasNoOutput(t *testing.T) {
 func TestProgressStopBeforeStartIsSafe(t *testing.T) {
 	var output bytes.Buffer
 	progress := NewProgress(context.Background(), Options{
-		Writer:   &output,
-		Enabled:  true,
-		Terminal: true,
+		Writer:       &output,
+		Enabled:      true,
+		Capabilities: testBasicCapabilities,
 	})
 	progress.Update(State{Query: "before", Phase: PhaseLocal})
 	progress.Stop()
@@ -124,13 +132,11 @@ func TestProgressStopBeforeStartIsSafe(t *testing.T) {
 func TestProgressDelayedRenderUpdateAndStop(t *testing.T) {
 	writer := newObservedWriter()
 	progress := NewProgress(context.Background(), Options{
-		Writer:   writer,
-		Enabled:  true,
-		Terminal: true,
-		ANSI:     true,
-		Unicode:  true,
-		Delay:    5 * time.Millisecond,
-		Interval: 5 * time.Millisecond,
+		Writer:       writer,
+		Enabled:      true,
+		Capabilities: testEnhancedCapabilities,
+		Delay:        5 * time.Millisecond,
+		Interval:     5 * time.Millisecond,
 	})
 	progress.Start(State{Query: "词典", Phase: PhaseLocal})
 	waitForWrite(t, writer)
@@ -161,13 +167,11 @@ func TestProgressDoesNotPolluteResultWriter(t *testing.T) {
 	status := newObservedWriter()
 	var result bytes.Buffer
 	progress := NewProgress(context.Background(), Options{
-		Writer:   status,
-		Enabled:  true,
-		Terminal: true,
-		ANSI:     true,
-		Unicode:  true,
-		Delay:    time.Millisecond,
-		Interval: 5 * time.Millisecond,
+		Writer:       status,
+		Enabled:      true,
+		Capabilities: testEnhancedCapabilities,
+		Delay:        time.Millisecond,
+		Interval:     5 * time.Millisecond,
 	})
 	progress.Start(State{Query: "separate", Phase: PhaseRemote})
 	waitForWrite(t, status)
@@ -185,11 +189,11 @@ func TestProgressContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	writer := newObservedWriter()
 	progress := NewProgress(ctx, Options{
-		Writer:   writer,
-		Enabled:  true,
-		Terminal: true,
-		Delay:    time.Millisecond,
-		Interval: 5 * time.Millisecond,
+		Writer:       writer,
+		Enabled:      true,
+		Capabilities: testBasicCapabilities,
+		Delay:        time.Millisecond,
+		Interval:     5 * time.Millisecond,
 	})
 	progress.Start(State{Query: "cancel", Phase: PhaseRemote})
 	waitForWrite(t, writer)
@@ -202,7 +206,7 @@ func TestProgressContextCancellation(t *testing.T) {
 
 func TestNonANSIRefreshPadsPreviousFrame(t *testing.T) {
 	var output bytes.Buffer
-	progress := &dynamicProgress{options: Options{Writer: &output}}
+	progress := &dynamicProgress{options: Options{Writer: &output, Capabilities: testBasicCapabilities}}
 	if err := progress.writeFrame("long status", 11, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -217,11 +221,11 @@ func TestNonANSIRefreshPadsPreviousFrame(t *testing.T) {
 func TestProgressConcurrentUpdateAndStop(t *testing.T) {
 	writer := newObservedWriter()
 	progress := NewProgress(context.Background(), Options{
-		Writer:   writer,
-		Enabled:  true,
-		Terminal: true,
-		Delay:    time.Millisecond,
-		Interval: 5 * time.Millisecond,
+		Writer:       writer,
+		Enabled:      true,
+		Capabilities: testBasicCapabilities,
+		Delay:        time.Millisecond,
+		Interval:     5 * time.Millisecond,
 	})
 	progress.Start(State{Query: "race", Phase: PhaseLocal})
 	waitForWrite(t, writer)
@@ -259,11 +263,11 @@ func (w *failingWriter) Write([]byte) (int, error) {
 func TestProgressWriterErrorStopsRenderer(t *testing.T) {
 	writer := &failingWriter{wrote: make(chan struct{}, 1)}
 	progress := NewProgress(context.Background(), Options{
-		Writer:   writer,
-		Enabled:  true,
-		Terminal: true,
-		Delay:    time.Millisecond,
-		Interval: 5 * time.Millisecond,
+		Writer:       writer,
+		Enabled:      true,
+		Capabilities: testBasicCapabilities,
+		Delay:        time.Millisecond,
+		Interval:     5 * time.Millisecond,
 	})
 	progress.Start(State{Query: "failure", Phase: PhaseRemote})
 	select {
@@ -276,44 +280,55 @@ func TestProgressWriterErrorStopsRenderer(t *testing.T) {
 
 func TestRenderFrameFallbacksAndUnicode(t *testing.T) {
 	tests := []struct {
-		name       string
-		state      State
-		ansi       bool
-		unicodeOut bool
-		want       []string
-		notWant    []string
+		name    string
+		state   State
+		caps    TerminalCapabilities
+		want    []string
+		notWant []string
 	}{
 		{
-			name:       "ASCII fallback",
-			state:      State{Query: "word", Phase: PhaseRemote},
-			unicodeOut: false,
-			want:       []string{"| word · 在线"},
-			notWant:    []string{"\x1b["},
+			name:    "ASCII fallback",
+			state:   State{Query: "word", Phase: PhaseRemote},
+			caps:    testBasicCapabilities,
+			want:    []string{"| word · 在线"},
+			notWant: []string{"\x1b[", "⠋"},
 		},
 		{
-			name:       "Unicode shimmer",
-			state:      State{Query: "词典", Phase: PhaseFormatting},
-			ansi:       true,
-			unicodeOut: true,
-			want:       []string{"词", "典", "排版", "\x1b[96;1m", "\x1b[0m"},
+			name:  "Unicode shimmer",
+			state: State{Query: "词典", Phase: PhaseFormatting},
+			caps:  testEnhancedCapabilities,
+			want:  []string{"词", "典", "排版", "\x1b[96;1m", "\x1b[0m", "⠋"},
 		},
 		{
-			name:       "empty query",
-			state:      State{Phase: PhaseStarting},
-			ansi:       true,
-			unicodeOut: true,
-			want:       []string{"启动"},
+			name:  "empty query",
+			state: State{Phase: PhaseStarting},
+			caps:  testEnhancedCapabilities,
+			want:  []string{"启动"},
 		},
 		{
-			name:       "unknown phase",
-			state:      State{Query: "word", Phase: Phase("custom")},
-			unicodeOut: true,
-			want:       []string{"custom"},
+			name:  "unknown phase",
+			state: State{Query: "word", Phase: Phase("custom")},
+			caps:  testEnhancedCapabilities,
+			want:  []string{"custom"},
+		},
+		{
+			name:    "Basic wide query has no sweep",
+			state:   State{Query: "中文查询", Phase: PhaseRemote},
+			caps:    testBasicCapabilities,
+			want:    []string{"| 中文查询 · 在线"},
+			notWant: []string{"\x1b[", "⠋"},
+		},
+		{
+			name:    "Enhanced without color keeps Unicode spinner",
+			state:   State{Query: "word", Phase: PhaseRemote},
+			caps:    TerminalCapabilities{Level: CapabilityEnhanced, Unicode: true},
+			want:    []string{"⠋ word · 在线"},
+			notWant: []string{"\x1b["},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			frame, width := renderFrame(tt.state, 0, tt.ansi, tt.unicodeOut)
+			frame, width := renderFrame(tt.state, 0, tt.caps)
 			if !utf8.ValidString(frame) || width < 0 {
 				t.Fatalf("renderFrame() = %q, width %d", frame, width)
 			}
@@ -344,24 +359,35 @@ func TestDisplayQuerySanitizesAndTruncates(t *testing.T) {
 
 func TestTerminalCapabilities(t *testing.T) {
 	tests := []struct {
-		name        string
-		goos        string
-		env         map[string]string
-		wantANSI    bool
-		wantUnicode bool
+		name  string
+		input capabilityInput
+		env   map[string]string
+		want  TerminalCapabilities
 	}{
-		{name: "Unix", goos: "linux", wantANSI: true, wantUnicode: true},
-		{name: "dumb terminal", goos: "linux", env: map[string]string{"TERM": "dumb"}},
-		{name: "legacy Windows", goos: "windows"},
-		{name: "Windows Terminal", goos: "windows", env: map[string]string{"WT_SESSION": "1"}, wantANSI: true, wantUnicode: true},
-		{name: "NO_COLOR", goos: "darwin", env: map[string]string{"NO_COLOR": "1"}, wantUnicode: true},
+		{name: "non TTY", input: capabilityInput{GOOS: "linux"}, want: TerminalCapabilities{Level: CapabilityPlain}},
+		{name: "dumb terminal", input: capabilityInput{GOOS: "linux", Terminal: true}, env: map[string]string{"TERM": "dumb"}, want: TerminalCapabilities{Level: CapabilityPlain}},
+		{name: "Unix missing TERM", input: capabilityInput{GOOS: "linux", Terminal: true}, want: testBasicCapabilities},
+		{name: "Unix unknown terminal", input: capabilityInput{GOOS: "linux", Terminal: true}, env: map[string]string{"TERM": "unknown", "LANG": "en_US.UTF-8"}, want: testBasicCapabilities},
+		{name: "Unix Unicode unclear", input: capabilityInput{GOOS: "linux", Terminal: true}, env: map[string]string{"TERM": "xterm-256color"}, want: testBasicCapabilities},
+		{name: "Unix modern terminal", input: capabilityInput{GOOS: "linux", Terminal: true}, env: map[string]string{"TERM": "xterm-256color", "LANG": "en_US.UTF-8"}, want: testEnhancedCapabilities},
+		{name: "Unix NO_COLOR", input: capabilityInput{GOOS: "darwin", Terminal: true}, env: map[string]string{"TERM_PROGRAM": "Apple_Terminal", "LANG": "en_US.UTF-8", "NO_COLOR": "1"}, want: TerminalCapabilities{Level: CapabilityEnhanced, Unicode: true}},
+		{name: "CI is conservative", input: capabilityInput{GOOS: "linux", Terminal: true}, env: map[string]string{"TERM": "xterm-256color", "LANG": "en_US.UTF-8", "CI": "1"}, want: testBasicCapabilities},
+		{name: "Windows capability unknown", input: capabilityInput{GOOS: "windows", Terminal: true}, want: testBasicCapabilities},
+		{name: "Windows VT unavailable", input: capabilityInput{GOOS: "windows", Terminal: true, VTKnown: true}, env: map[string]string{"WT_SESSION": "1"}, want: testBasicCapabilities},
+		{name: "Windows Terminal", input: capabilityInput{GOOS: "windows", Terminal: true, VTKnown: true, VTEnabled: true}, env: map[string]string{"WT_SESSION": "1"}, want: testEnhancedCapabilities},
+		{name: "Windows xterm with VT", input: capabilityInput{GOOS: "windows", Terminal: true, VTKnown: true, VTEnabled: true}, env: map[string]string{"TERM": "xterm-256color"}, want: testEnhancedCapabilities},
+		{name: "cmd style environment", input: capabilityInput{GOOS: "windows", Terminal: true, VTKnown: true, VTEnabled: true}, env: map[string]string{"ComSpec": `C:\Windows\System32\cmd.exe`}, want: testBasicCapabilities},
+		{name: "PowerShell version is ignored", input: capabilityInput{GOOS: "windows", Terminal: true, VTKnown: true, VTEnabled: true}, env: map[string]string{"PSModulePath": "PowerShell\\7"}, want: testBasicCapabilities},
+		{name: "ANSICON alone is conservative", input: capabilityInput{GOOS: "windows", Terminal: true, VTKnown: true, VTEnabled: true}, env: map[string]string{"ANSICON": "1"}, want: testBasicCapabilities},
+		{name: "Windows Terminal NO_COLOR", input: capabilityInput{GOOS: "windows", Terminal: true, VTKnown: true, VTEnabled: true}, env: map[string]string{"WT_SESSION": "1", "NO_COLOR": "1"}, want: TerminalCapabilities{Level: CapabilityEnhanced, Unicode: true}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			getenv := func(key string) string { return tt.env[key] }
-			ansi, unicodeOutput := terminalCapabilities(tt.goos, getenv)
-			if ansi != tt.wantANSI || unicodeOutput != tt.wantUnicode {
-				t.Fatalf("terminalCapabilities() = (%v, %v), want (%v, %v)", ansi, unicodeOutput, tt.wantANSI, tt.wantUnicode)
+			tt.input.Getenv = getenv
+			got := detectCapabilities(tt.input)
+			if got != tt.want {
+				t.Fatalf("detectCapabilities() = %+v, want %+v", got, tt.want)
 			}
 		})
 	}
