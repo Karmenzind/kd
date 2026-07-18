@@ -14,6 +14,8 @@ const MaxProtocolMessageSize = 1 << 20
 var (
 	ErrIncompleteProtocolMessage = errors.New("incomplete protocol message")
 	ErrProtocolMessageTooLarge   = errors.New("protocol message too large")
+	ErrEmptyProtocolMessage      = errors.New("empty protocol message")
+	ErrInvalidProtocolMessage    = errors.New("invalid protocol message")
 )
 
 type ProtocolReader struct {
@@ -51,10 +53,10 @@ func (r *ProtocolReader) Read(v any) error {
 		return io.EOF
 	}
 	if len(bytes.TrimSpace(r.scanner.Bytes())) == 0 {
-		return errors.New("empty protocol message")
+		return ErrEmptyProtocolMessage
 	}
 	if err := json.Unmarshal(r.scanner.Bytes(), v); err != nil {
-		return fmt.Errorf("decode protocol message: %w", err)
+		return fmt.Errorf("%w: %v", ErrInvalidProtocolMessage, err)
 	}
 	return nil
 }

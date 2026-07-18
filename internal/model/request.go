@@ -1,8 +1,11 @@
 package model
 
+const DaemonProtocolVersion = 1
+
 type TCPQuery struct {
-	Action string
-	B      *BaseResult
+	Action          string
+	ProtocolVersion int
+	B               *BaseResult
 }
 
 func (q *TCPQuery) GetResult() *Result {
@@ -12,8 +15,17 @@ func (q *TCPQuery) GetResult() *Result {
 type DaemonResponse struct {
 	R     *Result
 	Error string
+	Ping  *DaemonPing `json:",omitempty"`
 
 	Base *BaseResult
+}
+
+type DaemonPing struct {
+	Available       bool
+	PID             int
+	Version         string
+	ProtocolVersion int
+	StartTime       int64
 }
 
 func (dr *DaemonResponse) GetResult() *Result {

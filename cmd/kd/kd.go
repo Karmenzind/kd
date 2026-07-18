@@ -17,7 +17,6 @@ import (
 	"github.com/Karmenzind/kd/internal/cache"
 	"github.com/Karmenzind/kd/internal/core"
 	"github.com/Karmenzind/kd/internal/daemon"
-	"github.com/Karmenzind/kd/internal/model"
 	"github.com/Karmenzind/kd/internal/query"
 	"github.com/Karmenzind/kd/internal/run"
 	"github.com/Karmenzind/kd/internal/tts"
@@ -70,33 +69,51 @@ var um = map[string]string{
 
 func flagServer(*cli.Context, bool) (err error) {
 	err = internal.StartServer()
-	if strings.Contains(err.Error(), "address already in use") {
-		return fmt.Errorf("端口已经被占用（%s）", err)
+	if errors.Is(err, daemon.ErrPortOccupied) {
+		return fmt.Errorf("daemon端口已被其他程序占用: %w", err)
 	}
-	return
+	return err
 }
 
 func flagDaemon(*cli.Context, bool) (err error) {
-	p, _ := daemon.FindServerProcess()
-	if p != nil {
-		d.EchoWrong("已存在运行中的守护进程，PID：%d。请先执行`kd --stop`停止该进程", p.Pid)
-		return
+	err = daemon.StartDaemonProcess()
+	switch {
+	case errors.Is(err, daemon.ErrDaemonStartTimeout):
+		if logger.LOG_FILE != "" {
+			return fmt.Errorf("守护进程启动超时，请查看日志 %s: %w", logger.LOG_FILE, err)
+		}
+		return fmt.Errorf("守护进程启动超时: %w", err)
+	case errors.Is(err, daemon.ErrProtocolIncompatible):
+		return fmt.Errorf("已有daemon协议版本不兼容，请手动停止已确认的旧daemon进程后重试: %w", err)
+	case errors.Is(err, daemon.ErrPortOccupied):
+		return fmt.Errorf("daemon端口已被其他程序占用: %w", err)
+	case errors.Is(err, daemon.ErrDaemonInit):
+		return fmt.Errorf("守护进程初始化失败: %w", err)
+	default:
+		return err
 	}
-	if err := daemon.StartDaemonProcess(); err != nil {
-		d.EchoFatal("%s", err)
-	}
-	return
 }
 
 func flagStop(*cli.Context, bool) (err error) {
 	if err = daemon.KillDaemonIfRunning(); err != nil {
-		d.EchoFatal("%s", err)
+		return daemonControlError(err)
 	}
 	return
 }
 
 func flagRestart(*cli.Context, bool) error {
-	return daemon.RestartDaemon()
+	return daemonControlError(daemon.RestartDaemon())
+}
+
+func daemonControlError(err error) error {
+	switch {
+	case errors.Is(err, daemon.ErrProtocolIncompatible):
+		return fmt.Errorf("旧版daemon不支持安全停止，请手动结束已确认的旧daemon进程: %w", err)
+	case errors.Is(err, daemon.ErrPortOccupied), errors.Is(err, daemon.ErrNotKDDaemon):
+		return fmt.Errorf("daemon端口由其他程序占用，未执行进程终止操作: %w", err)
+	default:
+		return err
+	}
 }
 
 func flagUpdate(ctx *cli.Context, _ bool) (err error) {
@@ -250,37 +267,19 @@ type daemonStatus struct {
 	Running bool
 	PID     int
 	Port    string
+	State   daemon.State
 }
 
-func findRunningDaemon() (int, bool, error) {
-	p, err := daemon.FindServerProcess()
-	if err != nil {
-		return 0, false, err
+func resolveDaemonStatus(status daemon.Status) daemonStatus {
+	result := daemonStatus{State: status.State}
+	if status.State == daemon.StateRunning && status.Ping != nil {
+		result.Running = true
+		result.PID = status.Ping.PID
+		if status.Runtime != nil && status.Runtime.PID == status.Ping.PID {
+			result.Port = status.Runtime.Port
+		}
 	}
-	if p == nil {
-		return 0, false, nil
-	}
-	return int(p.Pid), true, nil
-}
-
-func resolveDaemonStatus(
-	find func() (int, bool, error),
-	loadInfo func() (*model.RunInfo, error),
-) (daemonStatus, error) {
-	pid, running, err := find()
-	if err != nil {
-		return daemonStatus{}, fmt.Errorf("查询守护进程状态失败: %w", err)
-	}
-	status := daemonStatus{Running: running, PID: pid}
-	if !running {
-		return status, nil
-	}
-
-	info, err := loadInfo()
-	if err == nil && info != nil && info.PID == pid {
-		status.Port = info.Port
-	}
-	return status, nil
+	return result
 }
 
 func writeStatus(out io.Writer, status daemonStatus) error {
@@ -293,7 +292,20 @@ func writeStatus(out io.Writer, status daemonStatus) error {
 			fmt.Fprintf(out, "    Daemon端口：%s\n", status.Port)
 		}
 	} else {
-		fmt.Fprintln(out, "    Daemon状态：未运行")
+		switch status.State {
+		case daemon.StateStaleRuntime:
+			fmt.Fprintln(out, "    Daemon状态：未运行（存在失效运行信息）")
+		case daemon.StatePortOccupied:
+			fmt.Fprintln(out, "    Daemon状态：不可用（端口被其他程序占用）")
+		case daemon.StateIncompatible:
+			fmt.Fprintln(out, "    Daemon状态：不可用（协议版本不兼容）")
+		case daemon.StateUnresponsive:
+			fmt.Fprintln(out, "    Daemon状态：不可用（无响应）")
+		case daemon.StateRuntimeError:
+			fmt.Fprintln(out, "    Daemon状态：未运行（运行信息损坏）")
+		default:
+			fmt.Fprintln(out, "    Daemon状态：未运行")
+		}
 	}
 	fmt.Fprintf(out, "    配置文件地址：%s\n", config.CONFIG_PATH)
 	fmt.Fprintf(out, "    数据文件目录：%s\n", cache.CACHE_ROOT_PATH)
@@ -306,11 +318,7 @@ func writeStatus(out io.Writer, status daemonStatus) error {
 }
 
 func flagStatus(*cli.Context, bool) error {
-	status, err := resolveDaemonStatus(findRunningDaemon, daemon.GetDaemonInfo)
-	if err != nil {
-		return err
-	}
-	return writeStatus(os.Stdout, status)
+	return writeStatus(os.Stdout, resolveDaemonStatus(daemon.CheckDaemonStatus(daemon.DefaultAddress())))
 }
 
 func checkAndNoticeUpdate() {
@@ -370,6 +378,7 @@ func main() {
 		if err != nil {
 			d.EchoFatal("%s", err)
 		}
+		defer func() { _ = l.Sync() }()
 		defer func() {
 			if r := recover(); r != nil {
 				zap.S().Errorln("Application crashed", zap.Any("reason", r))
@@ -430,8 +439,8 @@ func main() {
 			}
 
 			if cfg.FileExists {
-				di, err := daemon.GetDaemonInfo()
-				if err == nil && cfg.ModTime > di.StartTime {
+				status := daemon.CheckDaemonStatus(daemon.DefaultAddress())
+				if status.State == daemon.StateRunning && status.Ping != nil && cfg.ModTime > status.Ping.StartTime {
 					d.EchoWarn("检测到配置文件发生修改，正在重启守护进程")
 					flagRestart(cCtx, true)
 				}

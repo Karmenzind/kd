@@ -8,18 +8,14 @@ import (
 
 	"github.com/Karmenzind/kd/internal/model"
 	"github.com/Karmenzind/kd/internal/run"
-	"github.com/Karmenzind/kd/pkg"
 )
 
 func useDaemonInfoDir(t *testing.T) {
 	t.Helper()
 	originalPath := run.CACHE_RUN_PATH
-	originalInfo := DaemonInfo
 	run.CACHE_RUN_PATH = t.TempDir()
-	DaemonInfo = &model.RunInfo{}
 	t.Cleanup(func() {
 		run.CACHE_RUN_PATH = originalPath
-		DaemonInfo = originalInfo
 	})
 }
 
@@ -30,9 +26,9 @@ func TestGetDaemonInfo(t *testing.T) {
 		t.Fatal("GetDaemonInfoFromFile() returned nil error for missing file")
 	}
 
-	want := &model.RunInfo{PID: 123, Port: "19707", Version: "v1.2.3"}
-	if err := pkg.SaveJson(GetDaemonInfoPath(), want); err != nil {
-		t.Fatalf("SaveJson() error = %v", err)
+	want := &model.RunInfo{PID: 123, Port: "19707", Version: "v1.2.3", StartTime: 456, Instance: "one"}
+	if err := WriteDaemonInfo(GetDaemonInfoPath(), want); err != nil {
+		t.Fatalf("WriteDaemonInfo() error = %v", err)
 	}
 	got, err := GetDaemonInfoFromFile()
 	if err != nil {
@@ -45,7 +41,6 @@ func TestGetDaemonInfo(t *testing.T) {
 	if err := os.WriteFile(GetDaemonInfoPath(), []byte("not-json"), 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
-	DaemonInfo = &model.RunInfo{}
 	if _, err := GetDaemonInfoFromFile(); err == nil {
 		t.Fatal("GetDaemonInfoFromFile() returned nil error for invalid JSON")
 	}

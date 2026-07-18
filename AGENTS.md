@@ -31,10 +31,10 @@
 
 - `cmd/kd`: CLI flags, startup, configuration wiring, and result presentation.
 - `config`: TOML configuration defaults, loading, validation, and sample output.
-- `internal/client.go` and `internal/server.go`: client/daemon orchestration and the newline-delimited JSON protocol over localhost TCP.
-- `internal/query`: cache/daemon query handling, Youdao response parsing, and output formatting.
+- `internal/query.go` and `internal/server.go`: CLI-side query orchestration and the thin server entry point retained for compatibility.
+- `internal/query`: cache and online query handling, Youdao response parsing, and output formatting.
 - `internal/cache`: SQLite data, not-found data, and query counters.
-- `internal/daemon`: daemon lifecycle, process discovery, and scheduled maintenance.
+- `internal/daemon`: daemon lifecycle, TCP client/server communication, runtime state, process discovery, and scheduled maintenance.
 - `internal/model`: shared request, response, result, and runtime data structures.
 - `internal/run`: runtime metadata, cache paths, and the fixed daemon port (`19707`).
 - `internal/tts` and `internal/update`: optional speech and binary-update flows.
@@ -97,7 +97,7 @@ Package initialization creates user-level runtime directories. On Windows and Li
 ### Configuration, daemon, and releases
 
 - Keep configuration changes synchronized across `Config` fields/default tags, validation, generated samples in `config/output.go`, and the README. Avoid new options when an existing behavior or command is sufficient.
-- For daemon request, response, or serialization changes, review `internal/model`, `internal/client.go`, `internal/server.go`, and `internal/query` together. Preserve compatibility between old and new CLI/daemon versions where practical; otherwise explicitly handle stale processes, protocol versions, and cached payloads.
+- For daemon request, response, or serialization changes, review `internal/model`, `internal/daemon/client.go`, `internal/daemon/server.go`, and `internal/query.go` together. Preserve compatibility between old and new CLI/daemon versions where practical; otherwise explicitly handle stale processes, protocol versions, and cached payloads.
 - Release builds are tag-driven through `.github/workflows/release-tags.yml`; `scripts/build.sh` cross-builds all artifacts from one host and is the source of truth for artifact names and linker/build tags.
 - The single Ubuntu release job may cross-compile macOS artifacts only while the build remains pure Go with `CGO_ENABLED=0` and has no dependency on Apple SDKs, Objective-C, native dynamic libraries, or macOS system frameworks. Native macOS CI still provides compile-and-test coverage, but the Linux runner cannot execute the generated release artifacts.
 - Restore a native macOS release job when adding CGO or platform-native code, Apple code signing or notarization, macOS-specific packaging, or when release artifacts require native smoke testing. Treat any such change as a release-process decision rather than silently extending the cross-build script.

@@ -11,6 +11,7 @@ import (
 type RunInfo struct {
 	StartTime int64
 	PID       int
+	Instance  string
 	Port      string
 	ExeName   string
 	ExePath   string

@@ -1,4 +1,4 @@
-package query
+package daemon
 
 import (
 	"errors"

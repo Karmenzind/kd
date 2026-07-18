@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"archive/zip"
+	"context"
 	"database/sql"
 	"fmt"
 	"io"
@@ -25,47 +26,51 @@ const (
 	DATA_ZIP_URL_GLOBAL = "https://raw.githubusercontent.com/Karmenzind/static/main/kd/kd_data.zip"
 )
 
-func InitCron() {
-	go cronCheckUpdate()
-	go cronUpdateDataZip()
-	go cronDeleteSpam()
-	go cronEnsureDaemonJsonFile()
+func InitCron(ctx context.Context, shutdown func()) {
+	go cronCheckUpdate(ctx)
+	go cronUpdateDataZip(ctx, shutdown)
+	go cronDeleteSpam(ctx)
+	go cronEnsureDaemonJsonFile(ctx)
 }
 
-func cronEnsureDaemonJsonFile() {
+func cronEnsureDaemonJsonFile(ctx context.Context) {
 	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
 	for {
-		<-ticker.C
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
 		di, err := GetDaemonInfoFromFile()
-		// TODO 检查信息与当前是否匹配
-		var needUpdate bool
-		if err != nil {
-			zap.S().Warnf("Failed to get daemon info from file: %s", err)
-			needUpdate = true
-		} else {
-			ri := run.Info
-			run.Info.SetOSInfo()
-			if ri.StartTime != di.StartTime ||
-				ri.PID != di.PID ||
-				ri.Port != di.Port ||
-				ri.ExeName != di.ExeName ||
-				ri.ExePath != di.ExePath ||
-				ri.Version != di.Version {
-				zap.S().Warn("DaemonInfo from json is different from current run.Info")
-				needUpdate = true
+		if err == nil {
+			if !daemonInfoOwnedBy(di, run.Info) {
+				zap.S().Warn("Daemon runtime information belongs to another instance; leaving it untouched")
 			}
+			continue
 		}
-		if needUpdate {
-			run.Info.SaveToFile(GetDaemonInfoPath())
-			d.EchoRun("Update daemon.json")
+		zap.S().Warnf("Failed to get daemon info from file: %s", err)
+		ping, pingErr := PingDaemon(DefaultAddress())
+		if pingErr != nil || ping.PID != run.Info.PID {
+			continue
 		}
+		if err := WriteDaemonInfo(GetDaemonInfoPath(), run.Info); err != nil {
+			zap.S().Warnf("Failed to refresh daemon runtime information: %s", err)
+			continue
+		}
+		d.EchoRun("Update daemon.json")
 	}
 }
 
-func cronDeleteSpam() {
+func cronDeleteSpam(ctx context.Context) {
 	ticker := time.NewTicker(600 * time.Second)
+	defer ticker.Stop()
 	for {
-		<-ticker.C
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
 		zap.S().Debugf("Started clearing spam")
 		p, err := pkg.GetExecutablePath()
 		if err == nil {
@@ -80,11 +85,16 @@ func cronDeleteSpam() {
 	}
 }
 
-func cronCheckUpdate() {
+func cronCheckUpdate(ctx context.Context) {
 	ticker := time.NewTicker(3600 * 12 * time.Second)
+	defer ticker.Stop()
 	for {
 		// TODO (k): <2024-01-01> 改成检查文件Stat来判断时长
-		<-ticker.C
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
 
 		for range 3 {
 			tag, err := update.GetLatestTag()
@@ -93,7 +103,11 @@ func cronCheckUpdate() {
 				break
 			}
 			zap.S().Warnf("Failed to get latest tag: %s", err)
-			time.Sleep(5 * time.Second)
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(5 * time.Second):
+			}
 		}
 
 	}
@@ -109,88 +123,94 @@ func getZipDownloadUrl() string {
 	return DATA_ZIP_URL_CN
 }
 
-func cronUpdateDataZip() {
+func cronUpdateDataZip(ctx context.Context, shutdown func()) {
 	ticker := time.NewTicker(3 * time.Second)
-	go func() {
-		for {
-			<-ticker.C
-			zap.S().Infof("Start check updating data zip")
-
-			dbPath := filepath.Join(cache.CACHE_ROOT_PATH, cache.DB_FILENAME)
-			tsFile := filepath.Join(cache.CACHE_RUN_PATH, "last_fetch_db")
-			zipPath := filepath.Join(cache.CACHE_ROOT_PATH, "kd_data.zip")
-			tempDBPath := dbPath + ".temp"
-
-			if pkg.IsPathExists(tsFile) {
-				zap.S().Infof("Found last update record. Nothing to do.")
-				break
-			}
-			var need2Dl bool
-			dbFileInfo, _ := os.Stat(dbPath)
-			mb := dbFileInfo.Size() / 1024 / 1024
-			zap.S().Debugf("Current db file size: %dMB", mb)
-
-			if mb < 50 {
-				fmt.Println(1)
-				if pkg.IsPathExists(zipPath) {
-					// TODO checksum
-					zap.S().Infof("Found zip file: %s", zipPath)
-					if checksumZIP(zipPath) {
-						need2Dl = false
-					}
-				} else {
-					need2Dl = true
-					zap.S().Infof("Zip file not found. Will download later.")
-				}
-			}
-			zap.S().Debugf("Need to dl: %v", need2Dl)
-			var err error
-			// if need to download
-			if need2Dl {
-				dlUrl := getZipDownloadUrl()
-				zap.S().Infof("Download url: %s", dlUrl)
-				if err = downloadDataZip(dlUrl, zipPath); err != nil {
-					zap.S().Warnf("Failed to download zip file: %s", err)
-					continue
-				}
-			}
-			if err = decompressDBZip(tempDBPath, zipPath); err != nil {
-				zap.S().Warnf("Failed: %s. Current invalid file will be removed.", err)
-				if errDel := os.Remove(zipPath); errDel != nil {
-					zap.S().Warnf("Failed to remove invalid archive: %s", errDel)
-				} else {
-					zap.S().Infof("Removed invalid zip file")
-				}
-				continue
-			}
-			zap.S().Infof("Decompressed DB zip file -> %s", tempDBPath)
-
-			// err = parseDBAndInsertOffsetVersion(tempDBPath)
-			// os.Remove(tempDBPath)
-			// if err != nil {
-			// 	zap.S().Warnf("[parseDBAndInsert] Failed: %s", err)
-			// 	continue
-			// }
-
-			err = applyTempDB(dbPath, tempDBPath)
-			if err != nil {
-				zap.S().Warnf("Failed: %s", err)
-				continue
-			}
-
-			// success
-			os.WriteFile(tsFile, []byte(fmt.Sprint(time.Now().Unix())), os.ModePerm)
-
-			ticker.Stop()
-			// TODO 以消息通知形式
-			zap.S().Info("DB文件发生改变，进程主动退出")
-			fmt.Println("DB文件发生改变，进程主动退出")
-			os.Exit(0)
-			break
-			// TODO (k): <2023-12-15> 看情况删除
-			// os.Remove(zipPath)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
 		}
-	}()
+		zap.S().Infof("Start check updating data zip")
+
+		dbPath := filepath.Join(cache.CACHE_ROOT_PATH, cache.DB_FILENAME)
+		tsFile := filepath.Join(cache.CACHE_RUN_PATH, "last_fetch_db")
+		zipPath := filepath.Join(cache.CACHE_ROOT_PATH, "kd_data.zip")
+		tempDBPath := dbPath + ".temp"
+
+		if pkg.IsPathExists(tsFile) {
+			zap.S().Infof("Found last update record. Nothing to do.")
+			break
+		}
+		var need2Dl bool
+		var mb int64
+		if dbFileInfo, err := os.Stat(dbPath); err == nil {
+			mb = dbFileInfo.Size() / 1024 / 1024
+		} else {
+			need2Dl = true
+			zap.S().Warnf("Failed to inspect current database: %s", err)
+		}
+		zap.S().Debugf("Current db file size: %dMB", mb)
+
+		if mb < 50 {
+			if pkg.IsPathExists(zipPath) {
+				// TODO checksum
+				zap.S().Infof("Found zip file: %s", zipPath)
+				if checksumZIP(zipPath) {
+					need2Dl = false
+				}
+			} else {
+				need2Dl = true
+				zap.S().Infof("Zip file not found. Will download later.")
+			}
+		}
+		zap.S().Debugf("Need to dl: %v", need2Dl)
+		var err error
+		// if need to download
+		if need2Dl {
+			dlUrl := getZipDownloadUrl()
+			zap.S().Infof("Download url: %s", dlUrl)
+			if err = downloadDataZip(dlUrl, zipPath); err != nil {
+				zap.S().Warnf("Failed to download zip file: %s", err)
+				continue
+			}
+		}
+		if err = decompressDBZip(tempDBPath, zipPath); err != nil {
+			zap.S().Warnf("Failed: %s. Current invalid file will be removed.", err)
+			if errDel := os.Remove(zipPath); errDel != nil {
+				zap.S().Warnf("Failed to remove invalid archive: %s", errDel)
+			} else {
+				zap.S().Infof("Removed invalid zip file")
+			}
+			continue
+		}
+		zap.S().Infof("Decompressed DB zip file -> %s", tempDBPath)
+
+		// err = parseDBAndInsertOffsetVersion(tempDBPath)
+		// os.Remove(tempDBPath)
+		// if err != nil {
+		// 	zap.S().Warnf("[parseDBAndInsert] Failed: %s", err)
+		// 	continue
+		// }
+
+		err = applyTempDB(dbPath, tempDBPath)
+		if err != nil {
+			zap.S().Warnf("Failed: %s", err)
+			continue
+		}
+
+		// success
+		os.WriteFile(tsFile, []byte(fmt.Sprint(time.Now().Unix())), os.ModePerm)
+
+		// TODO 以消息通知形式
+		zap.S().Info("DB文件发生改变，进程主动退出")
+		fmt.Println("DB文件发生改变，进程主动退出")
+		shutdown()
+		return
+		// TODO (k): <2023-12-15> 看情况删除
+		// os.Remove(zipPath)
+	}
 }
 
 func checksumZIP(zipPath string) bool {

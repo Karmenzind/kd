@@ -2,17 +2,16 @@ package daemon
 
 import (
 	"errors"
+	"fmt"
+	"net"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
 
 	"github.com/Karmenzind/kd/internal/model"
-	"github.com/Karmenzind/kd/internal/run"
 	"github.com/Karmenzind/kd/pkg"
 	d "github.com/Karmenzind/kd/pkg/decorate"
-	"github.com/Karmenzind/kd/pkg/proc"
 	"github.com/Karmenzind/kd/pkg/systemd"
 
 	"github.com/shirou/gopsutil/v4/process"
@@ -20,34 +19,6 @@ import (
 )
 
 var SYSTEMD_UNIT_NAME = "kd-server"
-var DaemonInfo = &model.RunInfo{}
-
-func GetDaemonInfoPath() string {
-	return filepath.Join(run.CACHE_RUN_PATH, "daemon.json")
-}
-
-func GetDaemonInfoFromFile() (*model.RunInfo, error) {
-	dipath := filepath.Join(run.CACHE_RUN_PATH, "daemon.json")
-	if !pkg.IsPathExists(dipath) {
-		return DaemonInfo, errors.New("获取守护进程信息失败，文件不存在")
-	}
-	err := pkg.LoadJson(dipath, DaemonInfo)
-	return DaemonInfo, err
-}
-
-func GetDaemonInfo() (*model.RunInfo, error) {
-	var err error
-	if *DaemonInfo == (model.RunInfo{}) {
-		dipath := filepath.Join(run.CACHE_RUN_PATH, "daemon.json")
-		if !pkg.IsPathExists(dipath) {
-			return DaemonInfo, errors.New("获取守护进程信息失败，文件不存在")
-		}
-		if err = pkg.LoadJson(dipath, DaemonInfo); err != nil {
-			return DaemonInfo, err
-		}
-	}
-	return DaemonInfo, err
-}
 
 func getKdPIDs() {
 	var cmd *exec.Cmd
@@ -64,8 +35,8 @@ func getKdPIDs() {
 }
 
 func ServerIsRunning() bool {
-	p, _ := FindServerProcess()
-	return p != nil
+	_, err := PingDaemon(DefaultAddress())
+	return err == nil
 }
 
 func processNameMatched(n string) bool {
@@ -106,39 +77,94 @@ func FindServerProcess() (*process.Process, error) {
 }
 
 func StartDaemonProcess() error {
+	ping, err := startDaemon(DefaultAddress(), DaemonStartTimeout, launchDaemonProcess)
+	if err != nil {
+		return err
+	}
+	zap.S().Info("Started or reused daemon process")
+	d.EchoOkay("守护进程已就绪，PID：%d", ping.PID)
+	return nil
+}
+
+type daemonLauncher func() (<-chan error, error)
+
+func launchDaemonProcess() (<-chan error, error) {
 	kdpath, err := pkg.GetExecutablePath()
 	if err != nil {
 		zap.S().Errorf("Failed to get current file path: %s", err)
-		return err
+		return nil, err
 	}
 	zap.S().Debugf("Got executable path %s", kdpath)
 
 	cmd := exec.Command(kdpath, "--server")
-	err = cmd.Start()
-	if err != nil {
+	if err = cmd.Start(); err != nil {
 		zap.S().Errorf("Failed to start daemon with system command: %s", err)
-		return err
+		return nil, err
 	}
-	var p *process.Process
-	var err_ error
-	for range 3 {
-		time.Sleep(time.Second)
-		p, err_ = FindServerProcess()
-		if err_ != nil {
-			zap.S().Warnf("Failed finding daemon process: %s", err_)
+	exited := make(chan error, 1)
+	go func() {
+		exited <- cmd.Wait()
+		close(exited)
+	}()
+	return exited, nil
+}
+
+func startDaemon(addr string, timeout time.Duration, launch daemonLauncher) (*model.DaemonPing, error) {
+	ping, err := PingDaemon(addr)
+	if err == nil {
+		return ping, nil
+	}
+	if !errors.Is(err, ErrDaemonNotRunning) {
+		if errors.Is(err, ErrNotKDDaemon) || errors.Is(err, ErrDaemonNoResponse) {
+			return nil, errors.Join(ErrPortOccupied, err)
 		}
-		if p != nil {
-			zap.S().Infof("Started daemon process.")
-			d.EchoOkay("成功启动守护进程，PID：%d", p.Pid)
-			return nil
+		return nil, err
+	}
+	exited, err := launch()
+	if err != nil {
+		return nil, errors.Join(ErrDaemonInit, err)
+	}
+	return WaitDaemonReady(addr, timeout, exited)
+}
+
+func WaitDaemonReady(addr string, timeout time.Duration, exited <-chan error) (*model.DaemonPing, error) {
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	ticker := time.NewTicker(DaemonRetryInterval)
+	defer ticker.Stop()
+	var lastErr error
+	var exitErr error
+	var processExited bool
+	for {
+		ping, err := PingDaemon(addr)
+		if err == nil {
+			return ping, nil
 		}
-		d.EchoRun("正在检查运行结果，稍等...")
+		lastErr = err
+		if errors.Is(err, ErrNotKDDaemon) || errors.Is(err, ErrProtocolIncompatible) {
+			return nil, errors.Join(ErrPortOccupied, err)
+		}
+		select {
+		case err, ok := <-exited:
+			processExited = true
+			if ok {
+				exitErr = err
+			}
+			exited = nil
+		default:
+		}
+		select {
+		case <-ticker.C:
+		case <-timer.C:
+			err := errors.Join(ErrDaemonStartTimeout, lastErr)
+			if exitErr != nil {
+				err = errors.Join(err, fmt.Errorf("daemon process exited: %w", exitErr))
+			} else if processExited {
+				err = errors.Join(err, errors.New("daemon process exited before becoming ready"))
+			}
+			return nil, err
+		}
 	}
-	if p == nil {
-		err = errors.New("启动失败，请重试。如果多次启动失败，请创建Issue并提交日志文件")
-		return err
-	}
-	return nil
 }
 
 func KillDaemonIfRunning() error {
@@ -152,27 +178,50 @@ func KillDaemonIfRunning() error {
 			return err
 		}
 	}
-	p, err := FindServerProcess()
-	if err == nil {
-		if p == nil {
-			d.EchoOkay("未发现守护进程，无需停止")
-			return nil
-		}
-	} else {
-		zap.S().Warnf("[process] Failed to find daemon: %s", err)
+	ping, err := PingDaemon(DefaultAddress())
+	if errors.Is(err, ErrDaemonNotRunning) {
+		d.EchoOkay("未发现守护进程，无需停止")
+		return nil
+	}
+	if err != nil {
 		return err
 	}
-
-	zap.S().Debugf("try killing process: %v", p)
-	err = proc.KillProcess(p)
-
-	if err == nil {
-		zap.S().Info("Terminated daemon process.")
-		d.EchoOkay("守护进程已经停止")
-	} else {
-		zap.S().Warnf("Failed to terminate daemon process: %s", err)
+	if err := requestShutdown(DefaultAddress()); err != nil {
+		return err
 	}
-	return err
+	deadline := time.Now().Add(DaemonStartTimeout)
+	for time.Now().Before(deadline) {
+		if _, err := PingDaemon(DefaultAddress()); errors.Is(err, ErrDaemonNotRunning) {
+			zap.S().Info("Stopped daemon process")
+			d.EchoOkay("守护进程已经停止")
+			return nil
+		}
+		time.Sleep(DaemonRetryInterval)
+	}
+	return fmt.Errorf("停止守护进程 PID %d 超时", ping.PID)
+}
+
+func requestShutdown(addr string) error {
+	conn, err := net.DialTimeout("tcp", addr, PingTimeout)
+	if err != nil {
+		return fmt.Errorf("connect daemon for shutdown: %w", err)
+	}
+	defer conn.Close()
+	if err := conn.SetDeadline(time.Now().Add(ConnectionTimeout)); err != nil {
+		return err
+	}
+	request := model.TCPQuery{Action: "shutdown", ProtocolVersion: model.DaemonProtocolVersion}
+	if err := model.WriteProtocolMessage(conn, request); err != nil {
+		return fmt.Errorf("send daemon shutdown request: %w", err)
+	}
+	var response model.DaemonResponse
+	if err := model.NewProtocolReader(conn).Read(&response); err != nil {
+		return fmt.Errorf("read daemon shutdown response: %w", err)
+	}
+	if response.Error != "" {
+		return errors.New(response.Error)
+	}
+	return nil
 }
 
 // TODO (k): <2024-05-05 15:56>
