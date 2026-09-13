@@ -24,6 +24,10 @@ import (
 const (
 	DATA_ZIP_URL_CN     = "https://gitee.com/void_kmz/kd/releases/download/v0.0.1/kd_data.zip"
 	DATA_ZIP_URL_GLOBAL = "https://raw.githubusercontent.com/Karmenzind/static/main/kd/kd_data.zip"
+
+	// 清洗任务的启动延迟与失败重试间隔
+	sanitizeStartDelay    = 30 * time.Second
+	sanitizeRetryInterval = 6 * time.Hour
 )
 
 func InitCron(ctx context.Context, shutdown func()) {
@@ -31,6 +35,7 @@ func InitCron(ctx context.Context, shutdown func()) {
 	go cronUpdateDataZip(ctx, shutdown)
 	go cronDeleteSpam(ctx)
 	go cronEnsureDaemonJsonFile(ctx)
+	go cronSanitizeCache(ctx)
 }
 
 func cronEnsureDaemonJsonFile(ctx context.Context) {
@@ -414,4 +419,37 @@ func parseDBAndInsertOffsetVersion(tempDBPath string) (err error) {
 		}
 	}
 	return
+}
+
+// cronSanitizeCache 清洗词库中残留的未规整文本。任务由meta表中的版本号把关，
+// 正常情况下只在首次启动（以及整库被替换后）真正扫描一次，其余时候立即返回。
+func cronSanitizeCache(ctx context.Context) {
+	select {
+	case <-ctx.Done():
+		return
+	case <-time.After(sanitizeStartDelay):
+	}
+
+	ticker := time.NewTicker(sanitizeRetryInterval)
+	defer ticker.Stop()
+	for {
+		report, err := cache.SanitizeLegacyRows(ctx)
+		if err == nil {
+			if report.Cleaned > 0 {
+				d.EchoRun("已清洗%d条词库缓存", report.Cleaned)
+			}
+			return
+		}
+		if ctx.Err() != nil {
+			return
+		}
+		zap.S().Warnf("Failed to sanitize cached rows (scanned %d, cleaned %d): %s",
+			report.Scanned, report.Cleaned, err)
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
 }

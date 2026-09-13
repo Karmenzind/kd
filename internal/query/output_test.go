@@ -6,6 +6,7 @@ import (
 
 	"github.com/Karmenzind/kd/internal/model"
 	d "github.com/Karmenzind/kd/pkg/decorate"
+	fc "github.com/fatih/color"
 )
 
 func TestPrettyFormatStableSemantics(t *testing.T) {
@@ -98,5 +99,35 @@ func TestDisplayExampleAndCollinsSplit(t *testing.T) {
 	en, zh := cutCollinsTrans("to leave something 放弃某物")
 	if en != "to leave something" || zh != "放弃某物" {
 		t.Fatalf("cutCollinsTrans() = (%q, %q)", en, zh)
+	}
+}
+
+// 旧版缓存中的释义保存的是未清洗的HTML文本，含换行与大段缩进，
+// 直接渲染会导致排版错乱，这里确认渲染前会被规整。
+func TestPrettyFormatLegacyParaphrase(t *testing.T) {
+	originalNoColor := fc.NoColor
+	fc.NoColor = true
+	t.Cleanup(func() { fc.NoColor = originalNoColor })
+
+	d.ApplyTheme("temp")
+	r := &model.Result{
+		BaseResult: &model.BaseResult{Query: "lamb", IsEN: true},
+		Keyword:    "lamb",
+		Paraphrase: []string{
+			"n.\n\n小羊；羔羊\n                        小羊肉；羔羊肉",
+			"短语:\n\n\n                    in lamb\n                    怀着羔羊\n",
+		},
+	}
+
+	got := PrettyFormat(r, false, true)
+	lines := strings.Split(got, "\n")
+	want := []string{"lamb", "n.", "   小羊；羔羊", "   小羊肉；羔羊肉", "短语:", "   in lamb", "   怀着羔羊"}
+	if len(lines) != len(want) {
+		t.Fatalf("PrettyFormat() = %q, want %d lines", got, len(want))
+	}
+	for i, wantLine := range want {
+		if lines[i] != wantLine {
+			t.Fatalf("PrettyFormat() line %d = %q, want %q", i, lines[i], wantLine)
+		}
 	}
 }

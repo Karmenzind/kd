@@ -28,6 +28,11 @@ CREATE TABLE IF NOT EXISTS ch (
     query text NOT NULL UNIQUE PRIMARY KEY,
     detail text NOT NULL,
     update_time datetime NOT NULL) WITHOUT ROWID;
+
+CREATE TABLE IF NOT EXISTS meta (
+    key text NOT NULL UNIQUE PRIMARY KEY,
+    value text NOT NULL,
+    update_time datetime NOT NULL) WITHOUT ROWID;
 `
 
 func initDBAtPath(dbPath string) (*sql.DB, error) {
@@ -145,6 +150,31 @@ func saveCachedRow(query string, isEN bool, detail []byte) error {
 	err = tx.Commit()
 	if err != nil {
 		zap.S().Warnf("Failed to commit transaction for %s: %s", query, err)
+	}
+	return err
+}
+
+// getMetaValue 读取meta表中的配置项，不存在时返回空字符串。
+func getMetaValue(key string) (string, error) {
+	var value string
+	err := LiteDB.QueryRow("SELECT value FROM meta WHERE key = ?", key).Scan(&value)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		zap.S().Warnf("Failed to read meta %q: %s", key, err)
+		return "", err
+	}
+	return value, nil
+}
+
+func setMetaValue(key string, value string) error {
+	_, err := LiteDB.Exec(
+		"INSERT OR REPLACE INTO meta (key, value, update_time) VALUES (?, ?, ?)",
+		key, value, time.Now(),
+	)
+	if err != nil {
+		zap.S().Warnf("Failed to write meta %q: %s", key, err)
 	}
 	return err
 }

@@ -8,10 +8,12 @@ import (
 	"github.com/Karmenzind/kd/internal/model"
 	"github.com/Karmenzind/kd/internal/run"
 	d "github.com/Karmenzind/kd/pkg/decorate"
+	"github.com/Karmenzind/kd/pkg/str"
 )
 
 var collinsTransPat = regexp.MustCompile("^([^\u4e00-\u9fa5]+) ([^ ]*[\u4e00-\u9fa5]+.*)$") // collins的释义，英中混合
 var normalSentence = regexp.MustCompile("^[A-Za-z]+ ")
+var propertyOnly = regexp.MustCompile(`^[a-zA-Z]+\.([,&/][a-zA-Z]+\.)*$`) // 单独成行的词性，如n.、vi.,vt.
 
 var nationMap = map[string]string{"英": "EN", "美": "US"}
 
@@ -62,16 +64,7 @@ func PrettyFormat(r *model.Result, onlyEN bool, brief bool) string {
 				// FIXME (k): <2023-12-15> 从收集步骤规避
 				continue
 			}
-			if normalSentence.MatchString(para) {
-				s = append(s, d.Para(para))
-			} else {
-				splited := strings.SplitN(para, " ", 2)
-				if len(splited) == 2 {
-					s = append(s, fmt.Sprintf("%s %s", d.Property(splited[0]), d.Para(splited[1])))
-				} else {
-					s = append(s, d.Para(para))
-				}
-			}
+			s = append(s, formatParaphrase(para)...)
 		}
 	}
 
@@ -155,6 +148,36 @@ func PrettyFormat(r *model.Result, onlyEN bool, brief bool) string {
 	// s = append(s, r.Pronounce)
 	r.Output = strings.Join(s, "\n")
 	return r.Output
+}
+
+// formatParaphrase 渲染单条释义。旧版缓存中的释义可能是多行原始文本
+// （词性、若干义项、短语块），首行按"词性 + 释义"渲染，其余各行缩进展示。
+func formatParaphrase(para string) []string {
+	lines := str.SimplifyLines(para)
+	if len(lines) == 0 {
+		return nil
+	}
+
+	rendered := make([]string, 0, len(lines))
+	rendered = append(rendered, formatParaphraseLine(lines[0]))
+	for _, line := range lines[1:] {
+		rendered = append(rendered, "   "+d.Para(line))
+	}
+	return rendered
+}
+
+func formatParaphraseLine(line string) string {
+	if normalSentence.MatchString(line) {
+		return d.Para(line)
+	}
+	if propertyOnly.MatchString(line) {
+		return d.Property(line)
+	}
+	splited := strings.SplitN(line, " ", 2)
+	if len(splited) == 2 {
+		return fmt.Sprintf("%s %s", d.Property(splited[0]), d.Para(splited[1]))
+	}
+	return d.Para(line)
 }
 
 func displayExample(item []string, tab string, onlyEN bool, isEN bool) string {

@@ -24,19 +24,11 @@ func GetCachedQuery(r *model.Result) (err error) {
 		return
 	}
 
-	zb := bytes.NewBuffer(z)
-	c, err := zlib.NewReader(zb)
+	j, err := decompressDetail(z)
 	if err != nil {
 		zap.S().Debugf("Failed to decompress data for %s: %s", r.Query, err)
 		return
 	}
-	var jb bytes.Buffer
-	_, err = io.Copy(&jb, c)
-	if err != nil {
-		zap.S().Errorf("Failed to read buffer: %s", err)
-	}
-	c.Close()
-	j := jb.Bytes()
 	zap.S().Debugf("Got cached json %s", j)
 
 	if len(j) > 0 {
@@ -45,6 +37,7 @@ func GetCachedQuery(r *model.Result) (err error) {
 			zap.S().Debugf("Failed to unmarshal for %s: %s", r.Query, err)
 			return
 		}
+		r.Sanitize()
 	}
 	zap.S().Debugf("Got cached %s. (len: %d)", r.Query, len(j))
 	return
@@ -62,11 +55,11 @@ func UpdateQueryCache(r *model.Result) (err error) {
 	}
 	zap.S().Debugf("Got marshalled json to save: %s", j)
 
-	var zb bytes.Buffer
-	jw := zlib.NewWriter(&zb)
-	jw.Write(j)
-	jw.Close()
-	detail := zb.Bytes()
+	detail, err := compressDetail(j)
+	if err != nil {
+		zap.S().Warnf("Failed to compress detail for '%s': %s", r.Query, err)
+		return
+	}
 
 	err = saveCachedRow(r.Query, r.IsEN, detail)
 
@@ -75,6 +68,33 @@ func UpdateQueryCache(r *model.Result) (err error) {
 	}
 	zap.S().Debugf("Updated cache for '%s'. len: %d", r.Query, len(detail))
 	return
+}
+
+func decompressDetail(detail []byte) ([]byte, error) {
+	reader, err := zlib.NewReader(bytes.NewReader(detail))
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+
+	var body bytes.Buffer
+	if _, err = io.Copy(&body, reader); err != nil {
+		return nil, err
+	}
+	return body.Bytes(), nil
+}
+
+func compressDetail(body []byte) ([]byte, error) {
+	var compressed bytes.Buffer
+	writer := zlib.NewWriter(&compressed)
+	if _, err := writer.Write(body); err != nil {
+		writer.Close()
+		return nil, err
+	}
+	if err := writer.Close(); err != nil {
+		return nil, err
+	}
+	return compressed.Bytes(), nil
 }
 
 //  -----------------------------------------------------------------------------
