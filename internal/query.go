@@ -35,10 +35,52 @@ func Query(query string, noCache bool, longText bool) (r *model.Result, err erro
 	return QueryWithProgress(query, noCache, longText, ui.NopProgress())
 }
 
+// QueryWithProgress 负责标识符式查询的回退编排：
+//   - 短词（kd helloWorld / kd hello_world）：先按整体查询，未找到再拆词拼成
+//     词组，走长文本机器翻译通道。
+//   - 长文本（kd -t）：先对整段中的标识符 token 拆词重写后再翻译，重写无结果
+//     时退回原文重试。
+//
+// 拆分细节见 pkg/str 的 SplitIdentifier / RewriteIdentifiers。
 func QueryWithProgress(query string, noCache bool, longText bool, progress ui.Progress) (r *model.Result, err error) {
 	if progress == nil {
 		progress = ui.NopProgress()
 	}
+
+	raw := str.Simplify(query)
+	lookup := raw
+	if longText {
+		lookup = str.RewriteIdentifiers(raw)
+	}
+
+	if r, err = querySingle(lookup, noCache, longText, progress); err != nil || r.Found || r.Prompt != "" {
+		return r, err
+	}
+
+	if longText {
+		if lookup != raw {
+			if fr, ferr := querySingle(raw, noCache, true, progress); ferr == nil && fr.Found {
+				return fr, nil
+			}
+		}
+		return r, err
+	}
+
+	phrase, ok := str.IdentifierPhrase(raw)
+	if !ok {
+		return r, err
+	}
+	fr, ferr := querySingle(phrase, noCache, true, progress)
+	if ferr != nil || !fr.Found {
+		return r, err
+	}
+	// 复用主查询的计数通道：长文本结果不会启动 CounterIncr，
+	// 若直接返回会在 freq_alert 开启时永久阻塞在 <-r.History。
+	fr.History = r.History
+	return fr, nil
+}
+
+func querySingle(query string, noCache bool, longText bool, progress ui.Progress) (r *model.Result, err error) {
 	// TODO (k): <2024-01-02> regexp
 	query = normalizeQuery(query, longText)
 
