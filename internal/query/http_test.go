@@ -40,6 +40,39 @@ func TestRequestYoudaoWith(t *testing.T) {
 	}
 }
 
+// issue #82：查询词里的`%`、`#`、`&`等字符以前是原样拼进URL的，
+// `50%`后面跟着空格转义出的`%20`会凑成非法转义`%%2`，请求直接构造失败。
+func TestRequestYoudaoWithEscapesQuery(t *testing.T) {
+	for _, tt := range []struct {
+		name  string
+		query string
+		want  string
+	}{
+		{name: "percent", query: "About 50% of the students agreed.", want: "/About%2050%25%20of%20the%20students%20agreed./"},
+		{name: "hash", query: "c# language", want: "/c%23%20language/"},
+		{name: "slash", query: "and/or", want: "/and%2For/"},
+		{name: "apostrophe", query: "aren't", want: "/aren%27t/"},
+		{name: "ampersand", query: "AT&T", want: "/AT&T/"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var receivedPath string
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				receivedPath = r.URL.EscapedPath()
+				_, _ = w.Write([]byte("<html></html>"))
+			}))
+			t.Cleanup(server.Close)
+
+			r := &model.Result{BaseResult: &model.BaseResult{Query: tt.query}}
+			if _, err := requestYoudaoWith(server.Client(), server.URL, r); err != nil {
+				t.Fatalf("requestYoudaoWith(%q) error = %v", tt.query, err)
+			}
+			if receivedPath != tt.want {
+				t.Fatalf("escaped path = %q, want %q", receivedPath, tt.want)
+			}
+		})
+	}
+}
+
 func TestRequestYoudaoWithResponseErrors(t *testing.T) {
 	for _, tt := range []struct {
 		name   string

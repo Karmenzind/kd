@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	neturl "net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -30,10 +31,12 @@ func requestYoudao(r *model.Result) (body []byte, err error) {
 
 func requestYoudaoWith(cli *http.Client, baseURL string, r *model.Result) (body []byte, err error) {
 	var req *http.Request
-	var url string
-	q := strings.ReplaceAll(r.Query, " ", "%20")
-	url = fmt.Sprintf("%s/%s/#keyfrom=dict2.top", strings.TrimRight(baseURL, "/"), q)
-	req, err = http.NewRequest("GET", url, nil)
+	// 查询词整体作为一个路径段，必须转义后再拼接：`%`、空格这类字符
+	// 直接塞进URL会让net/url解析失败（如`50%`+`%20`拼成非法转义`%%2`），
+	// 请求根本发不出去。见 issue #82。
+	q := neturl.PathEscape(r.Query)
+	reqURL := fmt.Sprintf("%s/%s/#keyfrom=dict2.top", strings.TrimRight(baseURL, "/"), q)
+	req, err = http.NewRequest("GET", reqURL, nil)
 	if err != nil {
 		zap.S().Errorf("Failed to create request: %s", err)
 		return
@@ -59,7 +62,7 @@ func requestYoudaoWith(cli *http.Client, baseURL string, r *model.Result) (body 
 		zap.S().Infof("[http] Failed to read response: %s", err)
 		return
 	}
-	zap.S().Debugf("[http-get] query '%s' Resp len: %d Status: %v", url, len(body), resp.Status)
+	zap.S().Debugf("[http-get] query '%s' Resp len: %d Status: %v", reqURL, len(body), resp.Status)
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return nil, fmt.Errorf("youdao returned %s", resp.Status)
 	}
