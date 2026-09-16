@@ -13,7 +13,9 @@ import (
 
 var collinsTransPat = regexp.MustCompile("^([^\u4e00-\u9fa5]+) ([^ ]*[\u4e00-\u9fa5]+.*)$") // collins的释义，英中混合
 var normalSentence = regexp.MustCompile("^[A-Za-z]+ ")
-var propertyOnly = regexp.MustCompile(`^[a-zA-Z]+\.([,&/][a-zA-Z]+\.)*$`) // 单独成行的词性，如n.、vi.,vt.
+
+// 词性标记：n.、vi.,vt.、adj.&adv.、vt.,，以及[计]、【名】、[医][食品]这类学科标签
+var propertyPat = regexp.MustCompile(`^(?:[a-zA-Z]+\.(?:[,&/][a-zA-Z]+\.)*[,&/]?|(?:[\[【][^\[\]【】]{1,6}[\]】])+)$`)
 
 var nationMap = map[string]string{"英": "EN", "美": "US"}
 
@@ -170,14 +172,17 @@ func formatParaphraseLine(line string) string {
 	if normalSentence.MatchString(line) {
 		return d.Para(line)
 	}
-	if propertyOnly.MatchString(line) {
-		return d.Property(line)
+
+	// 仅在首段确实是词性标记时才按“词性 + 释义”着色。多词短语的释义是一整句话，
+	// 无条件按首个空格切分会把半句中文染成词性色（issue #86）
+	property, rest, found := strings.Cut(line, " ")
+	if !propertyPat.MatchString(property) {
+		return d.Para(line)
 	}
-	splited := strings.SplitN(line, " ", 2)
-	if len(splited) == 2 {
-		return fmt.Sprintf("%s %s", d.Property(splited[0]), d.Para(splited[1]))
+	if !found {
+		return d.Property(property)
 	}
-	return d.Para(line)
+	return fmt.Sprintf("%s %s", d.Property(property), d.Para(rest))
 }
 
 func displayExample(item []string, tab string, onlyEN bool, isEN bool) string {
