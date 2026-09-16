@@ -1,6 +1,7 @@
 package query
 
 import (
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -147,6 +148,7 @@ func (r *YdResult) parseExamples() {
 	examplesRoot := r.Doc.Find("div", "id", "examplesToggle")
 	if examplesRoot.Error == nil {
 		r.Examples = make(map[string][][]string)
+		var pendingBilingual [][]string
 		for _, tab := range []string{"bilingual", "authority", "originalSound"} {
 			egTabDiv := examplesRoot.Find("div", "id", tab)
 			if egTabDiv.Error != nil {
@@ -156,8 +158,8 @@ func (r *YdResult) parseExamples() {
 			if len(lis) == 0 {
 				continue
 			}
-			egKey := tab[:2]
-			r.Examples[egKey] = make([][]string, 0, len(lis))
+			examples := make([][]string, 0, len(lis))
+			var pairedFound bool
 			for _, li := range lis {
 				pTags := li.FindAll("p")
 				example := make([]string, 0, 3)
@@ -165,22 +167,76 @@ func (r *YdResult) parseExamples() {
 					if idx > 3 {
 						break
 					}
-					example = append(example, str.Simplify(ptag.FullText()))
+					example = append(example, exampleText(ptag))
+				}
+
+				// 没有句子文本的条目直接丢弃，否则会渲染出空例句
+				if len(example) == 0 || example[0] == "" {
+					continue
 				}
 
 				if tab == "bilingual" {
 					if len(example) < 2 {
+						// 结构不完整，渲染不出任何东西
 						continue
 					}
-					if !r.IsEN {
+					paired := example[1] != ""
+					if !paired && !r.IsEN {
+						// 中文词条无从判断单语例句属于原文还是译文，跳过
+						continue
+					}
+					if paired && !r.IsEN {
 						example[0], example[1] = example[1], example[0]
 					}
+					pairedFound = pairedFound || paired
 				}
 				zap.S().Debug("Got example", example)
-				r.Examples[egKey] = append(r.Examples[egKey], example)
+				examples = append(examples, example)
 			}
+
+			// 只有原句、没有译文的双语例句先搁置：其他来源有例句时让位给它们，
+			// 但如果整条词都没有别的例句，有原句也比没有强（issue #85）
+			if len(examples) == 0 {
+				continue
+			}
+			if tab == "bilingual" && !pairedFound {
+				pendingBilingual = examples
+				continue
+			}
+			r.Examples[tab[:2]] = examples
+		}
+
+		if len(r.Examples) == 0 && len(pendingBilingual) > 0 {
+			r.Examples["bi"] = pendingBilingual
 		}
 	}
+}
+
+// exampleText 取出例句文本。有道对部分词组/语法词条只在发音链接的data-rel里
+// 给出句子，<p>标签本身是空的，此时从data-rel还原（issue #85）
+func exampleText(ptag soup.Root) string {
+	if text := str.Simplify(ptag.FullText()); text != "" {
+		return text
+	}
+	audio := ptag.Find("a")
+	if audio.Error != nil {
+		return ""
+	}
+	return sentenceFromDataRel(audio.Attrs()["data-rel"])
+}
+
+// sentenceFromDataRel 解析形如`Let%27s+go.&le=eng`的data-rel，取出其中的句子
+func sentenceFromDataRel(dataRel string) string {
+	if dataRel == "" {
+		return ""
+	}
+	encoded, _, _ := strings.Cut(dataRel, "&")
+	decoded, err := url.QueryUnescape(encoded)
+	if err != nil {
+		zap.S().Debugf("Failed to decode data-rel: %s", err)
+		return ""
+	}
+	return str.Simplify(decoded)
 }
 
 func (r *YdResult) parseMachineTrans() {

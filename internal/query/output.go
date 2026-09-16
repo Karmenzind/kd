@@ -134,7 +134,8 @@ func PrettyFormat(r *model.Result, onlyEN bool, brief bool) string {
 
 	if (!r.IsEN || (r.IsEN && len(r.Collins.Items) == 0)) && len(r.Examples) > 0 {
 		s = append(s, d.Line(cutoff))
-		for _, tab := range []string{"bi", "or"} {
+		// 双语例句缺失时依次回落，否则会只剩一条分割线（issue #85）
+		for _, tab := range []string{"bi", "or", "au"} {
 			if exampleList, ok := r.Examples[tab]; ok {
 				for _, item := range exampleList {
 					if p := displayExample(item, tab, onlyEN, r.IsEN); p != "" {
@@ -197,6 +198,10 @@ func displayExample(item []string, tab string, onlyEN bool, isEN bool) string {
 		} else {
 			if len(item) < 2 {
 				return ""
+			}
+			if item[1] == "" {
+				// 有道对部分词组词条只给出原句、没有译文（issue #85）
+				return d.EgEn(item[0])
 			}
 			var rh string
 			if len(item) >= 3 && strings.ToLower(item[2]) != "youdao" {

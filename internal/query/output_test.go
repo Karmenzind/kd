@@ -1,6 +1,7 @@
 package query
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -276,4 +277,89 @@ func withColor(t *testing.T) {
 		fc.NoColor = originalNoColor
 		d.ApplyTheme("temp")
 	})
+}
+
+// issue #85: 有道对部分词组词条只给出原句、没有译文。这类例句要按单句渲染，
+// 而不是原句后面再跟一个空的译文半边。
+func TestDisplayExampleRendersUntranslatedBilingual(t *testing.T) {
+	withColor(t)
+
+	sentence := "Let's look at this simple example by using the modal verb."
+	got := displayExample([]string{sentence, "", "youdao"}, "bi", false, true)
+	if want := d.EgEn(sentence); got != want {
+		t.Fatalf("displayExample(untranslated bilingual) = %q, want %q", got, want)
+	}
+
+	// 有译文时仍是“原句 + 译文”
+	paired := displayExample([]string{sentence, "看看这个例子。", "youdao"}, "bi", false, true)
+	if want := d.EgEn(sentence) + " " + d.EgCh("看看这个例子。"); paired != want {
+		t.Fatalf("displayExample(paired bilingual) = %q, want %q", paired, want)
+	}
+}
+
+// 双语例句整个来源缺失时，渲染必须回落到其他来源，
+// 否则分割线底下空无一物。
+func TestPrettyFormatFallsBackToOtherExampleTabs(t *testing.T) {
+	withColor(t)
+
+	for _, tt := range []struct {
+		name     string
+		examples map[string][][]string
+		want     string
+	}{
+		{
+			name:     "original sound",
+			examples: map[string][][]string{"or": {{"They put it in the present tense.", "他们用的是现在时。"}}},
+			want:     "They put it in the present tense.",
+		},
+		{
+			name:     "authority only",
+			examples: map[string][][]string{"au": {{"In the present tense, that means we should act.", "WHITEHOUSE: Press Briefing"}}},
+			want:     "In the present tense, that means we should act.",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &model.Result{
+				BaseResult: &model.BaseResult{Query: "present tense", IsEN: true, Found: true},
+				Keyword:    "present tense",
+				Paraphrase: []string{"n. 现在时"},
+				Examples:   tt.examples,
+			}
+			got := PrettyFormat(r, false, false)
+			if !strings.Contains(got, tt.want) {
+				t.Fatalf("PrettyFormat() = %q, want it to contain %q", got, tt.want)
+			}
+		})
+	}
+}
+
+// 词组词条的混合来源：有译文的照常渲染，没译文的也要出现，且不带空的译文半边。
+func TestPrettyFormatRendersMixedBilingualExamples(t *testing.T) {
+	withColor(t)
+
+	recovered := "Let's look at this simple example by using the modal verb."
+	translated := "The semantics of the English modal verb are very complicated."
+	r := &model.Result{
+		BaseResult: &model.BaseResult{Query: "modal verb", IsEN: true, Found: true},
+		Keyword:    "modal verb",
+		Paraphrase: []string{"n. 情态动词"},
+		Examples: map[string][][]string{"bi": {
+			{recovered, "", "youdao"},
+			{translated, "英语情态动词的语义十分复杂。", "youdao"},
+		}},
+	}
+
+	lines := strings.Split(PrettyFormat(r, false, false), "\n")
+	var recoveredLine string
+	for _, line := range lines {
+		if strings.Contains(line, recovered) {
+			recoveredLine = line
+		}
+	}
+	if recoveredLine == "" {
+		t.Fatalf("PrettyFormat() = %q, want it to contain the recovered sentence", lines)
+	}
+	if want := fmt.Sprintf("%s %s", d.EgPref("≫  "), d.EgEn(recovered)); recoveredLine != want {
+		t.Fatalf("recovered example line = %q, want %q", recoveredLine, want)
+	}
 }

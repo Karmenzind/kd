@@ -92,12 +92,25 @@ func (r *Result) Sanitize() {
 		}
 	}
 
-	for _, examples := range r.Examples {
+	for tab, examples := range r.Examples {
+		kept := make([][]string, 0, len(examples))
 		for _, example := range examples {
 			for i, e := range example {
 				example[i] = str.Simplify(e)
 			}
+			// 没有原句的条目会渲染成一行空例句。旧版解析器对部分词组词条
+			// 就会存下这种条目，缓存里的原文已无从还原，只能丢弃（issue #85）
+			if len(example) == 0 || example[0] == "" {
+				continue
+			}
+			kept = append(kept, example)
 		}
+		// 整个来源都没有可用例句时移除，让渲染时可以回落到其他来源
+		if len(kept) == 0 {
+			delete(r.Examples, tab)
+			continue
+		}
+		r.Examples[tab] = kept
 	}
 
 	if r.BaseResult != nil {
