@@ -32,16 +32,18 @@ type Config struct {
 	Debug bool `default:"false" toml:"debug"`
 
 	// Modules      []string
-	EnableEmoji         bool   `default:"true" toml:"enable_emoji"`
-	Paging              bool   `default:"true" toml:"paging"`
-	PagerCommand        string `toml:"pager_command"`
-	EnglishOnly         bool   `default:"false" toml:"english_only"`
-	Theme               string `default:"temp" toml:"theme"`
-	HTTPProxy           string `toml:"http_proxy"`
-	ClearScreen         bool   `toml:"clear_screen" default:"false"`
-	FreqAlert           bool   `toml:"freq_alert" default:"false"`
-	Brief               bool   `toml:"brief" default:"false"`
-	AudioCacheMaxSizeMB uint64 `toml:"audio_cache_max_size_mb" default:"2048"`
+	EnableEmoji  bool   `default:"true" toml:"enable_emoji"`
+	Paging       bool   `default:"true" toml:"paging"`
+	PagerCommand string `toml:"pager_command"`
+	EnglishOnly  bool   `default:"false" toml:"english_only"`
+	Theme        string `default:"temp" toml:"theme"`
+	HTTPProxy    string `toml:"http_proxy"`
+	ClearScreen  bool   `toml:"clear_screen" default:"false"`
+	FreqAlert    bool   `toml:"freq_alert" default:"false"`
+	Brief        bool   `toml:"brief" default:"false"`
+	// SplitCamelcaseAndSnakecase 查询英文标识符时先按驼峰/下划线拆词再翻译（偏编程场景）。
+	SplitCamelcaseAndSnakecase bool   `toml:"split_camelcase_and_snakecase" default:"false"`
+	AudioCacheMaxSizeMB        uint64 `toml:"audio_cache_max_size_mb" default:"2048"`
 	// MaxCached    uint   `default:"10000" toml:"max_cached"`
 
 	Logging LoggerConfig `toml:"logging"`
