@@ -29,7 +29,6 @@ import (
 	d "github.com/Karmenzind/kd/pkg/decorate"
 	"github.com/urfave/cli/v3"
 	"go.uber.org/zap"
-	// "github.com/kyokomi/emoji/v2"
 )
 
 var VERSION = "v0.1.0"

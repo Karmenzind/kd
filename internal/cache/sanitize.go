@@ -15,7 +15,8 @@ import (
 // sanitizeVersion 是文本清洗规则的版本号。清洗规则变化时+1，
 // daemon会据此重新扫描一遍词库。
 // v2: 换行折成空格而非直接删除，避免`young\nsheep`被粘成`youngsheep`
-const sanitizeVersion = 2
+// v3: 丢弃没有原句的例句条目，它们会渲染成空行（issue #85）
+const sanitizeVersion = 3
 
 const sanitizeVersionKey = "sanitize_version"
 

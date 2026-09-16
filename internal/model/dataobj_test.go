@@ -1,6 +1,9 @@
 package model
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestSanitizeIsIdempotent(t *testing.T) {
 	r := &Result{
@@ -67,5 +70,42 @@ func TestSanitizeKeepsWordBoundaries(t *testing.T) {
 	}
 	if got, want := r.Collins.Items[0].ExampleLists[0][0], "the leg of lamb"; got != want {
 		t.Fatalf("collins example = %q, want %q", got, want)
+	}
+}
+
+// 旧版解析器给部分词组词条存下过没有原句的例句条目，渲染出来是一行空白。
+// 缓存里的原文已无从还原，清洗时必须丢弃；整个来源都空了就移除，
+// 好让渲染回落到其他来源（issue #85）。
+func TestSanitizeDropsEmptyExamples(t *testing.T) {
+	r := &Result{
+		BaseResult: &BaseResult{Query: "present tense"},
+		Examples: map[string][][]string{
+			"bi": {{"", "", "youdao"}, {"   ", "", "youdao"}},
+			"or": {
+				{"They put it in the present tense.", "他们用的是现在时。"},
+				{"", "", "youdao"},
+			},
+			"au": {{"In the present tense, that means we should act.", "WHITEHOUSE: Press Briefing"}},
+		},
+	}
+
+	r.Sanitize()
+
+	if _, ok := r.Examples["bi"]; ok {
+		t.Fatalf("bilingual examples = %#v, want the tab removed", r.Examples["bi"])
+	}
+	wantOr := [][]string{{"They put it in the present tense.", "他们用的是现在时。"}}
+	if len(r.Examples["or"]) != 1 || r.Examples["or"][0][0] != wantOr[0][0] {
+		t.Fatalf("originalSound examples = %#v, want %#v", r.Examples["or"], wantOr)
+	}
+	if len(r.Examples["au"]) != 1 {
+		t.Fatalf("authority examples = %#v, want the complete entry kept", r.Examples["au"])
+	}
+
+	// 幂等：再清洗一次不应有任何变化
+	before := fmt.Sprintf("%#v", r.Examples)
+	r.Sanitize()
+	if after := fmt.Sprintf("%#v", r.Examples); after != before {
+		t.Fatalf("second Sanitize() changed examples: %s -> %s", before, after)
 	}
 }
