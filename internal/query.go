@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/Karmenzind/kd/config"
 	"github.com/Karmenzind/kd/internal/cache"
 	"github.com/Karmenzind/kd/internal/core"
 	"github.com/Karmenzind/kd/internal/daemon"
@@ -35,7 +36,8 @@ func Query(query string, noCache bool, longText bool) (r *model.Result, err erro
 	return QueryWithProgress(query, noCache, longText, ui.NopProgress())
 }
 
-// QueryWithProgress 负责标识符式查询的回退编排：
+// QueryWithProgress 负责标识符式查询的回退编排（由配置项
+// split_camelcase_and_snakecase 控制，默认关闭）：
 //   - 短词（kd helloWorld / kd hello_world）：先按整体查询，未找到再拆词拼成
 //     词组，走长文本机器翻译通道。
 //   - 长文本（kd -t）：先对整段中的标识符 token 拆词重写后再翻译，重写无结果
@@ -48,12 +50,17 @@ func QueryWithProgress(query string, noCache bool, longText bool, progress ui.Pr
 	}
 
 	raw := str.Simplify(query)
+	splitIdentifier := config.Cfg.SplitCamelcaseAndSnakecase
 	lookup := raw
-	if longText {
+	if longText && splitIdentifier {
 		lookup = str.RewriteIdentifiers(raw)
 	}
 
 	if r, err = querySingle(lookup, noCache, longText, progress); err != nil || r.Found || r.Prompt != "" {
+		return r, err
+	}
+
+	if !splitIdentifier {
 		return r, err
 	}
 

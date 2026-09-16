@@ -42,6 +42,10 @@ type Config struct {
 	FreqAlert           bool   `toml:"freq_alert" default:"false"`
 	Brief               bool   `toml:"brief" default:"false"`
 	AudioCacheMaxSizeMB uint64 `toml:"audio_cache_max_size_mb" default:"2048"`
+
+	// SplitCamelcaseAndSnakecase 查询英文标识符时先按驼峰/下划线拆词再翻译（偏编程场景）。
+	SplitCamelcaseAndSnakecase bool `toml:"split_camelcase_and_snakecase" default:"false"`
+
 	// MaxCached    uint   `default:"10000" toml:"max_cached"`
 
 	Logging LoggerConfig `toml:"logging"`
