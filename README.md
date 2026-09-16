@@ -74,7 +74,7 @@ kd 专注于简洁、高效、丝滑的查询功能，不会发展成集成式�
 
     - `kd --update`命令一键更新版本
 
-    - 英文标识符（驼峰、下划线）自动拆词翻译，如`kd getUserByID`按`get user by id`查询
+    - 英文标识符（驼峰、下划线）可拆词翻译，如`kd getUserByID`按`get user by id`查询（需开启配置`split_camelcase_and_snakecase`）
 
 > 更多功能正在开发中 👽
 
@@ -205,7 +205,7 @@ GLOBAL OPTIONS:
 
 说明：
 
-- 英文标识符式输入会自动拆词后翻译：驼峰如`getUserByID`拆为`get user by id`，下划线如`hello_world`拆为`hello world`。普通查询会先整串查询、未找到再拆分回退；`-t`长句会对句中出现的标识符同样拆分
+- 开启`split_camelcase_and_snakecase`后，英文标识符式输入会自动拆词后翻译：驼峰如`getUserByID`拆为`get user by id`，下划线如`hello_world`拆为`hello world`。普通查询会先整串查询、未找到再拆分回退；`-t`长句会对句中出现的标识符同样拆分
 - JSON模式直接输出数据库中raw data，key为简写，暂不打算优化为易读形式
 - 查询进度仅用于交互式终端，并在正式结果输出前自动清除。现代终端显示完整动画，能力不明确或较旧的终端会降级为ASCII提示；JSON、管道和重定向输出不会混入动态状态
 
@@ -229,6 +229,10 @@ english_only = false
 
 # 精简输出，去除英语解释和例句（可使用 --no-brief 参数临时关闭）
 brief = false
+
+# 查询英文标识符时先按驼峰/下划线拆词再翻译，如 helloWorld -> hello world；
+# 偏编程场景，默认关闭，避免影响普通查询意图
+split_camelcase_and_snakecase = false
 
 # 音频缓存目录大小上限（MiB），默认2048（2 GiB）；设为0时朗读后不保留音频
 audio_cache_max_size_mb = 2048

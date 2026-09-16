@@ -110,6 +110,7 @@ func TestGenerateDefaultConfig(t *testing.T) {
 	}
 	if !strings.Contains(got, `theme = "temp"`) ||
 		!strings.Contains(got, "audio_cache_max_size_mb = 2048") ||
+		!strings.Contains(got, "split_camelcase_and_snakecase = false") ||
 		!strings.Contains(got, "[logging]") {
 		t.Fatalf("generated config is missing expected settings:\n%s", got)
 	}
@@ -141,6 +142,9 @@ func TestMissingConfigUsesDefaults(t *testing.T) {
 	if Cfg.AudioCacheMaxSizeMB != 2048 {
 		t.Fatalf("AudioCacheMaxSizeMB = %d, want 2048", Cfg.AudioCacheMaxSizeMB)
 	}
+	if Cfg.SplitCamelcaseAndSnakecase {
+		t.Fatal("SplitCamelcaseAndSnakecase default = true, want false")
+	}
 }
 
 func TestGeneratedConfigRoundTrip(t *testing.T) {
@@ -152,12 +156,13 @@ func TestGeneratedConfigRoundTrip(t *testing.T) {
 	})
 
 	Cfg = Config{
-		Paging:              true,
-		PagerCommand:        "less -RF",
-		EnglishOnly:         true,
-		Theme:               "wudao",
-		Brief:               true,
-		AudioCacheMaxSizeMB: 0,
+		Paging:                     true,
+		PagerCommand:               "less -RF",
+		EnglishOnly:                true,
+		Theme:                      "wudao",
+		Brief:                      true,
+		AudioCacheMaxSizeMB:        0,
+		SplitCamelcaseAndSnakecase: true,
 		Logging: LoggerConfig{
 			Enable: true,
 			Level:  "info",
@@ -180,6 +185,9 @@ func TestGeneratedConfigRoundTrip(t *testing.T) {
 
 	if Cfg.Theme != "wudao" || !Cfg.Paging || Cfg.PagerCommand != "less -RF" || !Cfg.EnglishOnly || !Cfg.Brief {
 		t.Fatalf("round-tripped config = %+v", Cfg)
+	}
+	if !Cfg.SplitCamelcaseAndSnakecase {
+		t.Fatal("round-tripped SplitCamelcaseAndSnakecase = false, want true")
 	}
 	if !Cfg.Logging.Enable || Cfg.Logging.Level != "info" || !Cfg.Logging.Stderr {
 		t.Fatalf("round-tripped logging config = %+v", Cfg.Logging)
