@@ -54,6 +54,9 @@ func QueryDaemon(addr string, result *model.Result) error {
 	if response.R == nil || response.Base == nil {
 		return errors.New("解析daemon返回结果失败: 响应缺少结果字段")
 	}
+	// History belongs to the local counter and is never sent over the protocol.
+	history := result.History
 	*result = *response.GetResult()
+	result.History = history
 	return nil
 }

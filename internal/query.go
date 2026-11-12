@@ -92,7 +92,6 @@ func querySingle(query string, noCache bool, longText bool, progress ui.Progress
 	query = normalizeQuery(query, longText)
 
 	r = buildResult(query, longText)
-	r.History = make(chan int, 1)
 
 	daemonReady := make(chan error, 1)
 	go func() {
@@ -103,6 +102,7 @@ func querySingle(query string, noCache bool, longText bool, progress ui.Progress
 	progress.Update(ui.State{Query: query, Phase: ui.PhaseLocal})
 
 	if !longText {
+		r.History = make(chan int, 1)
 		core.WG.Add(1)
 		go cache.CounterIncr(query, r.History)
 	}

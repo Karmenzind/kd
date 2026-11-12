@@ -19,6 +19,7 @@ import (
 	"github.com/Karmenzind/kd/internal/cache"
 	"github.com/Karmenzind/kd/internal/core"
 	"github.com/Karmenzind/kd/internal/daemon"
+	"github.com/Karmenzind/kd/internal/model"
 	"github.com/Karmenzind/kd/internal/query"
 	"github.com/Karmenzind/kd/internal/run"
 	"github.com/Karmenzind/kd/internal/tts"
@@ -72,7 +73,7 @@ var um = map[string]string{
 	"nocache":         "don't use cached result 不使用本地词库，查询网络结果",
 	"force":           "forcely update (only after --update) 强制更新（仅搭配--update）",
 	"theme":           "choose the color theme for current query 选择颜色主题，仅当前查询生效",
-	"json":            "output as JSON",
+	"json":            "output as JSON 输出JSON，长句含q（查询文本）和mt（译文）",
 	"init":            "initialize shell completion 初始化部分设置，例如shell的自动补全",
 	"server":          "start server foreground 在前台启动服务端",
 	"daemon":          "ensure/start the daemon process 启动守护进程",
@@ -429,7 +430,25 @@ func newCLICommand(actions cliActions) *cli.Command {
 	}
 }
 
+func marshalQueryResult(r *model.Result) ([]byte, error) {
+	if !r.IsLongText {
+		return json.Marshal(r)
+	}
+	// CLI-only fields keep cached records and daemon messages unchanged.
+	return json.Marshal(struct {
+		*model.Result
+		Query        string `json:"q"`
+		MachineTrans string `json:"mt"`
+	}{r, r.Query, r.MachineTrans})
+}
+
 func main() {
+	if err := runCLI(); err != nil {
+		os.Exit(1)
+	}
+}
+
+func runCLI() error {
 	basicCheck()
 	if err := run.EnsureCacheDirs(); err != nil {
 		d.EchoFatal("%s", err)
@@ -534,7 +553,7 @@ func main() {
 				if r, err := internal.QueryWithProgress(qstr, cmd.Bool("nocache"), cmd.Bool("text"), progress); err == nil {
 					if cmd.Bool("json") {
 						progress.Stop()
-						if j, jsonErr := json.Marshal(r); jsonErr == nil {
+						if j, jsonErr := marshalQueryResult(r); jsonErr == nil {
 							fmt.Println(string(j))
 							return nil
 						} else {
@@ -556,7 +575,7 @@ func main() {
 					}
 					progress.Stop()
 
-					if cfg.FreqAlert {
+					if cfg.FreqAlert && r.History != nil {
 						if h := <-r.History; h > 3 {
 							d.EchoWarn("本月第%d次查询`%s`", h, r.Query)
 						}
@@ -584,8 +603,7 @@ func main() {
 					}
 				} else {
 					progress.Stop()
-					d.EchoError("%s", err)
-					zap.S().Errorf("%+v", err)
+					return err
 				}
 			} else {
 				showPrompt()
@@ -597,6 +615,7 @@ func main() {
 	if err := command.Run(context.Background(), os.Args); err != nil {
 		zap.S().Errorf("APP stopped: %s", err)
 		d.EchoError("%s", err)
-		os.Exit(1)
+		return err
 	}
+	return nil
 }
