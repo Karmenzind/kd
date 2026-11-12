@@ -39,12 +39,20 @@ func TestQueryDaemonRoundTrip(t *testing.T) {
 		_ = model.WriteProtocolMessage(conn, result.ToDaemonResponse())
 	})
 
-	result := &model.Result{BaseResult: &model.BaseResult{Query: "abandon", IsEN: true}}
+	history := make(chan int, 1)
+	history <- 4
+	result := &model.Result{BaseResult: &model.BaseResult{Query: "abandon", IsEN: true, History: history}}
 	if err := QueryDaemon(addr, result); err != nil {
 		t.Fatalf("QueryDaemon() error = %v", err)
 	}
 	if !result.Found || result.Keyword != "reply:abandon" || result.Query != "abandon" {
 		t.Fatalf("QueryDaemon() result = %+v", result)
+	}
+	if result.History != history {
+		t.Fatal("QueryDaemon replaced the local history channel")
+	}
+	if got := <-result.History; got != 4 {
+		t.Fatalf("history count = %d, want 4", got)
 	}
 }
 

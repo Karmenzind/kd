@@ -95,6 +95,7 @@ Package initialization creates user-level runtime directories. On Windows and Li
 - Human-readable output is part of the public interface. Do not casually change wording, layout, colors, ordering, or add emoji; keep Chinese and English output concise and stylistically consistent.
 - Keep dynamic query status on stderr and stop it before any final output. It must remain disabled for non-TTY, JSON, and other machine-readable paths; keep ANSI and animation details inside `internal/ui`.
 - Keep flag behavior and help text together in `cmd/kd/kd.go`. When public behavior changes, update CLI help and README usage in the same change.
+- Keep CLI-only JSON fields out of cache and daemon serialization. Long-text JSON adds `q` (query) and `mt` (translation) in `cmd/kd`; query failures exit with status 1 after runtime cleanup.
 - Return errors with useful context instead of panicking. User-facing errors should be concise, understandable, and actionable; degrade gracefully when the problem is recoverable.
 - Log enough context to diagnose failures without flooding routine operation. Do not log configuration secrets, tokens, user queries, or other sensitive data unless the task explicitly requires it and the exposure is documented.
 - Preserve the structured `component` field so daemon/server logs use `component=server` and CLI logs use `component=client`.

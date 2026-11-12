@@ -188,7 +188,7 @@ AUTHOR:
 
 GLOBAL OPTIONS:
    --text, -t               translate long query with e.g. --text Long time ago 翻译长句
-   --json                   output as JSON
+   --json                   output as JSON 输出JSON，长句含q（查询文本）和mt（译文）
    --nocache, -n            don't use cached result 不使用本地词库，查询网络结果
    --theme value, -T value  choose the color theme for current query 选择颜色主题，仅当前查询生效 (default: temp)
    --force, -f              forcely update (only after --update) 强制更新（仅搭配--update）
@@ -206,7 +206,8 @@ GLOBAL OPTIONS:
 说明：
 
 - 开启`split_camelcase_and_snakecase`后，英文标识符式输入会自动拆词后翻译：驼峰如`getUserByID`拆为`get user by id`，下划线如`hello_world`拆为`hello world`。普通查询会先整串查询、未找到再拆分回退；`-t`长句会对句中出现的标识符同样拆分
-- JSON模式直接输出数据库中raw data，key为简写，暂不打算优化为易读形式
+- JSON模式保留词典数据的简写字段；长句翻译（含标识符拆词后转入的机器翻译）额外包含`q`（实际查询文本）和`mt`（译文），不改变缓存格式
+- 查询成功或未找到词条时退出码为0；网络、代理或daemon查询失败时退出码为1，错误写入stderr，JSON模式也遵循此规则
 - 查询进度仅用于交互式终端，并在正式结果输出前自动清除。现代终端显示完整动画，能力不明确或较旧的终端会降级为ASCII提示；JSON、管道和重定向输出不会混入动态状态
 
 ### 配置文件
