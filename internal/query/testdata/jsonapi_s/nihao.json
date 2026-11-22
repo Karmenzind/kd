@@ -1,0 +1,177 @@
+{
+  "blng_sents_part": {
+    "sentence-count": 30,
+    "sentence-pair": [
+      {
+        "sentence": "你好，西蒙！什么风把你吹来了？",
+        "sentence-eng": "<b>你好</b>，西蒙！什么风把你吹来了？",
+        "sentence-translation": "Hello Simon! What brings you here?",
+        "source": "《牛津词典》",
+        "url": "https://《牛津词典》/"
+      },
+      {
+        "sentence": "“你好，保罗。”他们齐声问候道。",
+        "sentence-eng": "“<b>你好</b>，保罗。”他们齐声问候道。",
+        "sentence-translation": "'Hello, Paul,' they chorused.",
+        "source": "《牛津词典》",
+        "url": "https://《牛津词典》/"
+      },
+      {
+        "sentence": "我真心希望他们给你好的报酬。",
+        "sentence-eng": "我真心希望他们给<b>你好</b>的报酬。",
+        "sentence-translation": "I hope to God they are paying you well.",
+        "source": "《柯林斯英汉双解大词典》",
+        "url": "https://《柯林斯英汉双解大词典》/"
+      }
+    ],
+    "more": "blng_sents",
+    "trs-classify": [
+      {
+        "proportion": "100%",
+        "tr": "全部"
+      },
+      {
+        "proportion": "71.1%",
+        "tr": "hello"
+      },
+      {
+        "proportion": "23.9%",
+        "tr": "hi"
+      },
+      {
+        "proportion": "1.8%",
+        "tr": "how do you do"
+      },
+      {
+        "proportion": "1.2%",
+        "tr": "hey"
+      },
+      {
+        "proportion": "0.8%",
+        "tr": "how are you"
+      },
+      {
+        "proportion": "0.4%",
+        "tr": "hello there"
+      },
+      {
+        "proportion": "0.4%",
+        "tr": "howdy"
+      },
+      {
+        "proportion": "0.1%",
+        "tr": "bonjour"
+      },
+      {
+        "proportion": "0.1%",
+        "tr": "ni hao"
+      },
+      {
+        "proportion": "0.1%",
+        "tr": "ciao"
+      }
+    ]
+  },
+  "input": "你好",
+  "ce": {
+    "source": {
+      "name": "有道词典",
+      "url": "https://dict.youdao.com"
+    },
+    "word": {
+      "trs": [
+        {
+          "#text": "hello",
+          "#tran": "喂，你好（用于问候或打招呼）；喂，你好（打电话时的招呼语）；喂，你好（引起别人注意的招呼语）；<非正式>喂，嘿 (认为别人说了蠢话或分心)；<英，旧>嘿（表示惊讶）；招呼，问候；（Hello）（法、印、美、俄）埃洛（人名）；说（或大声说）“喂”；打招呼；"
+        },
+        {
+          "#text": "hi",
+          "#tran": "嗨！（表示问候或用以唤起注意）；（口语）一声“嗨”，问候；（Hi）人名；（柬）希；"
+        },
+        {
+          "#text": "how do you do",
+          "#tran": "你好；"
+        }
+      ],
+      "phone": "nǐ hǎo",
+      "return-phrase": "你好"
+    }
+  },
+  "meta": {
+    "input": "你好",
+    "guessLanguage": "zh",
+    "isHasSimpleDict": "1",
+    "le": "en",
+    "lang": "eng",
+    "dicts": [
+      "blng_sents_part",
+      "ce",
+      "meta",
+      "media_sents_part",
+      "simple"
+    ]
+  },
+  "le": "en",
+  "media_sents_part": {
+    "sentence-count": 6,
+    "more": "media_sents",
+    "query": "你好",
+    "sent": [
+      {
+        "@mediatype": "video",
+        "snippets": {
+          "snippet": [
+            {
+              "sourceUrl": "youdao",
+              "imageUrl": "http://dict.youdao.com/pureimage?docid=4361932637018407335",
+              "name": "耶鲁公开课",
+              "source": "1945年后的美国小说课程节选"
+            }
+          ]
+        },
+        "chn": "那么，在那之后发生了什么呢，正如你所记得的,莉莉从汽车后座突然跳出来，<b>你好</b>，他根本就不知道她在那儿。<br>",
+        "eng": "And what happens of course thereafter, as you'll remember, is that Lily pops up from the back seat: \"Hi.\" He didn't know that she was there.<br>"
+      },
+      {
+        "@mediatype": "video",
+        "snippets": {
+          "snippet": [
+            {
+              "sourceUrl": "youdao",
+              "imageUrl": "http://dict.youdao.com/pureimage?docid=-516693558806550685",
+              "name": "和纽约的留学生",
+              "source": "SpeakingMax英语口语达人"
+            }
+          ]
+        },
+        "chn": "但我想，你见的人越多，你说的“<b>你好</b>”越多，你就会越发熟悉这一切的。<br>",
+        "eng": "But I think the more you meet people, here it's, the more you say hello, the more it's familiar.<br>"
+      },
+      {
+        "@mediatype": "video",
+        "snippets": {
+          "snippet": [
+            {
+              "sourceUrl": "youdao",
+              "imageUrl": "http://dict.youdao.com/pureimage?docid=534918979214778728",
+              "name": "耶鲁公开课",
+              "source": "金融市场课程节选"
+            }
+          ]
+        },
+        "chn": "学生：谢谢,卡尔·伊坎先生：好的,学生：嗨，伊坎先生，<b>你好</b>？<br>",
+        "eng": "Student: Thank you Mr. Carl Icahn: Okay, all right Student: Hi, Mr. Icahn. How are you?<br>"
+      }
+    ]
+  },
+  "simple": {
+    "query": "你好",
+    "word": [
+      {
+        "phone": "nǐ hǎo",
+        "return-phrase": "你好"
+      }
+    ]
+  },
+  "lang": "eng"
+}

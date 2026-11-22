@@ -1,0 +1,263 @@
+{
+  "blng_sents_part": {
+    "sentence-count": 30,
+    "sentence-pair": [
+      {
+        "sentence": "I look forward to hearing from you.",
+        "sentence-eng": "I <b>look</b> <b>forward</b> <b>to</b> hearing from you.",
+        "sentence-translation": "盼望着收到你的信。",
+        "source": "《牛津词典》",
+        "url": "https://《牛津词典》/"
+      },
+      {
+        "sentence": "I now look forward to going back to work as soon as possible.",
+        "sentence-eng": "I now <b>look</b> <b>forward</b> <b>to</b> going back to work as soon as possible.",
+        "sentence-translation": "我现在盼望尽快回到工作中。",
+        "source": "《柯林斯英汉双解大词典》",
+        "url": "https://《柯林斯英汉双解大词典》/"
+      },
+      {
+        "sentence": "We look forward to strengthening still further our already close co-operation with the police.",
+        "sentence-eng": "We <b>look</b> <b>forward</b> <b>to</b> strengthening still further our already close co-operation with the police.",
+        "sentence-translation": "我们期待进一步加强和警方现有的密切合作。",
+        "source": "《柯林斯英汉双解大词典》",
+        "url": "https://《柯林斯英汉双解大词典》/"
+      }
+    ],
+    "more": "blng_sents"
+  },
+  "input": "look forward to",
+  "collins": {
+    "collins_entries": [
+      {
+        "entries": {
+          "entry": [
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "PHRASAL VERB",
+                    "pos_tips": "动词词组"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "他很期待和新经理一起工作。",
+                        "eng_sent": "He was looking forward to working with the new manager."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>look forward to</b> something that is going to happen, you want it to happen because you think you will enjoy it. 期待"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "PHRASAL VERB",
+                    "pos_tips": "动词词组"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "他现在说他正期盼着战后的贸易增长。",
+                        "eng_sent": "He now says that he's looking forward to increased trade after the war."
+                      }
+                    ]
+                  },
+                  "tran": "If you say that someone <b>is looking forward</b> to something useful or positive, you mean they expect it to happen. 盼望"
+                }
+              ]
+            }
+          ]
+        },
+        "basic_entries": {
+          "basic_entry": [
+            {
+              "headword": "look forward to",
+              "wordforms": {
+                "wordform": [
+                  {
+                    "word": "looking"
+                  },
+                  {
+                    "word": "looked"
+                  },
+                  {
+                    "word": "looks"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "headword": "look forward to"
+      }
+    ]
+  },
+  "meta": {
+    "input": "look forward to",
+    "guessLanguage": "eng",
+    "isHasSimpleDict": "1",
+    "le": "en",
+    "lang": "eng",
+    "dicts": [
+      "blng_sents_part",
+      "collins",
+      "meta",
+      "auth_sents_part",
+      "media_sents_part",
+      "simple",
+      "ec"
+    ]
+  },
+  "auth_sents_part": {
+    "sentence-count": 6,
+    "more": "auth_sents",
+    "sent": [
+      {
+        "score": 0.9681191444396973,
+        "source": "ENGADGET: <i>blogger-avatar</i>",
+        "url": "youdao",
+        "foreign": "Another catalog we <b>look</b> <b>forward</b> <b>to</b> enjoying for the first time all over again is The Sixth Sense. "
+      },
+      {
+        "score": 0.9637645483016968,
+        "source": "FORBES: <i>MicrosoftVoice: Evolution of Enterprise IT and Virtualization Infrastructures to Private Cloud</i>",
+        "url": "youdao",
+        "foreign": "If you have com we are pirates, these data are stolen from youdao s or questions, I <b>look</b> <b>forward</b> <b>to</b> hearing from you in the com we are pirates, these data are stolen from youdao s. "
+      },
+      {
+        "score": 0.9637601375579834,
+        "source": "FORBES: <i>Connect</i>",
+        "url": "youdao",
+        "foreign": "We <b>look</b> <b>forward</b> <b>to</b> working together with the Rixty team <b>to</b> capitalize on this tremendous opportunity. "
+      }
+    ]
+  },
+  "le": "en",
+  "media_sents_part": {
+    "sentence-count": 6,
+    "more": "media_sents",
+    "query": "look forward to",
+    "sent": [
+      {
+        "@mediatype": "audio",
+        "snippets": {
+          "snippet": [
+            {
+              "duration": "8300",
+              "name": "special.2009.12.31",
+              "source": "VOA"
+            }
+          ]
+        },
+        "eng": "We wish you all the best in the New Year, and <b>look </b><b>forward </b><b>to</b> hearing from you."
+      },
+      {
+        "@mediatype": "video",
+        "snippets": {
+          "snippet": [
+            {
+              "sourceUrl": "youdao",
+              "imageUrl": "http://dict.youdao.com/pureimage?docid=-2070162545454390045",
+              "name": "耶鲁公开课",
+              "source": "1945年后的美国小说课程节选"
+            }
+          ]
+        },
+        "chn": "不期待亨伯特自己的诗，它已经是一首,让其疯狂，引其深思的诗。<br>",
+        "eng": "This doesn't <b>look </b><b>forward </b><b>to</b> Humbert's poem; it already is a poem and it is a poem <b>to</b> the crazed, aroused mind of Humbert.<br>"
+      },
+      {
+        "@mediatype": "video",
+        "snippets": {
+          "snippet": [
+            {
+              "sourceUrl": "youdao",
+              "imageUrl": "http://dict.youdao.com/pureimage?docid=5847684061027615268",
+              "name": "如何利用空闲时间",
+              "source": "SpeakingMax英语口语达人"
+            }
+          ]
+        },
+        "chn": "我休息的时候，真的真的很想进行一些户外活动。<br>",
+        "eng": "when I have some time off, I really, really <b>look </b><b>forward </b><b>to</b> getting outdoors.<br>"
+      },
+      {
+        "@mediatype": "audio",
+        "snippets": {
+          "snippet": [
+            {
+              "duration": "11700",
+              "name": "special.2009.04.24",
+              "source": "VOA"
+            }
+          ]
+        },
+        "eng": "At the end of recording every day, she says she had something wonderful <b>to </b><b>look </b><b>forward </b><b>to</b> C being with her two infant sons."
+      },
+      {
+        "@mediatype": "audio",
+        "snippets": {
+          "snippet": [
+            {
+              "duration": "9200",
+              "name": "special.2009.06.12",
+              "source": "VOA"
+            }
+          ]
+        },
+        "eng": "Movie lovers have adventure,comedy, animated and horror films <b>to </b><b>look </b><b>forward </b><b>to</b> this summer."
+      }
+    ]
+  },
+  "simple": {
+    "query": "look forward to",
+    "word": [
+      {
+        "return-phrase": "look forward to"
+      }
+    ]
+  },
+  "lang": "eng",
+  "ec": {
+    "web_trans": [
+      "盼望",
+      "期待",
+      "期盼"
+    ],
+    "source": {
+      "name": "有道词典",
+      "url": "https://dict.youdao.com"
+    },
+    "word": {
+      "trs": [
+        {
+          "sentence": [
+            {
+              "enShow": "I <b>look forward to</b> meeting you tomorrow.",
+              "en": "I look forward to meeting you tomorrow.",
+              "type": "双语例句-《精编例句》",
+              "zh": "我期待明天见到你。"
+            }
+          ],
+          "tran": "期待：指对未来的某事或某人充满期待和期望。"
+        },
+        {
+          "sentence": [
+            {
+              "enShow": "We <b>look forward to</b> a successful partnership.",
+              "en": "We look forward to a successful partnership.",
+              "type": "双语例句-《精编例句》",
+              "zh": "我们期望有一次成功的合作。"
+            }
+          ],
+          "tran": "期望：指对未来的某事或某人抱有希望和期望。"
+        }
+      ],
+      "return-phrase": "look forward to"
+    }
+  }
+}

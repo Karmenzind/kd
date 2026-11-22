@@ -2,7 +2,12 @@ package query
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/Karmenzind/kd/internal/model"
@@ -257,5 +262,214 @@ func TestSentenceFromDataRel(t *testing.T) {
 		if got := sentenceFromDataRel(tt.in); got != tt.want {
 			t.Fatalf("sentenceFromDataRel(%q) = %q, want %q", tt.in, got, tt.want)
 		}
+	}
+}
+
+// 有道对部分柯林斯释义不提供词性等附加说明（如 is 的第一条），
+// 这类释义以前会被整条丢掉。HTML 取自 is 的真实页面并做了删减。
+func TestParseCollinsKeepsItemsWithoutAdditional(t *testing.T) {
+	doc := soup.HTMLParse(`
+<div id="collinsResult"><ul class="ol">
+<li><div class="collinsMajorTrans">
+  <span class="collinsOrder">1.&nbsp;</span>
+  <p>
+  <b>Is</b> is the third person singular of the present tense of . <b>Is</b> is often added to other words and shortened to <b>-'s</b>. (be)的第三人称单数现在时
+  </p></div>
+</li>
+<li><div class="collinsMajorTrans">
+  <span class="collinsOrder">2.&nbsp;</span>
+  <p>
+  <span class="additional">the INTERNET DOMAIN NAME for</span>
+  Iceland 冰岛
+  </p></div>
+</li>
+<li><div class="collinsMajorTrans"><p>   </p></div></li>
+</ul></div>`)
+	result := &model.Result{BaseResult: &model.BaseResult{Query: "is", IsEN: true}}
+	yd := YdResult{Result: result, Doc: &doc}
+	yd.parseCollins()
+
+	got := make([][2]string, 0, len(result.Collins.Items))
+	for _, item := range result.Collins.Items {
+		got = append(got, [2]string{item.Additional, item.MajorTrans})
+	}
+	want := [][2]string{
+		{"", "Is is the third person singular of the present tense of . Is is often added to other words and shortened to -'s. (be)的第三人称单数现在时"},
+		{"the INTERNET DOMAIN NAME for", "Iceland 冰岛"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("Collins items = %q, want %q", got, want)
+	}
+}
+
+// 多义词的柯林斯释义分成好几组，每组又可能有多个列表（第一个列表常常只有
+// 词性标题，没有释义）。以前只读第一个列表，take 的 52 条释义只剩 2 条。
+// HTML 取自 take 的真实页面并做了删减。
+func TestParseCollinsReadsEveryGroupAndList(t *testing.T) {
+	doc := soup.HTMLParse(`
+<div id="collinsResult">
+<div class="wt-container">
+  <h4><span class="title">take</span><span class="star star5"></span>
+  <span class="via rank">CET4 TEM4</span>
+  <span class="additional pattern">(
+    taking,
+    took,
+    taken,
+    takes
+    )</span></h4>
+  <ul class="ol"><li><div class="collinsMajorTrans"><p>
+    <span class="additional">V-T</span> You can use take followed by a noun to talk about an action. 进行
+  </p></div></li></ul>
+</div>
+<div class="wt-container wt-collapse">
+  <ul class="ol"><li><p><span class="additional">V-T</span></p></li></ul>
+  <ul class="ol">
+  <li><div class="collinsMajorTrans"><p>
+    <span class="additional">V-T</span> If you take something, you reach out for it and hold it. 拿
+  </p></div>
+  <div class="exampleLists"><div class="examples"><p> Here, let me take your coat. </p><p>来，我帮你拿大衣。</p></div></div>
+  <div class="exampleLists"><div class="examples"><p> Take it or leave it. </p><p>  </p></div></div>
+  </li>
+  </ul>
+</div>
+</div>`)
+	result := &model.Result{BaseResult: &model.BaseResult{Query: "take", IsEN: true}}
+	yd := YdResult{Result: result, Doc: &doc}
+	yd.parseCollins()
+
+	if result.Collins.Star != 5 || result.Collins.ViaRank != "CET4 TEM4" || result.Collins.AdditionalPattern != "taking,took,taken,takes" {
+		t.Fatalf("Collins header = star %d, rank %q, pattern %q", result.Collins.Star, result.Collins.ViaRank, result.Collins.AdditionalPattern)
+	}
+	var got []string
+	for _, item := range result.Collins.Items {
+		got = append(got, item.MajorTrans)
+	}
+	want := []string{
+		"You can use take followed by a noun to talk about an action. 进行",
+		"If you take something, you reach out for it and hold it. 拿",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("Collins items = %q, want %q", got, want)
+	}
+	// 没有译文的例句只存原句，不存空串
+	if examples, want := result.Collins.Items[1].ExampleLists, [][]string{
+		{"Here, let me take your coat.", "来，我帮你拿大衣。"},
+		{"Take it or leave it."},
+	}; !reflect.DeepEqual(examples, want) {
+		t.Fatalf("Collins examples = %q, want %q", examples, want)
+	}
+}
+
+func TestNormalizeCollinsPattern(t *testing.T) {
+	for _, tt := range []struct{ in, want string }{
+		{"(\n  taking,\n  took,\n  taken,\n  takes\n  )", "taking,took,taken,takes"},
+		{"(also an)", "also an"},
+		{"( plural mice )", "plural mice"},
+		{"", ""},
+	} {
+		if got := normalizeCollinsPattern(tt.in); got != tt.want {
+			t.Errorf("normalizeCollinsPattern(%q) = %q, want %q", tt.in, got, tt.want)
+		}
+	}
+}
+
+func TestFetchLegacyWithOutcomes(t *testing.T) {
+	for _, tt := range []struct {
+		name        string
+		query       string
+		fixture     string
+		body        string
+		status      int
+		isEN        bool
+		isLongText  bool
+		want        fetchOutcome
+		paraphrase  []string
+		translation string
+	}{
+		{
+			name: "word found without results container", query: "abandon", isEN: true,
+			body: `<div class="trans-container"><ul><li> v. give up </li></ul></div>`,
+			want: fetchFound, paraphrase: []string{"v. give up"},
+		},
+		{
+			name: "Chinese word found", query: "放弃",
+			body: `<div class="trans-container"><p class="wordGroup"> abandon: 放弃 </p></div>`,
+			want: fetchFound, paraphrase: []string{"abandon: 放弃"},
+		},
+		{
+			name: "word not found", query: "qwzxvkj", isEN: true,
+			fixture: "qwzxvkj.html", want: fetchNotFound,
+		},
+		{
+			name: "word has only empty definitions", query: "blank", isEN: true,
+			body: `<div id="results-contents"><div class="trans-container"><ul><li> </li></ul></div></div>`,
+			want: fetchNotFound,
+		},
+		{
+			name: "word has no results container", query: "blocked", isEN: true,
+			body: `<html><body>Verify that you are human</body></html>`, want: fetchUnknown,
+		},
+		{
+			name: "long text found", query: "hello world", isEN: true, isLongText: true,
+			fixture: "hello_world.html", want: fetchFound,
+			translation: "你好，世界：一个用于展示编程语言基本语法和结构的示例程序。",
+		},
+		{
+			name: "long text not found", query: "qwzxvkj", isEN: true, isLongText: true,
+			fixture: "qwzxvkj.html", want: fetchNotFound,
+		},
+		{
+			name: "long text has no results container", query: "blocked", isEN: true, isLongText: true,
+			body: `<html><body>Verify that you are human</body></html>`, want: fetchUnknown,
+		},
+		{
+			name: "non-2xx overrides recognizable response", query: "qwzxvkj",
+			fixture: "qwzxvkj.html", status: http.StatusBadGateway, want: fetchUnknown,
+		},
+		{name: "empty response", query: "blank", want: fetchUnknown},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			body := []byte(tt.body)
+			if tt.fixture != "" {
+				var err error
+				body, err = os.ReadFile(filepath.Join("testdata", "legacy", tt.fixture))
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				if tt.status != 0 {
+					w.WriteHeader(tt.status)
+				}
+				_, _ = w.Write(body)
+			}))
+			t.Cleanup(server.Close)
+
+			base := model.BaseResult{
+				Query: tt.query, IsEN: tt.isEN, IsLongText: tt.isLongText, Found: tt.want != fetchFound,
+				Prompt: "prompt", Output: "output", IsPhrase: true, History: make(chan int),
+			}
+			wantBase := base
+			wantBase.MachineTrans = tt.translation
+			r := &model.Result{BaseResult: &base}
+			got, err := fetchLegacyWith(t.Context(), server.Client(), server.URL, r)
+
+			if got != tt.want {
+				t.Fatalf("fetchLegacyWith() = (%s, %v), want %s", got, err, tt.want)
+			}
+			if tt.want == fetchUnknown {
+				if err == nil || !strings.HasPrefix(err.Error(), "youdao:") {
+					t.Fatalf("error = %v, want Youdao context", err)
+				}
+			} else if err != nil {
+				t.Fatalf("error = %v, want nil", err)
+			}
+			if !reflect.DeepEqual(r.Paraphrase, tt.paraphrase) {
+				t.Errorf("Paraphrase = %q, want %q", r.Paraphrase, tt.paraphrase)
+			}
+			if r.BaseResult != &base || *r.BaseResult != wantBase {
+				t.Errorf("BaseResult = %+v, want %+v", r.BaseResult, wantBase)
+			}
+		})
 	}
 }

@@ -1,0 +1,66 @@
+{
+  "blng_sents_part": {
+    "sentence-count": 12,
+    "sentence-pair": [
+      {
+        "sentence": "'I don't know what you're talking about,' he blustered.",
+        "sentence-eng": "'<b>I</b> <b>don't</b> <b>know</b> <b>what</b> <b>you're</b> <b>talking</b> <b>about</b>,' he blustered.",
+        "sentence-translation": "“我不知道你到底在说什么！”他气势汹汹地说。",
+        "source": "《牛津词典》",
+        "url": "https://《牛津词典》/"
+      },
+      {
+        "sentence": "73 - \"I don't know what you're talking about,\" I said.",
+        "sentence-eng": "73 - \"<b>I</b> <b>don't</b> <b>know</b> <b>what</b> <b>you're</b> <b>talking</b> <b>about</b>,\" I said.",
+        "sentence-translation": "73 -“我不知道你在说什么，”我说。",
+        "url": "youdao"
+      },
+      {
+        "sentence": "\"I don't know what you're talking about,\" said Harry, stowing the little bottle hastily in his pocket.",
+        "sentence-eng": "\"<b>I</b> <b>don't</b> <b>know</b> <b>what</b> <b>you're</b> <b>talking</b> <b>about</b>,\" said Harry, stowing the little bottle hastily in his pocket.",
+        "sentence-translation": "“真听不懂你在说什么。”哈利一边说一边赶紧把一个小瓶子塞进口袋里。",
+        "url": "youdao"
+      }
+    ],
+    "more": "blng_sents"
+  },
+  "input": "I don't know what you're talking about",
+  "meta": {
+    "input": "I don't know what you're talking about",
+    "guessLanguage": "eng",
+    "isHasSimpleDict": "0",
+    "le": "en",
+    "lang": "eng",
+    "dicts": [
+      "blng_sents_part",
+      "meta",
+      "fanyi",
+      "media_sents_part"
+    ]
+  },
+  "fanyi": {
+    "input": "I don't know what you're talking about",
+    "type": "en2zh-CHS",
+    "tran": "我不知道你在说什么"
+  },
+  "le": "en",
+  "media_sents_part": {
+    "query": "I don't know what you're talking about",
+    "sent": [
+      {
+        "@mediatype": "audio",
+        "snippets": {
+          "snippet": [
+            {
+              "duration": "4900",
+              "name": "standard.other",
+              "source": "VOA"
+            }
+          ]
+        },
+        "eng": "<b>I </b><b>don't</b> even <b>know </b><b>what </b><b>you</b><b>'</b><b>re</b>... How... <b>What</b> are <b>you </b><b>talking </b><b>about</b>?<b>You</b> want me to go away? <b>I</b> can<b>'t</b>..."
+      }
+    ]
+  },
+  "lang": "eng"
+}

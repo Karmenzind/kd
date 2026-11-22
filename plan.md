@@ -14,6 +14,9 @@
 - 用代理爬词库
 - use hash as cache file's name for long query
 - json储存所有查过的单词最后访问时间
+- 修复RemoveNotFound改写查不到名单时末尾不带换行，之后追加的词会粘在最后一行上
+- jsonapi_s对部分中文词（银行、汽车、学校、老师）返回别的词的数据，目前靠input判定退回旧网页；若要把jsonapi_s改成首选，先查清范围或中文改用旧版jsonapi
+- jsonapi_s后端跳过了柯林斯的交叉引用（如to be taken aback →see aback），可用headword和sees拼出来，与旧网页一致
 
 ## Long-term
 - 引入stardict源

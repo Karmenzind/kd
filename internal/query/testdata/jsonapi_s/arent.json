@@ -1,0 +1,212 @@
+{
+  "blng_sents_part": {
+    "sentence-count": 30,
+    "sentence-pair": [
+      {
+        "sentence": "No, silly, those aren't your shoes!",
+        "sentence-eng": "No, silly, those <b>aren't</b> your shoes!",
+        "sentence-translation": "不对，傻孩子，那不是你的鞋！",
+        "source": "《牛津词典》",
+        "url": "https://《牛津词典》/"
+      },
+      {
+        "sentence": "Some people are born lucky, aren't they?",
+        "sentence-eng": "Some people are born lucky, <b>aren't</b> they?",
+        "sentence-translation": "一些人天生好运不断，不是吗？",
+        "source": "《柯林斯英汉双解大词典》",
+        "url": "https://《柯林斯英汉双解大词典》/"
+      },
+      {
+        "sentence": "You're a great one for quizzes, aren't you?",
+        "sentence-eng": "You're a great one for quizzes, <b>aren't</b> you?",
+        "sentence-translation": "你是智力竞赛老手，不是吗？",
+        "source": "《牛津词典》",
+        "url": "https://《牛津词典》/"
+      }
+    ],
+    "more": "blng_sents"
+  },
+  "input": "aren't",
+  "collins": {
+    "collins_entries": [
+      {
+        "entries": {
+          "entry": [
+            {
+              "tran_entry": [
+                {
+                  "tran": "<b>Aren't</b> is the usual spoken form of \"are not.\" (are not)的常用口语形式"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "tran": "<b>Aren't</b> is the form of \"am not\" that is used in questions or tags in spoken English. 口语中疑问句或附加疑问句里(am not)的缩略形式"
+                }
+              ]
+            }
+          ]
+        },
+        "phonetic": "ɑːnt, ˈɑːrənt",
+        "basic_entries": {
+          "basic_entry": [
+            {
+              "headword": "aren't"
+            }
+          ]
+        },
+        "headword": "aren't",
+        "star": "4"
+      }
+    ]
+  },
+  "meta": {
+    "input": "aren't",
+    "guessLanguage": "eng",
+    "isHasSimpleDict": "1",
+    "le": "en",
+    "lang": "eng",
+    "dicts": [
+      "blng_sents_part",
+      "collins",
+      "meta",
+      "auth_sents_part",
+      "media_sents_part",
+      "simple",
+      "ec"
+    ]
+  },
+  "auth_sents_part": {
+    "sentence-count": 6,
+    "more": "auth_sents",
+    "sent": [
+      {
+        "score": 0.9831384420394897,
+        "source": "BBC: <i>How Germany killed the merger of BAE and EADS</i>",
+        "url": "youdao",
+        "foreign": "Second, BAE's owners, as opposed to its board, aren't weeping about the collapse of the deal. "
+      },
+      {
+        "score": 0.9831359386444092,
+        "source": "CNN: <i>Can 'Big Data' stamp out human trafficking?</i>",
+        "url": "youdao",
+        "foreign": "And those fighting it aren't just from law enforcement, border control or local authorities. "
+      },
+      {
+        "score": 0.9831359386444092,
+        "source": "CNN: <i>Opinion: Unlocking crime using biological keys</i>",
+        "url": "youdao",
+        "foreign": "We aren't exactly what we eat, but not eating enough can make for malevolence. "
+      }
+    ]
+  },
+  "le": "en",
+  "media_sents_part": {
+    "sentence-count": 6,
+    "more": "media_sents",
+    "query": "aren't",
+    "sent": [
+      {
+        "@mediatype": "audio",
+        "snippets": {
+          "snippet": [
+            {
+              "duration": "10900",
+              "name": "special.2009.07.06",
+              "source": "VOA"
+            }
+          ]
+        },
+        "eng": "There <b>aren't</b> very many examples of names which are equally popular for both boys and girls for a really long period.\""
+      },
+      {
+        "@mediatype": "video",
+        "snippets": {
+          "snippet": [
+            {
+              "sourceUrl": "youdao",
+              "imageUrl": "http://dict.youdao.com/pureimage?docid=7942692601868602774",
+              "name": "好莱坞的真面目",
+              "source": "SpeakingMax英语口语达人"
+            }
+          ]
+        },
+        "chn": "你知道，我想说的是，许多住在好莱坞的人并不是那么浅薄的。<br>",
+        "eng": "You know, I mean, there<b>'</b>s a lot of people that live in Hollywood that <b>aren't</b> like superficial and things like that.<br>"
+      },
+      {
+        "@mediatype": "video",
+        "snippets": {
+          "snippet": [
+            {
+              "sourceUrl": "youdao",
+              "imageUrl": "http://dict.youdao.com/pureimage?docid=-8653039789654301137",
+              "name": "耶鲁公开课",
+              "source": "心理学导论课程节选"
+            }
+          ]
+        },
+        "chn": "或许是有个恶魔在戏弄我,让我产生错觉,感受到了一些并不存在的东西\"<br>",
+        "eng": "Maybe an evil demon, for instance, has tricked me, has deluded me into thinking I have experiences that <b>aren't</b> real.\"<br>"
+      },
+      {
+        "@mediatype": "audio",
+        "snippets": {
+          "snippet": [
+            {
+              "duration": "10700",
+              "name": "special.2009.12.03",
+              "source": "VOA"
+            }
+          ]
+        },
+        "eng": "\"We <b>aren't </b>that small because we couldn<b>'t</b> be bigger. We<b>'</b>re that small because we think we educate much more effectively and much more powerfully because we stay small."
+      },
+      {
+        "@mediatype": "audio",
+        "snippets": {
+          "snippet": [
+            {
+              "duration": "4100",
+              "name": "special.2009.11.28",
+              "source": "VOA"
+            }
+          ]
+        },
+        "eng": "\"No you <b>aren't</b>,\" said the cowboy."
+      }
+    ]
+  },
+  "simple": {
+    "query": "aren't",
+    "word": [
+      {
+        "usphone": "ɑːrnt",
+        "ukphone": "ɑːnt",
+        "return-phrase": "aren't"
+      }
+    ]
+  },
+  "lang": "eng",
+  "ec": {
+    "web_trans": [
+      "不是"
+    ],
+    "source": {
+      "name": "有道词典",
+      "url": "https://dict.youdao.com"
+    },
+    "word": {
+      "usphone": "ɑːrnt",
+      "ukphone": "ɑːnt",
+      "trs": [
+        {
+          "pos": "abbr.",
+          "tran": "are not 的缩略形式，表示“不是”；口语疑问句或附加疑问句中可代替 am not（如 Aren't I?）"
+        }
+      ],
+      "return-phrase": "aren't"
+    }
+  }
+}

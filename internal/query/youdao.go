@@ -25,7 +25,6 @@ func (r *YdResult) parseParaphrase() {
 				para = str.Simplify(v.Text())
 				if para != "" {
 					r.Paraphrase = append(r.Paraphrase, para)
-					zap.S().Debugf("Got para: %s", para)
 				}
 			}
 		} else {
@@ -33,7 +32,6 @@ func (r *YdResult) parseParaphrase() {
 				para = str.Simplify(wg.FullText())
 				if para != "" {
 					r.Paraphrase = append(r.Paraphrase, para)
-					zap.S().Debugf("Got para: %s", para)
 				}
 			}
 		}
@@ -77,33 +75,33 @@ func (r *YdResult) parseCollins() {
 		}
 
 		if ap := collinsRoot.FindStrict("span", "class", "additional pattern"); ap.Error == nil {
-			apText := ap.Text()
-			if apText != "" {
-				apText = strings.ReplaceAll(apText, "\n", "")
-				apText = regexp.MustCompile("[ \t]+").ReplaceAllString(apText, "")
-				apText = strings.Trim(apText, "()")
-				r.Collins.AdditionalPattern = apText
-			}
+			r.Collins.AdditionalPattern = normalizeCollinsPattern(ap.Text())
 		}
 
-		if olRoot := collinsRoot.Find("ul", "class", "ol"); olRoot.Error == nil {
+		// 多义词的柯林斯释义分成好几组（如 VERB USES / NOUN USES），每组又可能
+		// 有多个列表，只取第一个列表会丢掉大部分释义
+		for _, olRoot := range collinsRoot.FindAll("ul", "class", "ol") {
 			for _, liTag := range olRoot.FindAll("li") {
 				cTrans := liTag.Find("div", "class", "collinsMajorTrans")
 				if cTrans.Error != nil {
 					continue
 				}
 
-				adtTag := cTrans.Find("span", "class", "additional")
-
 				transTag := cTrans.Find("p")
-				if adtTag.Error != nil || transTag.Error != nil {
+				if transTag.Error != nil {
 					continue
 				}
-				adtStr := adtTag.Text()
 				transStr := str.Simplify(transTag.FullText())
+				if transStr == "" {
+					continue
+				}
+				// 词性等附加说明不是每条都有（如 is 的第一条释义），缺失时照常保留释义
+				var adtStr string
+				if adtTag := cTrans.Find("span", "class", "additional"); adtTag.Error == nil {
+					adtStr = adtTag.Text()
+				}
 
 				if adtStr != "" {
-					zap.S().Debugf("Got transStr: `%s` adtStr: `%s`", transStr, adtStr)
 					if transStr == adtStr {
 						continue
 					} else if len(transStr) > len(adtStr) && strings.HasPrefix(transStr, adtStr) {
@@ -129,19 +127,34 @@ func (r *YdResult) parseCollins() {
 						continue
 					}
 					ps := example.FindAll("p")
-					if len(ps) > 0 {
-						exampleEn := str.Simplify(ps[0].FullText())
-						exampleSlice := []string{exampleEn}
-						if len(ps) > 1 {
-							exampleCh := str.Simplify(ps[1].FullText())
+					if len(ps) == 0 {
+						continue
+					}
+					exampleEn := str.Simplify(ps[0].FullText())
+					if exampleEn == "" {
+						continue
+					}
+					exampleSlice := []string{exampleEn}
+					// 部分例句没有译文，不存空串，否则渲染时末尾会多出分隔空格
+					if len(ps) > 1 {
+						if exampleCh := str.Simplify(ps[1].FullText()); exampleCh != "" {
 							exampleSlice = append(exampleSlice, exampleCh)
 						}
-						i.ExampleLists = append(i.ExampleLists, exampleSlice)
 					}
+					i.ExampleLists = append(i.ExampleLists, exampleSlice)
 				}
 			}
 		}
 	}
+}
+
+var collinsPatternComma = regexp.MustCompile(`\s*,\s*`)
+
+// normalizeCollinsPattern 整理柯林斯的词形变化，如`(\n taking,\n took\n)`
+// 整理为`taking,took`。只去掉逗号两侧的空白，`(also an)`这类说明里的空格要保留
+func normalizeCollinsPattern(text string) string {
+	text = strings.TrimSpace(strings.Trim(str.Simplify(text), "()"))
+	return collinsPatternComma.ReplaceAllString(text, ",")
 }
 
 func (r *YdResult) parseExamples() {
@@ -190,7 +203,6 @@ func (r *YdResult) parseExamples() {
 					}
 					pairedFound = pairedFound || paired
 				}
-				zap.S().Debug("Got example", example)
 				examples = append(examples, example)
 			}
 
@@ -233,7 +245,7 @@ func sentenceFromDataRel(dataRel string) string {
 	encoded, _, _ := strings.Cut(dataRel, "&")
 	decoded, err := url.QueryUnescape(encoded)
 	if err != nil {
-		zap.S().Debugf("Failed to decode data-rel: %s", err)
+		zap.S().Debug("Failed to decode example audio link")
 		return ""
 	}
 	return str.Simplify(decoded)
@@ -244,7 +256,6 @@ func (r *YdResult) parseMachineTrans() {
 		if prev := tcRoot.FindPrevElementSibling(); prev.Error == nil && prev.Attrs()["class"] == "wordbook-js" {
 			r.MachineTrans = str.Simplify(tcRoot.FullText())
 			if r.MachineTrans != "" {
-				zap.S().Debug("Got Machine trans from top area: ", r.MachineTrans)
 				return
 			}
 		}
@@ -258,7 +269,6 @@ func (r *YdResult) parseMachineTrans() {
 			r.MachineTrans = str.Simplify(ps[1].FullText())
 
 			if r.MachineTrans != "" {
-				zap.S().Debug("Got Machine trans from fanyiToggle: ", r.MachineTrans)
 				return
 			}
 		}
@@ -268,14 +278,9 @@ func (r *YdResult) parseMachineTrans() {
 		if title := tWebRoot.FindStrict("div", "class", "title"); title.Error == nil {
 			r.MachineTrans = str.Simplify(title.FullText())
 			if r.MachineTrans != "" {
-				zap.S().Debug("Got Machine trans from tWebTrans: ", r.MachineTrans)
 				return
 			}
 		}
 	}
 
-}
-
-func (r *YdResult) isNotFound() bool {
-	return r.Paraphrase == nil || len(r.Paraphrase) == 0
 }

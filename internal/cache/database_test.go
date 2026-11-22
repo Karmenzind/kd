@@ -24,9 +24,15 @@ func useTestDB(t *testing.T) string {
 
 	originalDB := LiteDB
 	LiteDB = db
+	// SanitizeLegacyRows also edits the not-found list and the long-text
+	// cache; keep them away from the user's cache directory.
+	originalRoot, originalLongText := CACHE_ROOT_PATH, LONG_TEXT_CACHE_FILE
+	CACHE_ROOT_PATH = t.TempDir()
+	LONG_TEXT_CACHE_FILE = filepath.Join(CACHE_ROOT_PATH, "long_text_results.json")
 	t.Cleanup(func() {
 		db.Close()
 		LiteDB = originalDB
+		CACHE_ROOT_PATH, LONG_TEXT_CACHE_FILE = originalRoot, originalLongText
 	})
 	return dbPath
 }

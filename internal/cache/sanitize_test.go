@@ -3,7 +3,9 @@ package cache
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -217,4 +219,136 @@ func TestApplySanitizedSkipsRefreshedRows(t *testing.T) {
 	if len(got.Paraphrase) != 1 || got.Paraphrase[0] != "n. 羔羊，小羊" {
 		t.Fatalf("stored paraphrase = %q, want the refreshed result", got.Paraphrase)
 	}
+}
+
+// v4：旧网页对含'或&的查询会查错，三处缓存里的这类条目都要删掉，其余保留。
+func TestSanitizeLegacyRowsPurgesMisescapedQueries(t *testing.T) {
+	useTestDB(t)
+
+	insertLegacyRow(t, "en", "at&t", &model.Result{Keyword: "at", Paraphrase: []string{"prep. 在"}})
+	insertLegacyRow(t, "en", "rock 'n' roll", &model.Result{Paraphrase: []string{"n. 摇滚乐"}})
+	insertLegacyRow(t, "en", "take", &model.Result{Paraphrase: []string{"v. 拿"}})
+	insertLegacyRow(t, "ch", "你好", &model.Result{Paraphrase: []string{"hello"}})
+
+	notFound := []string{"aren't", "qwzxvkj", "at&t", "zzzz"}
+	for _, q := range notFound {
+		if err := AppendNotFound(q); err != nil {
+			t.Fatalf("AppendNotFound(%q) error = %v", q, err)
+		}
+	}
+	longText := map[string]LongTextData{
+		"an old horse won't forget the way": {Result: "一匹老马；#x27；我忘了路"},
+		"good morning everyone":             {Result: "大家早上好"},
+	}
+	if err := saveLongTextCache(LONG_TEXT_CACHE_FILE, longText); err != nil {
+		t.Fatalf("saveLongTextCache() error = %v", err)
+	}
+
+	report, err := SanitizeLegacyRows(context.Background())
+	if err != nil {
+		t.Fatalf("SanitizeLegacyRows() error = %v", err)
+	}
+	if report.Cleaned != 5 {
+		t.Fatalf("SanitizeLegacyRows() cleaned %d, want 5 (2 rows, 2 not-found lines, 1 long text)", report.Cleaned)
+	}
+
+	assertRows(t, "en", []string{"take"})
+	assertRows(t, "ch", []string{"你好"})
+	for q, want := range map[string]bool{"aren't": false, "at&t": false, "qwzxvkj": true, "zzzz": true} {
+		line, err := CheckNotFound(q)
+		if err != nil {
+			t.Fatalf("CheckNotFound(%q) error = %v", q, err)
+		}
+		if (line > 0) != want {
+			t.Fatalf("CheckNotFound(%q) = %d, want present=%v", q, line, want)
+		}
+	}
+	stored, err := loadLongTextCache(LONG_TEXT_CACHE_FILE)
+	if err != nil {
+		t.Fatalf("loadLongTextCache() error = %v", err)
+	}
+	if _, ok := stored["an old horse won't forget the way"]; ok || len(stored) != 1 {
+		t.Fatalf("long-text cache = %v, want only the entry without ' or &", stored)
+	}
+
+	// 名单改写后追加的新词要另起一行，不能粘在最后一行后面
+	if err := AppendNotFound("next"); err != nil {
+		t.Fatalf("AppendNotFound() error = %v", err)
+	}
+	if line, _ := CheckNotFound("next"); line != 3 {
+		t.Fatalf("CheckNotFound(next) = %d, want 3", line)
+	}
+
+	// 再跑一遍（如词库被替换后）不能删掉别的内容
+	if _, err := LiteDB.Exec("DELETE FROM meta"); err != nil {
+		t.Fatalf("delete meta error = %v", err)
+	}
+	report, err = SanitizeLegacyRows(context.Background())
+	if err != nil {
+		t.Fatalf("second SanitizeLegacyRows() error = %v", err)
+	}
+	if report.Cleaned != 0 {
+		t.Fatalf("second SanitizeLegacyRows() cleaned %d, want 0", report.Cleaned)
+	}
+	assertRows(t, "en", []string{"take"})
+}
+
+// 版本号已是4时不做任何删除。
+func TestSanitizeLegacyRowsSkipsPurgeWhenVersionRecorded(t *testing.T) {
+	useTestDB(t)
+
+	insertLegacyRow(t, "en", "at&t", &model.Result{Paraphrase: []string{"prep. 在"}})
+	if err := AppendNotFound("aren't"); err != nil {
+		t.Fatalf("AppendNotFound() error = %v", err)
+	}
+	if err := setMetaValue(sanitizeVersionKey, strconv.Itoa(sanitizeVersion)); err != nil {
+		t.Fatalf("setMetaValue() error = %v", err)
+	}
+	if _, err := SanitizeLegacyRows(context.Background()); err != nil {
+		t.Fatalf("SanitizeLegacyRows() error = %v", err)
+	}
+	assertRows(t, "en", []string{"at&t"})
+	if line, _ := CheckNotFound("aren't"); line == 0 {
+		t.Fatal("not-found list lost aren't although the purge already ran")
+	}
+}
+
+// 缓存文件都不存在时（新装用户）照常完成并记录版本号。
+func TestSanitizeLegacyRowsPurgeWithoutCacheFiles(t *testing.T) {
+	useTestDB(t)
+
+	if _, err := SanitizeLegacyRows(context.Background()); err != nil {
+		t.Fatalf("SanitizeLegacyRows() error = %v", err)
+	}
+	if version, _ := getMetaValue(sanitizeVersionKey); version != strconv.Itoa(sanitizeVersion) {
+		t.Fatalf("recorded version = %q, want %d", version, sanitizeVersion)
+	}
+	if pkgPathExists(getNotFoundFilePath()) || pkgPathExists(LONG_TEXT_CACHE_FILE) {
+		t.Fatal("the purge created cache files that did not exist")
+	}
+}
+
+func assertRows(t *testing.T, table string, want []string) {
+	t.Helper()
+	rows, err := LiteDB.Query("SELECT query FROM " + table + " ORDER BY query")
+	if err != nil {
+		t.Fatalf("select %s error = %v", table, err)
+	}
+	defer rows.Close()
+	var got []string
+	for rows.Next() {
+		var q string
+		if err := rows.Scan(&q); err != nil {
+			t.Fatalf("scan %s error = %v", table, err)
+		}
+		got = append(got, q)
+	}
+	if strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Fatalf("rows of %s = %q, want %q", table, got, want)
+	}
+}
+
+func pkgPathExists(p string) bool {
+	_, err := os.Stat(p)
+	return err == nil
 }

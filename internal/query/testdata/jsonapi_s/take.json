@@ -1,0 +1,1336 @@
+{
+  "blng_sents_part": {
+    "sentence-count": 30,
+    "sentence-pair": [
+      {
+        "sentence": "Let's take the kids to the fair.",
+        "sentence-eng": "Let's <b>take</b> the kids to the fair.",
+        "sentence-translation": "咱们带孩子们到游乐场吧。",
+        "source": "《牛津词典》",
+        "url": "https://《牛津词典》/"
+      },
+      {
+        "sentence": "Let me take your coat.",
+        "sentence-eng": "Let me <b>take</b> your coat.",
+        "sentence-translation": "让我帮您拿外套吧。",
+        "source": "《柯林斯英汉双解大词典》",
+        "url": "https://《柯林斯英汉双解大词典》/"
+      },
+      {
+        "sentence": "We take pride in offering you the highest standards.",
+        "sentence-eng": "We <b>take</b> pride in offering you the highest standards.",
+        "sentence-translation": "我们以向您提供最高标准的服务而自豪。",
+        "source": "《柯林斯英汉双解大词典》",
+        "url": "https://《柯林斯英汉双解大词典》/"
+      }
+    ],
+    "more": "blng_sents",
+    "trs-classify": [
+      {
+        "proportion": "100%",
+        "tr": "全部"
+      },
+      {
+        "proportion": "51.9%",
+        "tr": "采取"
+      },
+      {
+        "proportion": "16.8%",
+        "tr": "拿"
+      },
+      {
+        "proportion": "11.0%",
+        "tr": "接受"
+      },
+      {
+        "proportion": "5.5%",
+        "tr": "取"
+      },
+      {
+        "proportion": "5.0%",
+        "tr": "花费"
+      },
+      {
+        "proportion": "3.9%",
+        "tr": "服用"
+      },
+      {
+        "proportion": "1.9%",
+        "tr": "拿走"
+      },
+      {
+        "proportion": "1.8%",
+        "tr": "获得"
+      },
+      {
+        "proportion": "1.4%",
+        "tr": "搭"
+      },
+      {
+        "proportion": "0.9%",
+        "tr": "买"
+      }
+    ]
+  },
+  "input": "take",
+  "collins": {
+    "super_headwords": {
+      "super_headword": [
+        "USED WITH NOUNS DESCRIBING ACTIONS",
+        "OTHER USES"
+      ]
+    },
+    "collins_entries": [
+      {
+        "super_headword": "USED WITH NOUNS DESCRIBING ACTIONS",
+        "entries": {
+          "entry": [
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "她累得不想淋浴了。",
+                        "eng_sent": "She was too tired to take a shower."
+                      },
+                      {
+                        "chn_sent": "贝蒂给我们拍了一张照片。",
+                        "eng_sent": "Betty took a photograph of us."
+                      }
+                    ]
+                  },
+                  "tran": "You can use <b>take</b> followed by a noun to talk about an action or event, when it would also be possible to use the verb that is related to that noun. For example, you can say \"<b>she took a shower</b>\" instead of \"she showered.\" 后接名词描述动作或事件"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "爱国阵线经过3个月的内战后夺取了政权。",
+                        "eng_sent": "The Patriotic Front took power after a three-month civil war."
+                      },
+                      {
+                        "chn_sent": "我感觉妇女参与并担任领导角色很重要。",
+                        "eng_sent": "I felt it was important for women to join and take a leading role."
+                      }
+                    ]
+                  },
+                  "tran": "In ordinary spoken or written English, people use <b>take</b> with a range of nouns instead of using a more specific verb. For example, people often say \"<b>he took control</b>\" or \"<b>she took a positive attitude</b>\" instead of \"he assumed control\" or \"she adopted a positive attitude.\" 与许多名词连用，代替更具体的动词"
+                }
+              ]
+            }
+          ]
+        },
+        "phonetic": "teɪk",
+        "basic_entries": {
+          "basic_entry": [
+            {
+              "cet": "CET4 TEM4",
+              "headword": "take",
+              "wordforms": {
+                "wordform": [
+                  {
+                    "word": "taking"
+                  },
+                  {
+                    "word": "took"
+                  },
+                  {
+                    "word": "taken"
+                  },
+                  {
+                    "word": "takes"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "headword": "take",
+        "star": "5"
+      },
+      {
+        "super_headword": "OTHER USES",
+        "entries": {
+          "entry": [
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "来，我帮你拿大衣。",
+                        "eng_sent": "Here, let me take your coat."
+                      },
+                      {
+                        "chn_sent": "科利特抓住她的双肩，摇晃着她。",
+                        "eng_sent": "Colette took her by the shoulders and shook her."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> something, you reach out for it and hold it. 拿"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "马克经常带着书去贝丝家学习。",
+                        "eng_sent": "Mark often took his books to Bess's house to study."
+                      },
+                      {
+                        "chn_sent": "你换汇时应该带着你的护照。",
+                        "eng_sent": "You should take your passport with you when changing money."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> something with you when you go somewhere, you carry it or have it with you. 随身带着"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "她带我去了一家墨西哥餐馆。",
+                        "eng_sent": "She took me to a Mexican restaurant."
+                      }
+                    ]
+                  },
+                  "tran": "If a person, vehicle, or path <b>takes</b> someone somewhere, they transport or lead them there. 运送; 带领"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "他是个来自马德拉斯的穷学生，他的才华使他考上了斯坦福。",
+                        "eng_sent": "He was a poor student from Madras whose genius took him to Stanford."
+                      }
+                    ]
+                  },
+                  "tran": "If something such as a job or interest <b>takes</b> you to a place, it is the reason for you going there. (工作或兴趣等) 使某人去"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "你需要向一位训练有素的顾问请教你的问题。",
+                        "eng_sent": "You need to take your problems to a trained counsellor."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> something such as your problems or your business to someone, you go to that person when you have problems you want to discuss or things you want to buy. 请教 (问题); 洽谈 (生意)"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "天赋、勤奋和美貌的组合使她成了佼佼者。",
+                        "eng_sent": "A combination of talent, hard work and good looks have taken her to the top."
+                      }
+                    ]
+                  },
+                  "tran": "If one thing <b>takes</b> another <b>to</b> a particular level, condition, or state, it causes it to reach that level or condition. 使达到 (某种水平或状态)"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "他从口袋里拿出一块手帕，轻轻地擦了擦嘴。",
+                        "eng_sent": "He took a handkerchief from his pocket and lightly wiped his mouth."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> something from a place, you remove it from there. 拿走"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "他偷了我的钱，我不可能把它要回来了。",
+                        "eng_sent": "He has taken my money, and I have no chance of getting it back."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> something from someone who owns it, you steal it or go away with it without their permission. 偷走; 擅自拿走"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "一支塞尔维亚部队夺取了这个镇。",
+                        "eng_sent": "A Serb army unit took the town."
+                      }
+                    ]
+                  },
+                  "tran": "If an army or political party <b>takes</b> something or someone, they win them from their enemy or opponent. 夺取"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "减去房价，又是10万。",
+                        "eng_sent": "Take off the price of the house, that's another hundred thousand."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> one number or amount from another, you subtract it or deduct it. 减去"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "gram": "no passive, usu with brd-neg",
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "不要再叫我照看那些孩子们了。我简直无法忍受！",
+                        "eng_sent": "Don't ever ask me to look after those kids again. I just can't take it!"
+                      }
+                    ]
+                  },
+                  "tran": "If you cannot <b>take</b> something difficult, painful, or annoying, you cannot tolerate it without becoming upset, ill, or angry. 忍受"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "他们遭受了惨重的伤亡。",
+                        "eng_sent": "They have taken heavy casualties."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> something such as damage or loss, you suffer it, especially in war or in a battle. (尤指在战争中) 遭受"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "gram": "no passive",
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "由于道路很差，这次旅程花费了我们很长时间。",
+                        "eng_sent": "Since the roads are very bad, the trip took us a long time."
+                      },
+                      {
+                        "chn_sent": "我已听说一项诉讼可能要花费好几年时间。",
+                        "eng_sent": "I had heard an appeal could take years."
+                      },
+                      {
+                        "chn_sent": "从准备到烹制成这种调味汁需要25分钟。",
+                        "eng_sent": "The sauce takes 25 minutes to prepare and cook."
+                      },
+                      {
+                        "chn_sent": "拆除机翼和机尾，把那架飞机改成汽车需要15分钟的时间。",
+                        "eng_sent": "It takes 15 minutes to convert the plane into a car by removing the wings and the tail."
+                      }
+                    ]
+                  },
+                  "tran": "If something <b>takes</b> a certain amount of time, that amount of time is needed in order to do it. 花费 (时间)"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "gram": "no passive",
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "曾经有段时间，穿过这个房间得用尽她全部的力气。",
+                        "eng_sent": "At one time, walking across the room took all her strength."
+                      },
+                      {
+                        "chn_sent": "说出你的想法需要勇气。",
+                        "eng_sent": "It takes courage to say what you think."
+                      }
+                    ]
+                  },
+                  "tran": "If something <b>takes</b> a particular quality or thing, that quality or thing is needed in order to do it. 需要 (某种品质或事物)"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "当我接受这份工作时我以为我能改变这种体制，但太难了。",
+                        "eng_sent": "When I took the job I thought I could change the system, but it's hard."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> something that is given or offered to you, you agree to accept it. 接受"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "他们为自己的传统感到十分自豪。",
+                        "eng_sent": "They take great pride in their heritage."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> a feeling such as pleasure, pride, or delight in a particular thing or activity, it gives you that feeling. 感到"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "《毒药》在1991年的圣丹斯电影节上赢得一等奖。",
+                        "eng_sent": "\"Poison\" took first prize at the 1991 Sundance Film Festival."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> a prize or medal, you win it. 赢得"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "莱昂内尔的兄弟拉乌尔做了这件事，但莱昂内尔承担了责任而且对此绝口不提。",
+                        "eng_sent": "His brother Raoul did it, but Leonel took the blame and kept his mouth shut."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> the blame, responsibility, or credit for something, you agree to accept it. 承担"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "有些大学将被迫接纳比他们想要的更多的学生。",
+                        "eng_sent": "Some universities would be forced to take more students than they wanted."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> patients or clients, you accept them as your patients or clients. 接纳"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "道格拉斯把电话打到凯瑟琳的办公室。她拒绝接听他的电话。",
+                        "eng_sent": "Douglas telephoned Catherine at her office. She refused to take his calls."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> a telephone call, you speak to someone who is telephoning you. 接听 (电话)"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "不幸的是，没有人严肃地看待我的意见。",
+                        "eng_sent": "Unfortunately, no one took my opinion seriously."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> something in a particular way, you react in the way mentioned to a situation or to someone's beliefs or behaviour. (以某种方式) 看待"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "gram": "usu imper",
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "混乱和怨恨是存在的，而几乎从没人公开表露出来过。就以这个办公室为例。",
+                        "eng_sent": "There's confusion and resentment, and it's almost never expressed out in the open. Take this office, for example."
+                      }
+                    ]
+                  },
+                  "tran": "You use <b>take</b> when you are discussing or explaining a particular question, in order to introduce an example or to say how the question is being considered. 举出… (为例)"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "我已经尽我所能地说明白，所以他不会不理解我的意思。",
+                        "eng_sent": "I had made it as plain as I could so that he could not fail to take my meaning."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> someone's meaning or point, you understand and accept what they are saying. 理解"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "她把他错当成记者了。",
+                        "eng_sent": "She had taken him for a journalist."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> someone <b>for</b> something, you believe wrongly that they are that thing. 把…错当成"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "从社区学院出发，走老磨坊路到达市郊。",
+                        "eng_sent": "From the community college take Old Mill Road to the outskirts of town."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> a road or route, you choose to travel along it. 选择走 (某条路)"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "它在城镇的那头，因此我们应该乘车去。",
+                        "eng_sent": "It's the other end of town so we should take the car."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> a car, train, bus, or plane, you use it to go from one place to another. 搭乘"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "学生被允许选修欧洲史和美国史。",
+                        "eng_sent": "Students are allowed to take European history and American history."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> a subject or course at school or college, you choose to study it. 选修"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "她昨天参加了驾照考试。",
+                        "eng_sent": "She took her driving test yesterday."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> a test or examination, you do it in order to show your knowledge or ability. 参加 (考试)"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "她一直在服用安眠药。",
+                        "eng_sent": "She's been taking sleeping pills."
+                      }
+                    ]
+                  },
+                  "tran": "If someone <b>takes</b> drugs, pills, or other medicines, they take them into their body, for example, by swallowing them. 服用"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "她面无表情地坐着，仔细地记着笔记。",
+                        "eng_sent": "She sat expressionless, carefully taking notes."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> a note or a letter, you write down something you want to remember or the words that someone says. 写下"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "通过钻孔，地质学家可以在不同深度测量。",
+                        "eng_sent": "By drilling, geologists can take measurements at various depths."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> a measurement, you find out what it is by measuring. 测量"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "gram": "no passive",
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "这个地方只能容纳大约两千人。",
+                        "eng_sent": "The place could just about take 2,000 people."
+                      }
+                    ]
+                  },
+                  "tran": "If a place or container <b>takes</b> a particular amount or number, there is enough space for that amount or number. 容纳"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "“你穿多少号？”—“我穿7号。”",
+                        "eng_sent": "\"What size do you take?\"—\"I take a size 7.\""
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>take</b> a particular size in shoes or clothes, that size fits you. 穿 (某个尺寸的鞋子或衣服)"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "loc": "美国英语",
+                  "pos_entry": {
+                    "pos": "N-SING",
+                    "pos_tips": "单数型名词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "它又增加了1180万美元的营业收入，总计为4300万美元。",
+                        "eng_sent": "It added another $11.8 million to the take, for a grand total of $43 million."
+                      }
+                    ]
+                  },
+                  "tran": "You can use <b>take</b> to refer to the amount of money that a business such as a shop or theatre gets from selling its goods or tickets during a particular period. 营业收入",
+                  "prof": "商业"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "loc": "英国英语",
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "他们计划要收入16亿美元。",
+                        "eng_sent": "They plan to take £1.6 billion."
+                      }
+                    ]
+                  },
+                  "tran": "If a shop, restaurant, theatre, or other business <b>takes</b> a certain amount of money, they get that amount from people buying goods or services. 赚得",
+                  "prof": "商业"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "registr": "非正式",
+                  "pos_entry": {
+                    "pos": "V-T",
+                    "pos_tips": "及物动词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "他们被一个假冒的艺术家骗了。",
+                        "eng_sent": "They got taken by a scam artist."
+                      }
+                    ]
+                  },
+                  "tran": "If you <b>are taken</b> <b>by</b> someone, you are cheated or deceived by them. 欺骗"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "N-COUNT",
+                    "pos_tips": "可数名词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "她就是做不好–她一直不熟悉台词，我们只好一个镜头拍好几次。",
+                        "eng_sent": "She couldn't get it right – she never knew the lines and we had to do several takes."
+                      }
+                    ]
+                  },
+                  "tran": "A <b>take</b> is a short piece of action which is filmed in one continuous process for a movie. (电影中一次连续拍摄的) 镜头"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "N-SING",
+                    "pos_tips": "单数型名词"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "你对新政府持什么态度？你认为它能行吗？",
+                        "eng_sent": "What's your take on the new government? Do you think it can work?"
+                      }
+                    ]
+                  },
+                  "tran": "Someone's <b>take</b> <b>on</b> a particular situation or fact is their attitude to it or their interpretation of it. 态度; 解释"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "CONVENTION",
+                    "pos_tips": "习惯表达"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "1周72小时，每天12小时，每周6天，要么接受，要么走开。",
+                        "eng_sent": "A 72-hour week, 12 hours a day, six days a week, take it or leave it."
+                      }
+                    ]
+                  },
+                  "tran": "If you say to someone \"<b>take it or leave it</b>,\" you are telling them that they can accept something or not accept it, but that you are not prepared to discuss any other alternatives. 要么接受，要么走开"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "PHRASE",
+                    "pos_tips": "习语"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "政府不会心甘情愿地忍受这种批评。",
+                        "eng_sent": "The government is not taking such criticism lying down."
+                      }
+                    ]
+                  },
+                  "tran": "If someone <b>takes</b> an insult or attack <b>lying down</b>, they accept it without protesting. 心甘情愿地忍受"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "PHRASE",
+                    "pos_tips": "习语"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "他看上去累了，似乎这场辩论已使他筋疲力尽。",
+                        "eng_sent": "He looked tired, as if the argument had taken a lot out of him."
+                      }
+                    ]
+                  },
+                  "tran": "If something <b>takes a lot out of</b> you or <b>takes it out of</b> you, it requires a lot of energy or effort and makes you feel very tired and weak afterward. 使某人筋疲力尽"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "registr": "非正式",
+                  "loc": "美国英语",
+                  "pos_entry": {
+                    "pos": "PHRASE",
+                    "pos_tips": "习语"
+                  },
+                  "tran": "If someone tells you to <b>take five</b> or to <b>take ten</b>, they are telling you to have a five or ten minute break from what you are doing. 休息5分钟; 休息10分钟"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "registr": "非正式",
+                  "pos_entry": {
+                    "pos": "PHRASE",
+                    "pos_tips": "习语"
+                  },
+                  "exam_sents": {
+                    "sent": [
+                      {
+                        "chn_sent": "我也能说出受贿警察的名字。",
+                        "eng_sent": "I can also name cops who are on the take."
+                      }
+                    ]
+                  },
+                  "tran": "Someone who is <b>on the take</b> is receiving illegal income such as bribes. 受贿"
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "headword": "to be taken aback",
+                  "sees": {
+                    "see": [
+                      {
+                        "seeword": "aback"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "headword": "to take up arms",
+                  "sees": {
+                    "see": [
+                      {
+                        "seeword": "arm"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "headword": "to take the cake",
+                  "sees": {
+                    "see": [
+                      {
+                        "seeword": "cake"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "headword": "to take your hat off to someone",
+                  "sees": {
+                    "see": [
+                      {
+                        "seeword": "hat"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "headword": "to be taken for a ride",
+                  "sees": {
+                    "see": [
+                      {
+                        "seeword": "ride"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "headword": "to take someone by surprise",
+                  "sees": {
+                    "see": [
+                      {
+                        "seeword": "surprise"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "tran_entry": [
+                {
+                  "headword": "take my word for it",
+                  "sees": {
+                    "see": [
+                      {
+                        "seeword": "word"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "phonetic": "teɪk",
+        "basic_entries": {
+          "basic_entry": [
+            {
+              "headword": "take",
+              "wordforms": {
+                "wordform": [
+                  {
+                    "word": "taking"
+                  },
+                  {
+                    "word": "took"
+                  },
+                  {
+                    "word": "taken"
+                  },
+                  {
+                    "word": "takes"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "headword": "take",
+        "star": "5"
+      }
+    ]
+  },
+  "meta": {
+    "input": "take",
+    "guessLanguage": "eng",
+    "isHasSimpleDict": "1",
+    "le": "en",
+    "lang": "eng",
+    "dicts": [
+      "blng_sents_part",
+      "collins",
+      "meta",
+      "auth_sents_part",
+      "media_sents_part",
+      "simple",
+      "ec"
+    ]
+  },
+  "auth_sents_part": {
+    "sentence-count": 6,
+    "more": "auth_sents",
+    "sent": [
+      {
+        "score": 0.983147382736206,
+        "source": "BBC: <i>[an error occurred while processing this directive]</i>",
+        "url": "youdao",
+        "foreign": "The troops' mandate was to protect observers who would <b>take</b> notes on ceasefire violations. "
+      },
+      {
+        "score": 0.9831472635269165,
+        "source": "NPR: <i>James Taylor Gets Ready for Summer Tour</i>",
+        "url": "youdao",
+        "foreign": "My own <b>take</b> on it is that the music comes from a lot of different places. "
+      },
+      {
+        "score": 0.9831430912017822,
+        "source": "FORBES: <i>Hat Trick at High Lonesome</i>",
+        "url": "youdao",
+        "foreign": "We <b>take</b> off in pursuit, doing a fast hike straight up the steep ridge. "
+      }
+    ]
+  },
+  "le": "en",
+  "media_sents_part": {
+    "sentence-count": 6,
+    "more": "media_sents",
+    "query": "take",
+    "sent": [
+      {
+        "@mediatype": "audio",
+        "snippets": {
+          "snippet": [
+            {
+              "duration": "4600",
+              "name": "special.2009.08.10",
+              "source": "VOA"
+            }
+          ]
+        },
+        "eng": "\"I will <b>take</b> the children on an outing as well. I will <b>take</b> them to the zoo or to the park."
+      },
+      {
+        "@mediatype": "video",
+        "snippets": {
+          "snippet": [
+            {
+              "sourceUrl": "youdao",
+              "imageUrl": "http://dict.youdao.com/pureimage?docid=-2128381851617859060",
+              "name": "麻省理工公开课",
+              "source": "固态化学导论课程节选"
+            }
+          ]
+        },
+        "chn": "当然，如果你安排到11：00参加考试的话，请在11：00参加考试。<br>",
+        "eng": "And, by all means, if you are scheduled to attend class at 11:00, please <b>take</b> the test at 11:00.<br>"
+      },
+      {
+        "@mediatype": "video",
+        "snippets": {
+          "snippet": [
+            {
+              "sourceUrl": "youdao",
+              "imageUrl": "http://dict.youdao.com/pureimage?docid=-4939093924695827271",
+              "name": "写作课程比较难",
+              "source": "SpeakingMax英语口语达人"
+            }
+          ]
+        },
+        "chn": "但是今年我已经大四了，所以不想再那么忙了，就……好好地上课吧。<br>",
+        "eng": "But this year, it's my senior year, so I'm just trying to <b>take</b> it easy and... <b>take</b> my classes.<br>"
+      },
+      {
+        "@mediatype": "audio",
+        "snippets": {
+          "snippet": [
+            {
+              "duration": "10200",
+              "name": "special.2009.04.08",
+              "source": "VOA"
+            }
+          ]
+        },
+        "eng": "Studies have shown that the fewer medicines a person has to <b>take</b> the more likely he or she will <b>take</b> them."
+      },
+      {
+        "@mediatype": "audio",
+        "snippets": {
+          "snippet": [
+            {
+              "duration": "10700",
+              "name": "special.2009.12.12",
+              "source": "VOA"
+            }
+          ]
+        },
+        "eng": "The farmer who had promised to <b>take</b> care of the farm while her husband was away had been lazy and dishonest."
+      }
+    ]
+  },
+  "simple": {
+    "query": "take",
+    "word": [
+      {
+        "usphone": "teɪk",
+        "ukphone": "teɪk",
+        "return-phrase": "take"
+      }
+    ]
+  },
+  "lang": "eng",
+  "ec": {
+    "web_trans": [
+      "取",
+      "拿走",
+      "花费"
+    ],
+    "exam_type": [
+      "初中",
+      "高中",
+      "CET4",
+      "CET6",
+      "考研"
+    ],
+    "source": {
+      "name": "有道词典",
+      "url": "https://dict.youdao.com"
+    },
+    "word": {
+      "usphone": "teɪk",
+      "ukphone": "teɪk",
+      "trs": [
+        {
+          "pos": "v.",
+          "tran": "携带，拿走；带去，引领；使达到，提升；拿，取；移走，拿开；偷走，误拿；取材于，收集；攻占，控制；选中，买下；订阅（报纸等）；吃，服用；减去；记录，摘录；照相，摄影；量取，测定；就（座）；以…...为例；接受，收取；接纳，接待（顾客、患者等）；遭受，经受；忍受，容忍；（以某种方式）对待，处理；理解，考虑；误以为；赢得（比赛、竞赛等）；产生（感情），持有（看法）；采取（措施），采用（方法）；做，拥有；采用（形式），就任（职位）；花费，占用（时间）； 需要，要求；使用；穿（特定尺码的鞋或衣物）；容纳；授课；学习，选修（课程）；参加（考试或测验）；走（路线），乘坐（交通工具）；跨过，跳过；踢，掷；举行投票，进行民意调查；成功，奏效；（语法）需带有（某种结构）"
+        },
+        {
+          "pos": "n.",
+          "tran": "（一次拍摄的）镜头，场景；收入量；看法，态度；（印刷）一次排版量"
+        }
+      ],
+      "wfs": [
+        {
+          "wf": {
+            "name": "复数",
+            "value": "takes"
+          }
+        },
+        {
+          "wf": {
+            "name": "第三人称单数",
+            "value": "takes"
+          }
+        },
+        {
+          "wf": {
+            "name": "现在分词",
+            "value": "taking"
+          }
+        },
+        {
+          "wf": {
+            "name": "过去式",
+            "value": "took"
+          }
+        },
+        {
+          "wf": {
+            "name": "过去分词",
+            "value": "taken"
+          }
+        }
+      ],
+      "return-phrase": "take"
+    }
+  }
+}

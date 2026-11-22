@@ -1,7 +1,9 @@
 package query
 
 import (
+	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -25,21 +27,14 @@ var ydCliLegacy = &http.Client{Timeout: 5 * time.Second}
 var ydCli = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}, Timeout: 5 * time.Second}
 var youdaoLegacyBaseURL = "http://dict.youdao.com/w"
 
-func requestYoudao(r *model.Result) (body []byte, err error) {
-	return requestYoudaoWith(ydCliLegacy, youdaoLegacyBaseURL, r)
-}
-
-func requestYoudaoWith(cli *http.Client, baseURL string, r *model.Result) (body []byte, err error) {
-	var req *http.Request
-	// 查询词整体作为一个路径段，必须转义后再拼接：`%`、空格这类字符
-	// 直接塞进URL会让net/url解析失败（如`50%`+`%20`拼成非法转义`%%2`），
-	// 请求根本发不出去。见 issue #82。
+func requestYoudaoWith(ctx context.Context, cli *http.Client, baseURL string, r *model.Result) ([]byte, error) {
+	// Escape the entire query as one path segment to preserve characters such
+	// as percent signs and spaces (issue #82).
 	q := neturl.PathEscape(r.Query)
 	reqURL := fmt.Sprintf("%s/%s/#keyfrom=dict2.top", strings.TrimRight(baseURL, "/"), q)
-	req, err = http.NewRequest("GET", reqURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 	if err != nil {
-		zap.S().Errorf("Failed to create request: %s", err)
-		return
+		return nil, errors.New("youdao: invalid request URL")
 	}
 	if r.IsLongText {
 		req.Header.Set("Upgrade-Insecure-Requests", "1")
@@ -52,22 +47,25 @@ func requestYoudaoWith(cli *http.Client, baseURL string, r *model.Result) (body 
 
 	resp, err := cli.Do(req)
 	if err != nil {
-		zap.S().Infof("[http] Failed to do request: %s", err)
-		return
+		// The client's URL error includes the query in the request path.
+		if urlErr, ok := err.(*neturl.Error); ok {
+			err = urlErr.Err
+		}
+		return nil, fmt.Errorf("youdao: request failed: %w", err)
 	}
-
 	defer resp.Body.Close()
-	body, err = io.ReadAll(resp.Body)
-	if err != nil {
-		zap.S().Infof("[http] Failed to read response: %s", err)
-		return
-	}
-	zap.S().Debugf("[http-get] query '%s' Resp len: %d Status: %v", reqURL, len(body), resp.Status)
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("youdao returned %s", resp.Status)
+		return nil, fmt.Errorf("youdao: HTTP status %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("youdao: read response: %w", err)
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("youdao: request failed: %w", err)
 	}
 	if len(body) == 0 {
-		return nil, fmt.Errorf("youdao returned an empty response")
+		return nil, errors.New("youdao: empty response")
 	}
 	if config.Cfg.Debug {
 		htmlDir := filepath.Join(run.CACHE_ROOT_PATH, "html")
@@ -77,12 +75,12 @@ func requestYoudaoWith(cli *http.Client, baseURL string, r *model.Result) (body 
 			errW = os.WriteFile(htmlPath, body, 0666)
 		}
 		if errW == nil {
-			zap.S().Debugf("Saved '%s.html'", r.Query)
+			zap.S().Debug("Saved Youdao HTML response")
 		} else {
-			zap.S().Warnf("Failed to save html data for '%s': %s", r.Query, errW)
+			zap.S().Warn("Failed to save Youdao HTML response")
 		}
 	}
-	return
+	return body, nil
 }
 
 func parseHtml(resp string, r *model.Result) (err error) {
@@ -98,43 +96,113 @@ func parseCollinsStar(v string) (star int) {
 	return
 }
 
-// return html
-func FetchOnline(r *model.Result) (err error) {
-	body, err := requestYoudao(r)
+func FetchOnline(r *model.Result) error {
+	return fetchOnlineWith(r, onlineDeps{
+		legacy:  fetchLegacy,
+		jsonapi: fetchJSONAPI,
+		saveFound: func(r *model.Result) {
+			if r.IsLongText {
+				go cache.UpdateLongTextCache(r)
+			} else {
+				go cache.UpdateQueryCache(r)
+			}
+		},
+		saveNotFound: func(query string) {
+			go cache.AppendNotFound(query)
+		},
+		total: 8 * time.Second,
+	})
+}
+
+// fetchLegacy queries the legacy Youdao page.
+func fetchLegacy(ctx context.Context, r *model.Result) (fetchOutcome, error) {
+	return fetchLegacyWith(ctx, ydCliLegacy, youdaoLegacyBaseURL, r)
+}
+
+// fetchLegacyWith is fetchLegacy with a replaceable client and base URL.
+func fetchLegacyWith(ctx context.Context, cli *http.Client, baseURL string, r *model.Result) (fetchOutcome, error) {
+	body, err := requestYoudaoWith(ctx, cli, baseURL, r)
 	if err != nil {
-		zap.S().Infof("[http-youdao] Failed to request: %s", err)
-		return
+		return fetchUnknown, err
 	}
 
 	doc := soup.HTMLParse(string(body))
-	yr := YdResult{r, &doc}
-
+	if doc.Error != nil {
+		return fetchUnknown, fmt.Errorf("youdao: parse HTML: %w", doc.Error)
+	}
+	resetContent(r)
+	yr := YdResult{Result: r, Doc: &doc}
 	if r.IsLongText {
 		yr.parseMachineTrans()
 		if r.MachineTrans != "" {
-			r.Found = true
-			go cache.UpdateLongTextCache(r)
+			return fetchFound, nil
 		}
-		return
+	} else {
+		yr.parseParaphrase()
+		if !yr.isNotFound() {
+			yr.parseKeyword()
+			yr.parsePronounce()
+			yr.parseCollins()
+			yr.parseExamples()
+			return fetchFound, nil
+		}
 	}
 
-	yr.parseParaphrase()
-	if yr.isNotFound() {
-		go cache.AppendNotFound(r.Query)
-		return
+	if doc.FindStrict("", "id", "results-contents").Error == nil {
+		return fetchNotFound, nil
 	}
-
-	// XXX (k): <2024-01-02> long text?
-	yr.parseKeyword()
-	yr.parsePronounce()
-	yr.parseCollins()
-	yr.parseExamples()
-
-	r.Found = true
-	go cache.UpdateQueryCache(r)
-	return
+	return fetchUnknown, errors.New("youdao: unrecognized response without results-contents")
 }
 
 // func init() {
 // 	ydCli = pkg.CreateHTTPClient(5)
 // }
+
+func (r *YdResult) isNotFound() bool {
+	return len(r.Paraphrase) == 0
+}
+
+// fetchOnlineWith picks the preferred backend and retries the other one once.
+func fetchOnlineWith(r *model.Result, deps onlineDeps) error {
+	ctx, cancel := context.WithTimeout(context.Background(), deps.total)
+	defer cancel()
+
+	primary, fallback := deps.legacy, deps.jsonapi
+	fallbackName := "jsonapi_s"
+	if preferJSONAPI(r.Query) {
+		primary, fallback = fallback, primary
+		fallbackName = "youdao"
+	}
+
+	outcome, errPrimary := primary(ctx, r)
+	if outcome == fetchUnknown {
+		resetContent(r)
+		var errFallback error
+		outcome, errFallback = fallback(ctx, r)
+		if outcome == fetchUnknown {
+			resetContent(r)
+			r.Found = false
+			zap.S().Infof("%s fallback failed: %s", fallbackName, redactQuery(errFallback.Error(), r.Query))
+			return errPrimary
+		}
+	}
+
+	r.Found = outcome == fetchFound
+	if r.Found {
+		deps.saveFound(r)
+	} else if !r.IsLongText {
+		deps.saveNotFound(r.Query)
+	}
+	return nil
+}
+
+func redactQuery(message, query string) string {
+	if query == "" {
+		return message
+	}
+	return strings.NewReplacer(
+		neturl.PathEscape(query), "[redacted]",
+		neturl.QueryEscape(query), "[redacted]",
+		query, "[redacted]",
+	).Replace(message)
+}

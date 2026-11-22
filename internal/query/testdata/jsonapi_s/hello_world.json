@@ -1,0 +1,151 @@
+{
+  "blng_sents_part": {
+    "sentence-count": 30,
+    "sentence-pair": [
+      {
+        "sentence": "Figure 6 shows the Source TAB for the hello world sample page.",
+        "sentence-eng": "Figure 6 shows the Source TAB for the <b>hello</b> <b>world</b> sample page.",
+        "sentence-translation": "图6展示了hello world示例页面的Source附签。",
+        "url": "youdao"
+      },
+      {
+        "sentence": "Since the hello world example only has a single page, this file is empty here.",
+        "sentence-eng": "Since the <b>hello</b> <b>world</b> example only has a single page, this file is empty here.",
+        "sentence-translation": "因为hello world示例只有一个简单的页面，因此该文档是空的。",
+        "url": "youdao"
+      },
+      {
+        "sentence": "I'll begin with a \"hello world\" application that can be integrated into Tomcat.",
+        "sentence-eng": "I'll begin with a \"<b>hello</b> <b>world</b>\" application that can be integrated into Tomcat.",
+        "sentence-translation": "我将从可以集成到Tomcat的“hello world”应用程序开始。",
+        "url": "youdao"
+      }
+    ],
+    "more": "blng_sents"
+  },
+  "input": "hello world",
+  "meta": {
+    "input": "hello world",
+    "guessLanguage": "eng",
+    "isHasSimpleDict": "1",
+    "le": "en",
+    "lang": "eng",
+    "dicts": [
+      "blng_sents_part",
+      "meta",
+      "auth_sents_part",
+      "media_sents_part",
+      "simple",
+      "ec"
+    ]
+  },
+  "auth_sents_part": {
+    "sentence-count": 6,
+    "more": "auth_sents",
+    "sent": [
+      {
+        "score": 0.8271684050559998,
+        "source": "FORBES: <i>What Are Some Useful Technical Skills I Can Learn Within A Day?</i>",
+        "url": "youdao",
+        "foreign": "Get your eclipse installation fully pumped up: python dev tools, c dev tools, any other language you could ever write in, and make sure you can write a <b>hello</b> <b>world</b> successfully in each perspective. "
+      },
+      {
+        "score": 0.8651854991912842,
+        "source": "FORBES: <i>Hello World, Goodbye Society?</i>",
+        "url": "youdao",
+        "foreign": "But as we travel deeper into this new <b>world</b> of constant connectedness and ever-present technology, I wonder whether we are saying <b>hello</b> to the <b>world</b> or goodbye to society. "
+      },
+      {
+        "score": 0.9385254383087158,
+        "source": "FORBES: <i>R.I.P. Beastie Boys' Adam Yauch</i>",
+        "url": "youdao",
+        "foreign": "In <b>Hello</b> Nasty I found a secret little <b>world</b> of comfort and joy. "
+      }
+    ]
+  },
+  "le": "en",
+  "media_sents_part": {
+    "query": "hello world",
+    "sent": [
+      {
+        "@mediatype": "video",
+        "snippets": {
+          "snippet": [
+            {
+              "sourceUrl": "youdao",
+              "imageUrl": "http://dict.youdao.com/pureimage?docid=511196752199502203",
+              "name": "哈佛公开课",
+              "source": "计算机科学课程节选"
+            }
+          ]
+        },
+        "chn": "这堂课最后,如果我们只是看几个小程序，根本没啥用,还不如<b>hello</b>，<b>world</b>程序呢。<br>",
+        "eng": "So we looked at a number of fairly small programs that at the end of the day did very little more than print <b>hello </b><b>world</b> and the like.<br>"
+      },
+      {
+        "@mediatype": "video",
+        "snippets": {
+          "snippet": [
+            {
+              "sourceUrl": "youdao",
+              "imageUrl": "http://dict.youdao.com/pureimage?docid=-7413877831235127097",
+              "name": "哈佛公开课",
+              "source": "计算机科学课程节选"
+            }
+          ]
+        },
+        "chn": "不过一旦你们写了一个“<b>hello</b>，<b>world</b>“程序“,并且把它保存为<b>hello</b>，c文件后退出。<br>",
+        "eng": "But once you've written a program, \"<b>hello </b><b>world</b>,\" in a file called <b>hello</b>.c, you Save and Quit.<br>"
+      },
+      {
+        "@mediatype": "video",
+        "snippets": {
+          "snippet": [
+            {
+              "sourceUrl": "youdao",
+              "imageUrl": "http://dict.youdao.com/pureimage?docid=6552722828742065573",
+              "name": "哈佛公开课",
+              "source": "计算机科学课程节选"
+            }
+          ]
+        },
+        "chn": "这只是某种“<b>hello</b>，<b>world</b>“程序,即计算机界最简单的程序样例。<br>",
+        "eng": "It's sort of the canonical <b>hello </b><b>world</b> program as computer scientists call this very simple example.<br>"
+      }
+    ]
+  },
+  "simple": {
+    "query": "hello world",
+    "word": [
+      {
+        "return-phrase": "hello world"
+      }
+    ]
+  },
+  "lang": "eng",
+  "ec": {
+    "web_trans": [
+      "你好世界"
+    ],
+    "source": {
+      "name": "有道词典",
+      "url": "https://dict.youdao.com"
+    },
+    "word": {
+      "trs": [
+        {
+          "sentence": [
+            {
+              "enShow": "The programmer wrote a simple '<b>hello world</b>' program to test the new language.",
+              "en": "The programmer wrote a simple 'hello world' program to test the new language.",
+              "type": "双语例句-《精编例句》",
+              "zh": "程序员编写了一个简单的“你好，世界”程序来测试这种新语言。"
+            }
+          ],
+          "tran": "你好，世界：一个用于展示编程语言基本语法和结构的示例程序。"
+        }
+      ],
+      "return-phrase": "hello world"
+    }
+  }
+}

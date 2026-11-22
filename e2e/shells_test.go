@@ -34,6 +34,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode"
 	"unicode/utf16"
 
 	"github.com/Karmenzind/kd/internal/daemon"
@@ -335,6 +336,22 @@ func shellCases(t *testing.T, root string) []kdCase {
 			},
 		},
 		{
+			// The legacy page finds nothing for aren't; kd must reach it
+			// through jsonapi_s, and the quote must survive every shell.
+			name: "word with an apostrophe is found",
+			desc: "带撇号的词（aren't）能查到中文释义",
+			args: []string{"aren't"},
+			check: func(stdout, _ string) error {
+				if strings.Contains(stdout, "Not found") {
+					return errors.New(`stdout says "Not found"`)
+				}
+				if !strings.Contains(stdout, "aren't") || !strings.ContainsFunc(stdout, isHan) {
+					return errors.New("output lacks the word or a Chinese paraphrase")
+				}
+				return nil
+			},
+		},
+		{
 			name: "invalid config exits 1",
 			desc: "配置文件写错：报出出错的配置项，退出码 1",
 			args: []string{"abandon"},
@@ -599,3 +616,5 @@ func powerShell(name, path string) *shell {
 		pipe:   func(line string) string { return line + " | ForEach-Object { $_ }" },
 	}
 }
+
+func isHan(r rune) bool { return unicode.Is(unicode.Han, r) }

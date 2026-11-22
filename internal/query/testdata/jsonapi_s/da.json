@@ -1,0 +1,177 @@
+{
+  "blng_sents_part": {
+    "sentence-count": 30,
+    "sentence-pair": [
+      {
+        "sentence": "他下班后喜欢打几杆高尔夫球。",
+        "sentence-eng": "他下班后喜欢<b>打</b>几杆高尔夫球。",
+        "sentence-translation": "He liked to play a few holes after work.",
+        "source": "《牛津词典》",
+        "url": "https://《牛津词典》/"
+      },
+      {
+        "sentence": "爷爷教我打纸牌的情景我记忆犹新。",
+        "sentence-eng": "爷爷教我<b>打</b>纸牌的情景我记忆犹新。",
+        "sentence-translation": "I can still vividly remember my grandfather teaching me to play cards.",
+        "source": "《牛津词典》",
+        "url": "https://《牛津词典》/"
+      },
+      {
+        "sentence": "他风格高，同意那一分重打。",
+        "sentence-eng": "他风格高，同意那一分重<b>打</b>。",
+        "sentence-translation": "He sportingly agreed to play the point again.",
+        "source": "《牛津词典》",
+        "url": "https://《牛津词典》/"
+      }
+    ],
+    "more": "blng_sents",
+    "trs-classify": [
+      {
+        "proportion": "100%",
+        "tr": "全部"
+      },
+      {
+        "proportion": "36.3%",
+        "tr": "hit"
+      },
+      {
+        "proportion": "24.4%",
+        "tr": "beat"
+      },
+      {
+        "proportion": "22.1%",
+        "tr": "dozen"
+      },
+      {
+        "proportion": "13.0%",
+        "tr": "fight"
+      },
+      {
+        "proportion": "3.2%",
+        "tr": "strike"
+      },
+      {
+        "proportion": "0.4%",
+        "tr": "smack"
+      },
+      {
+        "proportion": "0.2%",
+        "tr": "thrash"
+      },
+      {
+        "proportion": "0.2%",
+        "tr": "knock"
+      },
+      {
+        "proportion": "0.2%",
+        "tr": "smite"
+      }
+    ]
+  },
+  "input": "打",
+  "ce": {
+    "source": {
+      "name": "有道词典",
+      "url": "https://dict.youdao.com"
+    },
+    "word": {
+      "trs": [
+        {
+          "#text": "hit",
+          "#tran": "打，击；撞击，碰撞；击中，命中；击（球）；产生不良影响，危害；攻击，袭击；达到（一个特定的水平，阶段，数字）；碰到，遇到（困难、问题等）；使（某人）突然意识到；使（突然）闻到，使看到；按，摁；<非正式>给（人）一剂毒品（或烈酒）；<非正式>（产品）面市并产生影响；<非正式>给（21点纸牌游戏玩家）发另一张纸牌；打击；命中，击中；很受欢迎的人（或事物），成功；（对网站的）访问，点击；<非正式>毒品的一剂；<美，非正式>暴力犯罪，凶杀；很受欢迎的人（或事物）；"
+        },
+        {
+          "#text": "fight",
+          "#tran": "与……作斗争，坚决反对；努力争取，为……而斗争；打仗，作战；打架；争吵，争论；参加拳击赛；打官司，进行（诉讼，辩护等）；努力抑制（情感）；斗争；打斗，打架；争吵，争论；拳击比赛；战斗；斗志；"
+        },
+        {
+          "#text": "strike",
+          "#tran": "击，撞；（用手或武器等）打；罢工；突然想到，突然意识到；突击，袭击，进攻；（疾病、灾难等）侵袭；让（某人）觉得；引起（强烈感情）；达成，达到；行进；（时钟）敲响；发现（黄金，矿物，石油）；铸造，冲制；删除；踢球，击球；使处于特定状态；摆出（姿态）；照在……上；弹奏，奏出；划（火柴）, 击出（火星）；拆除（帐篷、帆等）；生根，附着；（渔）急拉钓线把鱼钩住；来到；罢工，罢市，罢课；袭击，攻击；击，踢；（石油等宝贵资源的）发现；（投出的）好球；（棒球中的）击空；（十柱保龄球）一投全倒；不利因素；拒绝，抗拒；（地层、断层等地质特征的）走向；【名】 （Strike）（美、俄、秘）斯特赖克（人名）；"
+        },
+        {
+          "#text": "dozen",
+          "#tran": "一打，十二个；大量，许多；十多个；"
+        }
+      ],
+      "phone": "dá,dǎ",
+      "return-phrase": "打"
+    }
+  },
+  "meta": {
+    "input": "打",
+    "guessLanguage": "zh",
+    "isHasSimpleDict": "1",
+    "le": "en",
+    "lang": "eng",
+    "dicts": [
+      "blng_sents_part",
+      "ce",
+      "meta",
+      "media_sents_part",
+      "simple"
+    ]
+  },
+  "le": "en",
+  "media_sents_part": {
+    "sentence-count": 6,
+    "more": "media_sents",
+    "query": "打",
+    "sent": [
+      {
+        "@mediatype": "video",
+        "snippets": {
+          "snippet": [
+            {
+              "sourceUrl": "youdao",
+              "imageUrl": "http://dict.youdao.com/pureimage?docid=6944887442542312866",
+              "name": "普林斯顿公开课",
+              "source": "人性课程节选"
+            }
+          ]
+        },
+        "chn": "很简单，他就已经,开始<b>打</b>网球生涯中最好的表现，仅仅是记起了比赛的真正含义。<br>",
+        "eng": "That's simple, and he just started playing the best tennis of his life, just remembering what it's been like for him.<br>"
+      },
+      {
+        "@mediatype": "video",
+        "snippets": {
+          "snippet": [
+            {
+              "sourceUrl": "youdao",
+              "imageUrl": "http://dict.youdao.com/pureimage?docid=3256111811238252064",
+              "name": "最美丽的公园",
+              "source": "SpeakingMax英语口语达人"
+            }
+          ]
+        },
+        "chn": "我过去常来这里<b>打</b>网球，我的朋友会带孩子去游泳池。在这儿可以做的事情太多了。<br>",
+        "eng": "and I used to play tennis here, and my friends take kids to the pool. There's so much to do here.<br>"
+      },
+      {
+        "@mediatype": "video",
+        "snippets": {
+          "snippet": [
+            {
+              "sourceUrl": "youdao",
+              "imageUrl": "http://dict.youdao.com/pureimage?docid=-2091298201347678445",
+              "name": "斯坦福公开课",
+              "source": "微软CEO-Steve.Ballmer谈科技的未来课程节选"
+            }
+          ]
+        },
+        "chn": "我能够摸它，却不能控制它，它不可能认识我，还说“别<b>打</b>我了史蒂夫“<br>",
+        "eng": "I can touch it, I'm not controlling it, it doesn't recognize me and say, \"Hey Steve, stop beating on me.\"<br>"
+      }
+    ]
+  },
+  "simple": {
+    "query": "打",
+    "word": [
+      {
+        "phone": "dá,dǎ",
+        "return-phrase": "打"
+      }
+    ]
+  },
+  "lang": "eng"
+}

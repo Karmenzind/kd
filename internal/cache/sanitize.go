@@ -4,11 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Karmenzind/kd/internal/model"
+	"github.com/Karmenzind/kd/pkg"
 	"go.uber.org/zap"
 )
 
@@ -16,7 +21,9 @@ import (
 // daemon会据此重新扫描一遍词库。
 // v2: 换行折成空格而非直接删除，避免`young\nsheep`被粘成`youngsheep`
 // v3: 丢弃没有原句的例句条目，它们会渲染成空行（issue #85）
-const sanitizeVersion = 3
+// v4: 删除查询含`'`或`&`的词库、查不到名单和长文本缓存条目。旧网页把它们查错
+// （aren't查不到，at&t查成at），删掉后下次查询会改走jsonapi_s重新获取
+const sanitizeVersion = 4
 
 const sanitizeVersionKey = "sanitize_version"
 
@@ -55,6 +62,12 @@ func SanitizeLegacyRows(ctx context.Context) (report SanitizeReport, err error) 
 	}
 
 	zap.S().Infof("Start sanitizing cached rows (version %d)", sanitizeVersion)
+	purged, err := purgeMisescapedQueries(ctx)
+	report.Cleaned += purged
+	if err != nil {
+		return report, err
+	}
+
 	for _, table := range []string{"en", "ch"} {
 		tableReport, tableErr := sanitizeTable(ctx, table)
 		report.Scanned += tableReport.Scanned
@@ -231,4 +244,118 @@ func applySanitized(ctx context.Context, table string, rows []sanitizedRow) (int
 		return 0, err
 	}
 	return applied, nil
+}
+
+// misescaped 判断查询是否含旧网页会转义两次的字符
+func misescaped(query string) bool {
+	return strings.ContainsAny(query, "'&")
+}
+
+// purgeMisescapedQueries 删除查询含`'`或`&`的缓存（sanitizeVersion v4），
+// 返回删除的条数。可以重复执行：再跑一遍不会删掉别的内容。
+func purgeMisescapedQueries(ctx context.Context) (int, error) {
+	removed := 0
+	for _, table := range []string{"en", "ch"} {
+		result, err := LiteDB.ExecContext(ctx,
+			fmt.Sprintf("DELETE FROM %s WHERE instr(query, ?) > 0 OR instr(query, ?) > 0", table), "'", "&")
+		if err != nil {
+			zap.S().Warnf("Failed to purge misescaped rows of %s: %s", table, err)
+			return removed, err
+		}
+		affected, err := result.RowsAffected()
+		if err != nil {
+			return removed, err
+		}
+		removed += int(affected)
+	}
+
+	n, err := purgeMisescapedNotFound()
+	removed += n
+	if err != nil {
+		zap.S().Warnf("Failed to purge the not-found list: %s", err)
+		return removed, err
+	}
+
+	n, err = purgeMisescapedLongText()
+	removed += n
+	if err != nil {
+		zap.S().Warnf("Failed to purge the long-text cache: %s", err)
+		return removed, err
+	}
+	return removed, nil
+}
+
+// purgeMisescapedNotFound 从查不到名单里删掉匹配的行，整体替换文件
+func purgeMisescapedNotFound() (int, error) {
+	p := getNotFoundFilePath()
+	body, err := os.ReadFile(p)
+	if errors.Is(err, os.ErrNotExist) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+
+	var kept strings.Builder
+	removed := 0
+	for _, line := range strings.Split(string(body), "\n") {
+		if line == "" {
+			continue
+		}
+		if misescaped(line) {
+			removed++
+			continue
+		}
+		kept.WriteString(line)
+		kept.WriteByte('\n')
+	}
+	if removed == 0 {
+		return 0, nil
+	}
+	return removed, replaceFile(p, []byte(kept.String()))
+}
+
+// purgeMisescapedLongText 从长文本缓存里删掉匹配的条目
+func purgeMisescapedLongText() (int, error) {
+	longTextCacheMu.Lock()
+	defer longTextCacheMu.Unlock()
+
+	if !pkg.IsPathExists(LONG_TEXT_CACHE_FILE) {
+		return 0, nil
+	}
+	m, err := loadLongTextCache(LONG_TEXT_CACHE_FILE)
+	if err != nil {
+		return 0, err
+	}
+	removed := 0
+	for query := range m {
+		if misescaped(query) {
+			delete(m, query)
+			removed++
+		}
+	}
+	if removed == 0 {
+		return 0, nil
+	}
+	return removed, saveLongTextCache(LONG_TEXT_CACHE_FILE, m)
+}
+
+// replaceFile 先写临时文件再改名，避免读者看到写了一半的文件
+func replaceFile(path string, body []byte) (err error) {
+	temp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+"-*.tmp")
+	if err != nil {
+		return err
+	}
+	tempPath := temp.Name()
+	defer func() {
+		temp.Close()
+		os.Remove(tempPath)
+	}()
+	if _, err = temp.Write(body); err != nil {
+		return err
+	}
+	if err = temp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tempPath, path)
 }

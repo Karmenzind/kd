@@ -1,0 +1,188 @@
+{
+  "blng_sents_part": {
+    "sentence-count": 27,
+    "sentence-pair": [
+      {
+        "sentence": "NASA found that certain plants could remove chemicals from the air, and even today, garden centers recommend the plants for air-cleaning properties.",
+        "sentence-eng": "<b>NASA</b> found that certain plants could remove chemicals from the air, and even today, garden centers recommend the plants for air-cleaning properties.",
+        "sentence-translation": "美国国家航空航天局发现某些植物可以去除空气中的化学物质，即使在今天，园艺中心也因这些植物的空气净化特性而推荐它们。",
+        "url": "youdao"
+      },
+      {
+        "sentence": "Companies like SpaceX could help NASA and its partners when it comes to resupplying the ISS, as it suggests it can reduce launch costs by two-thirds.",
+        "sentence-eng": "Companies like SpaceX could help <b>NASA</b> and its partners when it comes to resupplying the ISS, as it suggests it can reduce launch costs by two-thirds.",
+        "sentence-translation": "在为国际空间站提供补给方面，像 SpaceX 这样的公司可以帮到 NASA 及其合作伙伴，因为该公司表示这样可以将发射成本降低三分之二。",
+        "url": "youdao"
+      },
+      {
+        "sentence": "Since NASA published a paper in 1989 claiming that houseplants can soak up pollution and toxic chemicals, businesses and homeowners have increasingly invested in greenery to help clean their air.",
+        "sentence-eng": "Since <b>NASA</b> published a paper in 1989 claiming that houseplants can soak up pollution and toxic chemicals, businesses and homeowners have increasingly invested in greenery to help clean their air.",
+        "sentence-translation": "自从1989年美国国家航空航天局发表论文声称室内植物可以吸收污染物和有毒化学物质以来，企业和房主越来越多地投资绿植以帮助净化空气。",
+        "url": "youdao"
+      }
+    ],
+    "more": "blng_sents",
+    "trs-classify": [
+      {
+        "proportion": "100%",
+        "tr": "全部"
+      },
+      {
+        "proportion": "100.0%",
+        "tr": "美国宇航局"
+      }
+    ]
+  },
+  "input": "NASA",
+  "collins": {
+    "collins_entries": [
+      {
+        "entries": {
+          "entry": [
+            {
+              "tran_entry": [
+                {
+                  "pos_entry": {
+                    "pos": "N-PROPER",
+                    "pos_tips": "专有名词"
+                  },
+                  "tran": "<b>NASA</b> is a U.S. government organization concerned with spacecraft and space travel. <b>NASA</b> is an abbreviation for \"National Aeronautics and Space Administration.\" 美国国家航空航天局"
+                }
+              ]
+            }
+          ]
+        },
+        "phonetic": "ˈnæsə",
+        "basic_entries": {
+          "basic_entry": [
+            {
+              "headword": "NASA"
+            }
+          ]
+        },
+        "headword": "NASA",
+        "star": "2"
+      }
+    ]
+  },
+  "meta": {
+    "input": "NASA",
+    "guessLanguage": "eng",
+    "isHasSimpleDict": "1",
+    "le": "en",
+    "lang": "eng",
+    "dicts": [
+      "blng_sents_part",
+      "collins",
+      "meta",
+      "auth_sents_part",
+      "media_sents_part",
+      "simple",
+      "ec"
+    ]
+  },
+  "auth_sents_part": {
+    "sentence-count": 6,
+    "more": "auth_sents",
+    "sent": [
+      {
+        "score": 0.9681358933448792,
+        "source": "CNN: <i>Rare supermoon eclipse comes Sunday</i>",
+        "url": "youdao",
+        "foreign": "Sunday's supermoon will technically be a perigee full moon, the closest full moon of the year, <b>NASA</b> says. "
+      },
+      {
+        "score": 0.9637621641159058,
+        "source": "BBC: <i>Obama names US space agency chief</i>",
+        "url": "youdao",
+        "foreign": "This month, the White House ordered a sweeping independent review of Nasa's manned spaceflight strategy. "
+      },
+      {
+        "score": 0.9637531638145447,
+        "source": "NPR: <i>Challenger: Reporting a Disaster's Cold, Hard Facts</i>",
+        "url": "youdao",
+        "foreign": "That engineer told me something that would later become symbolic of NASA's Challenger failures. "
+      }
+    ]
+  },
+  "le": "en",
+  "media_sents_part": {
+    "sentence-count": 6,
+    "more": "media_sents",
+    "query": "NASA",
+    "sent": [
+      {
+        "@mediatype": "audio",
+        "snippets": {
+          "snippet": [
+            {
+              "duration": "9800",
+              "name": "special.2009.12.30",
+              "source": "VOA"
+            }
+          ]
+        },
+        "eng": "<b>NASA</b> plans to send the Mars Science Laboratory to the red planet in the autumn of two thousand eleven."
+      },
+      {
+        "@mediatype": "audio",
+        "snippets": {
+          "snippet": [
+            {
+              "duration": "13200",
+              "name": "special.2009.12.30",
+              "source": "VOA"
+            }
+          ]
+        },
+        "eng": "In September, <b>NASA</b> scientists had announced the discovery of water molecules mainly in the moon's extreme northern and southern areas."
+      },
+      {
+        "@mediatype": "audio",
+        "snippets": {
+          "snippet": [
+            {
+              "duration": "10000",
+              "name": "special.2009.09.30",
+              "source": "VOA"
+            }
+          ]
+        },
+        "eng": "The <b>NASA</b> team still is not sure how much of what they have found is water and how much is hydroxyl."
+      }
+    ]
+  },
+  "simple": {
+    "query": "NASA",
+    "word": [
+      {
+        "usphone": "ˈnæsə",
+        "ukphone": "ˈnæsə",
+        "return-phrase": "NASA"
+      }
+    ]
+  },
+  "lang": "eng",
+  "ec": {
+    "web_trans": [
+      "美国国家航空航天局(National Aeronautics And Space Administration)",
+      "美国宇航局(National Aeronautics And Space Administration)",
+      "美国航空航天局(National Aeronautics And Space Administration)"
+    ],
+    "source": {
+      "name": "有道词典",
+      "url": "https://dict.youdao.com"
+    },
+    "word": {
+      "usphone": "ˈnæsə",
+      "ukphone": "ˈnæsə",
+      "trs": [
+        {
+          "pos": "abbr.",
+          "tran": "美国国家航空和宇宙航行局（National Aeronautics and Space Administration）"
+        }
+      ],
+      "return-phrase": "NASA"
+    }
+  }
+}
