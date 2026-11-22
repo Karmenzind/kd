@@ -217,3 +217,76 @@ func TestConfigPathFor(t *testing.T) {
 		})
 	}
 }
+
+func TestDisplayConfig(t *testing.T) {
+	originalPath := CONFIG_PATH
+	originalCfg := Cfg
+	t.Cleanup(func() {
+		CONFIG_PATH = originalPath
+		Cfg = originalCfg
+	})
+	allShown := DisplayConfig{
+		Title: true, Pronunciation: true, Paraphrase: true, Star: true,
+		Rank: true, Pattern: true, Collins: true, Examples: true,
+	}
+	partial := allShown
+	partial.Rank, partial.Examples = false, false
+
+	tests := []struct {
+		name    string
+		content string
+		want    DisplayConfig
+	}{
+		{"config without display table", "theme = \"temp\"\n", allShown},
+		{"empty display table", "[display]\n", allShown},
+		{"partial display table", "[display]\nrank = false\nexamples = false\n", partial},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			CONFIG_PATH = filepath.Join(t.TempDir(), "kd.toml")
+			if err := os.WriteFile(CONFIG_PATH, []byte(tt.content), 0o600); err != nil {
+				t.Fatalf("WriteFile() error = %v", err)
+			}
+			Cfg = Config{}
+			if err := parseConfig(); err != nil {
+				t.Fatalf("parseConfig() error = %v", err)
+			}
+			if Cfg.Display != tt.want {
+				t.Fatalf("Display = %+v, want %+v", Cfg.Display, tt.want)
+			}
+		})
+	}
+
+	t.Run("missing config file", func(t *testing.T) {
+		CONFIG_PATH = filepath.Join(t.TempDir(), "missing.toml")
+		Cfg = Config{}
+		if err := parseConfig(); err != nil {
+			t.Fatalf("parseConfig() error = %v", err)
+		}
+		if Cfg.Display != allShown {
+			t.Fatalf("Display = %+v, want all shown", Cfg.Display)
+		}
+	})
+
+	t.Run("generated config round trip", func(t *testing.T) {
+		Cfg = Config{Theme: "temp", Display: partial}
+		generated, err := GenerateDefaultConfig()
+		if err != nil {
+			t.Fatalf("GenerateDefaultConfig() error = %v", err)
+		}
+		if !strings.Contains(generated, "[display]") || !strings.Contains(generated, "rank = false") {
+			t.Fatalf("generated config is missing the display table:\n%s", generated)
+		}
+		CONFIG_PATH = filepath.Join(t.TempDir(), "generated.toml")
+		if err := os.WriteFile(CONFIG_PATH, []byte(generated), 0o600); err != nil {
+			t.Fatalf("WriteFile() error = %v", err)
+		}
+		Cfg = Config{}
+		if err := parseConfig(); err != nil {
+			t.Fatalf("parseConfig() error = %v\n%s", err, generated)
+		}
+		if Cfg.Display != partial {
+			t.Fatalf("round-tripped Display = %+v, want %+v", Cfg.Display, partial)
+		}
+	})
+}

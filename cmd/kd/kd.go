@@ -571,7 +571,7 @@ func runCLI() error {
 							brief = false
 						}
 						progress.Update(ui.State{Query: r.Query, Phase: ui.PhaseFormatting})
-						formatted = query.PrettyFormat(r, cfg.EnglishOnly, brief)
+						formatted = query.PrettyFormat(r, cfg.EnglishOnly, brief, cfg.Display)
 					}
 					progress.Stop()
 

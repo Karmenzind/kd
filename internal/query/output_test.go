@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Karmenzind/kd/config"
 	"github.com/Karmenzind/kd/internal/model"
 	d "github.com/Karmenzind/kd/pkg/decorate"
 	fc "github.com/fatih/color"
@@ -57,7 +58,7 @@ func TestPrettyFormatStableSemantics(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := PrettyFormat(tt.result, tt.onlyEN, tt.brief)
+			got := PrettyFormat(tt.result, tt.onlyEN, tt.brief, showAll)
 			for _, want := range tt.contains {
 				if !strings.Contains(got, want) {
 					t.Fatalf("PrettyFormat() = %q, missing %q", got, want)
@@ -83,7 +84,7 @@ func TestPrettyFormatStableSemantics(t *testing.T) {
 func TestPrettyFormatUsesPreformattedOutput(t *testing.T) {
 	d.ApplyTheme("temp")
 	r := &model.Result{BaseResult: &model.BaseResult{Query: "ignored", Output: "cached output"}}
-	if got := PrettyFormat(r, false, false); got != "cached output" {
+	if got := PrettyFormat(r, false, false, showAll); got != "cached output" {
 		t.Fatalf("PrettyFormat() = %q, want cached output", got)
 	}
 }
@@ -120,7 +121,7 @@ func TestPrettyFormatLegacyParaphrase(t *testing.T) {
 		},
 	}
 
-	got := PrettyFormat(r, false, true)
+	got := PrettyFormat(r, false, true, showAll)
 	lines := strings.Split(got, "\n")
 	want := []string{"lamb", "n.", "   小羊；羔羊", "   小羊肉；羔羊肉", "短语:", "   in lamb", "   怀着羔羊"}
 	if len(lines) != len(want) {
@@ -152,7 +153,7 @@ func paraphraseLine(t *testing.T, query string, paraphrase string) string {
 		Keyword:    query,
 		Paraphrase: []string{paraphrase},
 	}
-	lines := strings.Split(PrettyFormat(r, false, true), "\n")
+	lines := strings.Split(PrettyFormat(r, false, true, showAll), "\n")
 	if len(lines) != 2 {
 		t.Fatalf("PrettyFormat(%q) = %q, want a title line and a single paraphrase line", query, lines)
 	}
@@ -258,7 +259,7 @@ func TestPrettyFormatPhraseParaphraseModes(t *testing.T) {
 				Keyword:    "pay attention",
 				Paraphrase: []string{paraphrase},
 			}
-			got := PrettyFormat(r, tt.onlyEN, tt.brief)
+			got := PrettyFormat(r, tt.onlyEN, tt.brief, showAll)
 			if !strings.Contains(got, d.Para(paraphrase)) {
 				t.Fatalf("PrettyFormat(onlyEN=%v, brief=%v) = %q, want it to contain %q",
 					tt.onlyEN, tt.brief, got, d.Para(paraphrase))
@@ -325,7 +326,7 @@ func TestPrettyFormatFallsBackToOtherExampleTabs(t *testing.T) {
 				Paraphrase: []string{"n. 现在时"},
 				Examples:   tt.examples,
 			}
-			got := PrettyFormat(r, false, false)
+			got := PrettyFormat(r, false, false, showAll)
 			if !strings.Contains(got, tt.want) {
 				t.Fatalf("PrettyFormat() = %q, want it to contain %q", got, tt.want)
 			}
@@ -349,7 +350,7 @@ func TestPrettyFormatRendersMixedBilingualExamples(t *testing.T) {
 		}},
 	}
 
-	lines := strings.Split(PrettyFormat(r, false, false), "\n")
+	lines := strings.Split(PrettyFormat(r, false, false, showAll), "\n")
 	var recoveredLine string
 	for _, line := range lines {
 		if strings.Contains(line, recovered) {
@@ -361,5 +362,141 @@ func TestPrettyFormatRendersMixedBilingualExamples(t *testing.T) {
 	}
 	if want := fmt.Sprintf("%s %s", d.EgPref("≫  "), d.EgEn(recovered)); recoveredLine != want {
 		t.Fatalf("recovered example line = %q, want %q", recoveredLine, want)
+	}
+}
+
+var showAll = config.DisplayConfig{
+	Title: true, Pronunciation: true, Paraphrase: true, Star: true,
+	Rank: true, Pattern: true, Collins: true, Examples: true,
+}
+
+// collinsWord has every part the formatter can render for an English word.
+// The bilingual example must stay hidden because Collins items exist.
+func collinsWord() *model.Result {
+	r := &model.Result{
+		BaseResult: &model.BaseResult{Query: "abandon", IsEN: true, Found: true},
+		Keyword:    "abandon",
+		Pronounce:  map[string]string{"英": "əˈbændən"},
+		Paraphrase: []string{"vt. 放弃；抛弃"},
+		Examples:   map[string][][]string{"bi": {{"Never abandon hope.", "永远不要放弃希望。"}}},
+	}
+	r.Collins.Star = 3
+	r.Collins.ViaRank = "CET4 TEM4"
+	r.Collins.AdditionalPattern = "abandoning,abandoned,abandons"
+	r.Collins.Items = []*model.CollinsItem{{
+		Additional:   "VERB",
+		MajorTrans:   "If you abandon a place, you leave it.",
+		ExampleLists: [][]string{{"He abandoned his car.", "他丢下了他的车。"}},
+	}}
+	return r
+}
+
+// exampleWord has no Collins items, so the example block is rendered.
+func exampleWord() *model.Result {
+	return &model.Result{
+		BaseResult: &model.BaseResult{Query: "abandon", IsEN: true, Found: true},
+		Keyword:    "abandon",
+		Paraphrase: []string{"vt. 放弃；抛弃"},
+		Examples:   map[string][][]string{"bi": {{"Never abandon hope.", "永远不要放弃希望。"}}},
+	}
+}
+
+func TestPrettyFormatDisplayConfig(t *testing.T) {
+	originalNoColor := fc.NoColor
+	fc.NoColor = true
+	t.Cleanup(func() { fc.NoColor = originalNoColor })
+	d.ApplyTheme("temp")
+
+	divider := strings.Repeat("⸺", cutoffLength())
+	egPref := d.EgPref("≫  ")
+	collinsEg := fmt.Sprintf("   %s %s", egPref, "He abandoned his car.  他丢下了他的车。")
+	collinsDefault := []string{
+		"abandon    [英 əˈbændən]",
+		"vt. 放弃；抛弃",
+		"★★★ CET4 TEM4 abandoning,abandoned,abandons",
+		divider,
+		"1. (VERB) If you abandon a place, you leave it.",
+		collinsEg,
+	}
+	exampleDefault := []string{
+		"abandon",
+		"vt. 放弃；抛弃",
+		divider,
+		egPref + " Never abandon hope. 永远不要放弃希望。",
+	}
+
+	tests := []struct {
+		name   string
+		result func() *model.Result
+		hide   func(*config.DisplayConfig)
+		want   []string
+	}{
+		{"collins default", collinsWord, func(*config.DisplayConfig) {}, collinsDefault},
+		{"no title", collinsWord, func(c *config.DisplayConfig) { c.Title = false },
+			append([]string{"[英 əˈbændən]"}, collinsDefault[1:]...)},
+		{"no pronunciation", collinsWord, func(c *config.DisplayConfig) { c.Pronunciation = false },
+			append([]string{"abandon"}, collinsDefault[1:]...)},
+		{"no header line at all", collinsWord, func(c *config.DisplayConfig) { c.Title, c.Pronunciation = false, false },
+			collinsDefault[1:]},
+		{"no paraphrase", collinsWord, func(c *config.DisplayConfig) { c.Paraphrase = false },
+			append([]string{collinsDefault[0]}, collinsDefault[2:]...)},
+		{"no star", collinsWord, func(c *config.DisplayConfig) { c.Star = false },
+			replaceLine(collinsDefault, 2, "CET4 TEM4 abandoning,abandoned,abandons")},
+		{"no rank", collinsWord, func(c *config.DisplayConfig) { c.Rank = false },
+			replaceLine(collinsDefault, 2, "★★★ abandoning,abandoned,abandons")},
+		{"no pattern", collinsWord, func(c *config.DisplayConfig) { c.Pattern = false },
+			replaceLine(collinsDefault, 2, "★★★ CET4 TEM4")},
+		{"no rank line at all", collinsWord, func(c *config.DisplayConfig) { c.Star, c.Rank, c.Pattern = false, false, false },
+			append(append([]string{}, collinsDefault[:2]...), collinsDefault[3:]...)},
+		{"no collins does not bring in the example block", collinsWord, func(c *config.DisplayConfig) { c.Collins = false },
+			collinsDefault[:3]},
+		{"no examples keeps collins definitions", collinsWord, func(c *config.DisplayConfig) { c.Examples = false },
+			collinsDefault[:5]},
+		{"example block default", exampleWord, func(*config.DisplayConfig) {}, exampleDefault},
+		{"no examples hides the example block", exampleWord, func(c *config.DisplayConfig) { c.Examples = false },
+			exampleDefault[:2]},
+		{"no collins keeps the example block", exampleWord, func(c *config.DisplayConfig) { c.Collins = false },
+			exampleDefault},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			show := showAll
+			tt.hide(&show)
+			got := strings.Split(PrettyFormat(tt.result(), false, false, show), "\n")
+			if strings.Join(got, "\n") != strings.Join(tt.want, "\n") {
+				t.Fatalf("PrettyFormat() lines =\n%q\nwant\n%q", got, tt.want)
+			}
+		})
+	}
+}
+
+func replaceLine(lines []string, index int, line string) []string {
+	out := append([]string{}, lines...)
+	out[index] = line
+	return out
+}
+
+func TestPrettyFormatDisplayConfigWithBriefAndLongText(t *testing.T) {
+	originalNoColor := fc.NoColor
+	fc.NoColor = true
+	t.Cleanup(func() { fc.NoColor = originalNoColor })
+	d.ApplyTheme("temp")
+
+	// brief still cuts everything after the paraphrase even when shown in config
+	if got := PrettyFormat(collinsWord(), false, true, showAll); got != "abandon    [英 əˈbændən]\nvt. 放弃；抛弃" {
+		t.Fatalf("brief PrettyFormat() = %q", got)
+	}
+
+	// english_only still hides the Chinese paraphrase of an English word
+	if got := PrettyFormat(exampleWord(), true, true, showAll); got != "abandon" {
+		t.Fatalf("english-only PrettyFormat() = %q", got)
+	}
+
+	show := showAll
+	show.Title = false
+	long := &model.Result{BaseResult: &model.BaseResult{Query: "Hello 世界", IsLongText: true, MachineTrans: "你好，世界"}}
+	if got := PrettyFormat(long, false, false, show); got != "你好，世界" {
+		t.Fatalf("long text without title = %q, want only the translation", got)
 	}
 }

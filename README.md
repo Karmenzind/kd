@@ -254,6 +254,26 @@ enable_emoji = true
 # 是否开启频率提醒：本月第X次查询xxx
 freq_alert = false
 
+# 查词结果中各部分是否显示，默认全部显示；隐藏某一部分不影响其他部分
+# brief和english_only照常生效：某部分要两边都允许才会显示
+[display]
+  # 标题（查询的单词）
+  title = true
+  # 音标
+  pronunciation = true
+  # 释义（英译中为中文释义，中译英为英文译文）
+  paraphrase = true
+  # 柯林斯星级，如★★★
+  star = true
+  # 考试等级标签，如CET4 TEM4
+  rank = true
+  # 词形变化，如abandoning,abandoned,abandons
+  pattern = true
+  # 柯林斯英英释义
+  collins = true
+  # 例句（柯林斯释义下的例句，以及没有柯林斯释义时显示的例句）
+  examples = true
+
 # 日志配置
 [logging]
   # 开启日志记录（程序异常时会记录关键信息，不建议关闭）
@@ -374,7 +394,6 @@ sudo xattr -r -d com.apple.quarantine <kd文件所在路径>
 **长期**
 
 - 增加多种主题，包含常见配色如Gruvbox/Molokai，仿照bat实现
-- 支持全模块自定义显示配置
 - 引入多种查询源和词库，如stardict、bing等
 - 增加远程服务端
 - 支持通过fzf补全

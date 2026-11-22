@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/Karmenzind/kd/config"
 	"github.com/Karmenzind/kd/internal/model"
 	"github.com/Karmenzind/kd/internal/run"
 	d "github.com/Karmenzind/kd/pkg/decorate"
@@ -19,7 +20,10 @@ var propertyPat = regexp.MustCompile(`^(?:[a-zA-Z]+\.(?:[,&/][a-zA-Z]+\.)*[,&/]?
 
 var nationMap = map[string]string{"英": "EN", "美": "US"}
 
-func PrettyFormat(r *model.Result, onlyEN bool, brief bool) string {
+// PrettyFormat renders a result. show hides individual parts; brief and onlyEN
+// still apply on top of it, so a part is rendered only when all of them allow it.
+// Hiding a part never changes how the remaining parts are rendered.
+func PrettyFormat(r *model.Result, onlyEN bool, brief bool, show config.DisplayConfig) string {
 	egPref := d.EgPref("≫  ")
 	if r.Output != "" {
 		return r.Output
@@ -33,8 +37,10 @@ func PrettyFormat(r *model.Result, onlyEN bool, brief bool) string {
 		title = r.Keyword
 	}
 
-	header := d.Title(title)
-	// s = append(s, d.Title(title))
+	headerParts := []string{}
+	if show.Title {
+		headerParts = append(headerParts, d.Title(title))
+	}
 
 	pronStr := ""
 	for nation, v := range r.Pronounce {
@@ -47,11 +53,12 @@ func PrettyFormat(r *model.Result, onlyEN bool, brief bool) string {
 		v = strings.Trim(v, "[]")
 		pronStr += fmt.Sprintf("%s %s / ", nation, v)
 	}
-	if pronStr != "" {
-		pronStr = d.Pron(fmt.Sprintf("[%s]", strings.Trim(pronStr, "/ ")))
-		header = fmt.Sprintf("%s    %s", header, pronStr)
+	if pronStr != "" && show.Pronunciation {
+		headerParts = append(headerParts, d.Pron(fmt.Sprintf("[%s]", strings.Trim(pronStr, "/ "))))
 	}
-	s = append(s, header)
+	if len(headerParts) > 0 {
+		s = append(s, strings.Join(headerParts, "    "))
+	}
 
 	if r.IsLongText {
 		s = append(s, d.Text(r.MachineTrans))
@@ -60,7 +67,7 @@ func PrettyFormat(r *model.Result, onlyEN bool, brief bool) string {
 	}
 
 	// TODO wth is de morgan's law
-	if !(onlyEN && r.IsEN) {
+	if show.Paraphrase && !(onlyEN && r.IsEN) {
 		for _, para := range r.Paraphrase {
 			if para == "" {
 				// FIXME (k): <2023-12-15> 从收集步骤规避
@@ -78,20 +85,22 @@ func PrettyFormat(r *model.Result, onlyEN bool, brief bool) string {
 	cutoff := strings.Repeat("⸺", cutoffLength())
 
 	rankParts := []string{}
-	if r.Collins.Star > 0 {
+	if show.Star && r.Collins.Star > 0 {
 		rankParts = append(rankParts, d.Star(strings.Repeat("★", r.Collins.Star)))
 	}
-	if r.Collins.ViaRank != "" {
+	// ViaRank holds exam tags such as "CET4 TEM4"
+	if show.Rank && r.Collins.ViaRank != "" {
 		rankParts = append(rankParts, d.Rank(r.Collins.ViaRank))
 	}
-	if r.Collins.AdditionalPattern != "" {
+	// AdditionalPattern holds inflections such as "abandoning,abandoned,abandons"
+	if show.Pattern && r.Collins.AdditionalPattern != "" {
 		rankParts = append(rankParts, d.Rank(r.Collins.AdditionalPattern))
 	}
 	if len(rankParts) > 0 {
 		s = append(s, strings.Join(rankParts, " "))
 	}
 
-	if r.IsEN && len(r.Collins.Items) > 0 {
+	if show.Collins && r.IsEN && len(r.Collins.Items) > 0 {
 		s = append(s, d.Line(cutoff))
 		for idx, i := range r.Collins.Items {
 			var transExpr string
@@ -117,7 +126,7 @@ func PrettyFormat(r *model.Result, onlyEN bool, brief bool) string {
 			s = append(s, piece)
 
 			for _, ePair := range i.ExampleLists {
-				if len(ePair) == 0 {
+				if !show.Examples || len(ePair) == 0 {
 					continue
 				}
 				var eRepr string
@@ -132,7 +141,9 @@ func PrettyFormat(r *model.Result, onlyEN bool, brief bool) string {
 		}
 	}
 
-	if (!r.IsEN || (r.IsEN && len(r.Collins.Items) == 0)) && len(r.Examples) > 0 {
+	// The example block stands in for Collins only when Collins has no items;
+	// hiding Collins by config does not bring it in.
+	if show.Examples && (!r.IsEN || (r.IsEN && len(r.Collins.Items) == 0)) && len(r.Examples) > 0 {
 		s = append(s, d.Line(cutoff))
 		// 双语例句缺失时依次回落，否则会只剩一条分割线（issue #85）
 		for _, tab := range []string{"bi", "or", "au"} {

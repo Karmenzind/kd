@@ -27,6 +27,19 @@ type LoggerConfig struct {
 	RedirectToStream bool   `default:"false" toml:"redirect_to_stream"`
 }
 
+// DisplayConfig controls which parts of a word result are rendered. Every part
+// defaults to shown, so a config file without [display] keeps the old output.
+type DisplayConfig struct {
+	Title         bool `default:"true" toml:"title"`
+	Pronunciation bool `default:"true" toml:"pronunciation"`
+	Paraphrase    bool `default:"true" toml:"paraphrase"`
+	Star          bool `default:"true" toml:"star"`
+	Rank          bool `default:"true" toml:"rank"`
+	Pattern       bool `default:"true" toml:"pattern"`
+	Collins       bool `default:"true" toml:"collins"`
+	Examples      bool `default:"true" toml:"examples"`
+}
+
 type Config struct {
 	// FIXME (k): <2025-06-12 01:08>
 	Debug bool `default:"false" toml:"debug"`
@@ -48,7 +61,8 @@ type Config struct {
 
 	// MaxCached    uint   `default:"10000" toml:"max_cached"`
 
-	Logging LoggerConfig `toml:"logging"`
+	Display DisplayConfig `toml:"display"`
+	Logging LoggerConfig  `toml:"logging"`
 
 	FileExists bool  `toml:"-"`
 	ModTime    int64 `toml:"-"`
