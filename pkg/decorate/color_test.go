@@ -14,8 +14,8 @@ func TestThemesPreserveTextWhenColorIsDisabled(t *testing.T) {
 		applyTheme("temp")
 	})
 
-	themes := []string{"temp", "wudao", "canvas"}
-	for _, theme := range themes {
+	// Every name in Themes must be accepted: applyTheme exits on unknown names.
+	for _, theme := range Themes {
 		t.Run(theme, func(t *testing.T) {
 			applyTheme(theme)
 			for name, render := range map[string]ColorStringFunc{

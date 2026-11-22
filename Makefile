@@ -24,7 +24,7 @@ test-coverage: ## Run tests with coverage
 	@cat cover.out >> coverage.txt
 
 build: dep ## Build the binary file
-	@go build -i -o build/main $(PKG)
+	@CGO_ENABLED=0 go build -o build/kd ./cmd/kd
 
 clean: ## Remove previous build
 	@rm -f ./build

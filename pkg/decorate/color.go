@@ -56,6 +56,10 @@ var Text, Title, Nation, Line, Pron, Property, Idx, Addi, Para,
 	CollinsPara, Eg, EgPref, EgEn, EgCh,
 	Star, Rank ColorStringFunc
 
+// Themes lists the theme names applyTheme accepts, in the order shell
+// completion offers them. Keep it in sync with the cases below.
+var Themes = []string{"temp", "wudao", "canvas"}
+
 func applyTheme(colorscheme string) {
 	switch colorscheme {
 	case "", "temp":

@@ -15,7 +15,7 @@
 
 - Module: `github.com/Karmenzind/kd`
 - Go version: 1.26.5 (see `go.mod`)
-- CLI entry point: `cmd/kd/kd.go`
+- CLI entry point: `cmd/kd/kd.go`. `cmd/kd` has several source files, so build and run the package (`go run ./cmd/kd`), not the single file `cmd/kd/kd.go`.
 - CLI framework: `github.com/urfave/cli/v3`; construct a fresh root `cli.Command` for tests and keep framework types inside `cmd/kd`.
 - Auxiliary TTS test program: `cmd/ttstest/main.go`
 - The SQLite driver is the pure-Go `modernc.org/sqlite`; builds and cross-builds must keep `CGO_ENABLED=0` and require no C compiler.
@@ -42,6 +42,7 @@
 - `internal/run`: runtime metadata, cache paths, and the fixed daemon port (`19707`).
 - `internal/tts` and `internal/update`: optional speech and binary-update flows.
 - `pkg`: focused filesystem, HTTP, terminal, process, string, and decoration helpers.
+- `e2e`: opt-in end-to-end tests that run a built kd from real shells (see Testing).
 - `scripts/build.sh`: release build logic used by GitHub Actions for Linux amd64/arm64, macOS amd64/arm64, and Windows amd64.
 
 ## Development workflow
@@ -67,6 +68,7 @@ Package initialization creates user-level runtime directories. On Windows and Li
 - Test coverage is risk-driven rather than percentage-driven. Add regression tests for changed behavior and failure modes, using table-driven tests where they improve clarity.
 - Prefer the standard `testing` package, `t.TempDir`, `t.Setenv`, `httptest`, `net.Pipe`, and listeners on `127.0.0.1:0`. Do not add a test or mock framework for behavior the standard library can express clearly.
 - Tests must not depend on execution order, the user's config or cache, real network services, a running daemon, or fixed port `19707`. Use a real temporary SQLite database instead of mocking `database/sql`.
+- The one exception is `e2e/`, built only with the `e2e` tag (`go test -tags e2e -count=1 ./e2e`; without `-count=1` go test may replay a cached result instead of running it). It builds kd and runs it from every available shell (bash, zsh, fish, pwsh, and cmd on Windows) against the real daemon port and network, and simulates pressing Tab with kd's completion script loaded in bash, fish and pwsh. It must keep HOME/USERPROFILE/TMP isolated in a temporary directory, run shells and cases serially, stop any daemon it finds on the port before starting (but stop instead of touching a systemd-managed one), and check structure rather than exact dictionary text. On Windows it uses Git Bash, not the WSL `bash.exe`; zsh and fish are tested only on Linux and macOS; Windows PowerShell 5.1 is not supported. Set `KD_E2E_SHELLS` to make missing shells fail instead of skipping.
 - Avoid `time.Sleep` in tests. Coordinate concurrency with channels, wait groups, contexts, or listener readiness, and run focused `go test -race` checks after changing concurrent cache or protocol code when the platform supports it.
 - Running the CLI for a real query may create or restart a daemon, bind localhost port `19707`, write cache/database/log/runtime files, and make network requests.
 - Update, TTS, configuration-generation/editing, daemon lifecycle, and release scripts have additional external side effects. Do not use them as routine smoke tests.
@@ -95,6 +97,7 @@ Package initialization creates user-level runtime directories. On Windows and Li
 - Human-readable output is part of the public interface. Do not casually change wording, layout, colors, ordering, or add emoji; keep Chinese and English output concise and stylistically consistent.
 - Keep dynamic query status on stderr and stop it before any final output. It must remain disabled for non-TTY, JSON, and other machine-readable paths; keep ANSI and animation details inside `internal/ui`.
 - Keep flag behavior and help text together in `cmd/kd/kd.go`. When public behavior changes, update CLI help and README usage in the same change.
+- Shell completion uses urfave/cli's built-in support (`cmd/kd/completion.go`). Users get the scripts from `kd --completion <shell>`; urfave/cli's hidden completion command is named `_completion` because `kd completion` must keep looking up the word. kd ships its own pwsh script (`cmd/kd/completion.ps1`) so all four shells send the same request. Completing a flag must never run its action. Only flags and flag values (themes from `decorate.Themes`, shell names) are completed; query-word completion is not implemented yet.
 - Keep CLI-only JSON fields out of cache and daemon serialization. Long-text JSON adds `q` (query) and `mt` (translation) in `cmd/kd`; query failures exit with status 1 after runtime cleanup.
 - Return errors with useful context instead of panicking. User-facing errors should be concise, understandable, and actionable; degrade gracefully when the problem is recoverable.
 - Log enough context to diagnose failures without flooding routine operation. Do not log configuration secrets, tokens, user queries, or other sensitive data unless the task explicitly requires it and the exposure is documented.

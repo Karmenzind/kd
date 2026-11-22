@@ -30,6 +30,7 @@ kd 专注于简洁、高效、丝滑的查询功能，不会发展成集成式�
 * [⚙️ 用法](#-用法)
     * [配置文件](#配置文件)
     * [更多特性](#更多特性)
+        * [Shell补全](#shell补全)
         * [读音功能（experimental）](#读音功能experimental)
 * [🎈 提升体验技巧](#-提升体验技巧)
     * [NeoVim插件kd_translate.nvim](#neovim插件kd_translatenvim)
@@ -40,6 +41,7 @@ kd 专注于简洁、高效、丝滑的查询功能，不会发展成集成式�
 * [❓ 常见问题和解决方法](#-常见问题和解决方法)
     * [设置less为Pager后显示异常](#设置less为pager后显示异常)
     * [MacOS弹出“无法打开”提醒](#macos弹出无法打开提醒)
+* [🤝 参与开发](#-参与开发)
 * [📝 进度和计划](#-进度和计划)
 * [Thanks to](#thanks-to)
 
@@ -126,6 +128,9 @@ Invoke-WebRequest -uri 'https://github.com/Karmenzind/kd/releases/latest/downloa
 
 > 或手动下载文件，然后通过“计算机->属性->修改环境变量”修改PATH
 
+> [!NOTE]
+> kd在Windows上只在PowerShell 7（pwsh）、cmd和Git Bash中进行过稳定性测试。系统自带的旧版Windows PowerShell（5.1及以下）不保证效果，例如查询内容中的双引号会丢失，建议[安装pwsh](https://learn.microsoft.com/zh-cn/powershell/scripting/install/installing-powershell-on-windows)后使用
+
 ### 其他平台
 
 **Android**
@@ -199,6 +204,7 @@ GLOBAL OPTIONS:
    --update                 check and update kd client 更新kd的可执行文件
    --generate-config        generate config sample 生成配置文件，Linux/Mac默认地址为~/.config/kd.toml，Win为~\kd.toml
    --edit-config            edit configuration file with the default editor 用默认编辑器打开配置文件
+   --completion value       print the shell completion script (bash/zsh/fish/pwsh) 输出shell补全脚本
    --help, -h               show help
    --version, -v            print the version
 ```
@@ -285,6 +291,19 @@ freq_alert = false
 ```
 
 ### 更多特性
+
+#### Shell补全
+
+按Tab可补全参数、主题名（`--theme`后）和shell名（`--completion`后）。单词补全（热词、查询历史）计划在下一阶段实现
+
+| shell | 加载方式 |
+|---|---|
+| bash | 需要bash-completion（多数Linux发行版默认已安装，Git Bash自带）。在`~/.bashrc`中加入`source <(kd --completion bash)` |
+| zsh | 在`~/.zshrc`中`compinit`之后加入`source <(kd --completion zsh)` |
+| fish | 执行`kd --completion fish > ~/.config/fish/completions/kd.fish` |
+| pwsh | 在`$PROFILE`中加入`kd --completion pwsh \| Out-String \| Invoke-Expression` |
+
+> 输入单词时没有候选项，bash和zsh会退回到补全文件名，这是补全框架的默认行为
 
 #### 读音功能（experimental）
 
@@ -384,11 +403,49 @@ alias kd=__kdwithpager
 sudo xattr -r -d com.apple.quarantine <kd文件所在路径>
 ```
 
+## 🤝 参与开发
+
+欢迎提交issue和PR。新功能、新配置项、新依赖这类较大的改动，请先开issue讨论。
+
+**构建**：Go版本以`go.mod`为准，始终用`CGO_ENABLED=0`构建（kd以纯Go单文件发布）
+
+```shell
+CGO_ENABLED=0 go build -o build/kd ./cmd/kd
+```
+
+**提交前**：
+
+```shell
+gofmt -w <改动的go文件>
+go vet ./...
+go test -count=1 ./...
+```
+
+改动涉及命令行参数、输出编码、退出码或守护进程启动时，再跑一遍端到端测试，它会在本机的bash、zsh、fish、pwsh、cmd中逐条执行kd（加`-v`可看到每条命令和结果）：
+
+```shell
+go test -tags e2e -count=1 ./e2e
+```
+
+> [!WARNING]
+> 端到端测试会联网，并**停掉你正在运行的kd守护进程**（下次查词时自动重启）；配置和缓存放在临时目录，不会动你自己的数据
+
+**注意事项**：
+
+- 兼容性：配置文件、缓存数据、守护进程协议不能悄悄失效，改动时附带旧格式数据的兼容测试
+- 跨平台：功能要同时支持Linux、macOS和Windows
+- 输出：查词结果的措辞、排版和颜色属于对外接口，不要随意改动；面向用户的文字用中文
+- 配置项和依赖：能不加就不加；新增配置项要同步更新默认值、校验、`--generate-config`示例和本README
+- 测试：只用标准库`testing`，单元测试不依赖网络、真实守护进程和你自己的配置
+- 提交信息：参照已有写法，如`feat(config): ...`、`fix #85 (youdao): ...`
+
+更完整的项目约定见[AGENTS.md](AGENTS.md)
+
 ## 📝 进度和计划
 
 **近期**
 
-- 支持bash/zsh/fish补全，包含命令补全和[热词](https://github.com/first20hours/google-10000-english)补全
+- 支持单词补全，包含[热词](https://github.com/first20hours/google-10000-english)和查询历史（参数补全已支持）
 - 支持生词本功能
 
 **长期**

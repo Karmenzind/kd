@@ -86,6 +86,7 @@ var um = map[string]string{
 	"generate-config": "generate config sample 生成配置文件，Linux/Mac默认地址为~/.config/kd.toml，Win为~\\kd.toml",
 	"edit-config":     "edit configuration file with the default editor 用默认编辑器打开配置文件",
 	"status":          "show running status 展示运行信息",
+	"completion":      "print the shell completion script (bash/zsh/fish/pwsh) 输出shell补全脚本",
 	"log-to-stream":   "redirect logging output to stdout&stderr (for debugging or server mode)",
 }
 
@@ -404,6 +405,12 @@ func newCLICommand(actions cliActions) *cli.Command {
 		HideHelpCommand: true,
 		Authors:         []any{"kmz <valesail7@gmail.com>"},
 		StopOnNthArg:    &stopAfterFirstArg,
+
+		EnableShellCompletion:           true,
+		ShellCompletionCommandName:      completionCommandName,
+		ConfigureShellCompletionCommand: configureCompletionCommand,
+		ShellComplete:                   completeRoot,
+
 		Flags: []cli.Flag{
 			&cli.BoolFlag{Name: "text", Aliases: []string{"t"}, HideDefault: true, Usage: um["text"]},
 			&cli.BoolFlag{Name: "json", HideDefault: true, Usage: um["json"]},
@@ -423,6 +430,7 @@ func newCLICommand(actions cliActions) *cli.Command {
 			&cli.BoolFlag{Name: "update", HideDefault: true, Action: actions.update, Usage: um["update"]},
 			&cli.BoolFlag{Name: "generate-config", HideDefault: true, Action: actions.generateConfig, Usage: um["generate-config"]},
 			&cli.BoolFlag{Name: "edit-config", HideDefault: true, Action: actions.editConfig, Usage: um["edit-config"]},
+			&cli.StringFlag{Name: "completion", Action: flagCompletion, Usage: um["completion"]},
 			&cli.BoolFlag{Name: "status", HideDefault: true, Action: actions.status, Hidden: true, Usage: um["status"]},
 			&cli.BoolFlag{Name: "log-to-stream", HideDefault: true, Hidden: true, Usage: um["log-to-stream"]},
 		},
@@ -502,11 +510,13 @@ func runCLI() error {
 		status:         flagStatus,
 		root: func(ctx context.Context, cmd *cli.Command) error {
 			// 这里BoolFlag都当subcommand用
-			if !cmd.Bool("update") && !cmd.Bool("json") {
+			// The completion script is sourced from stdout, so no update notice
+			// may follow it.
+			if !cmd.Bool("update") && !cmd.Bool("json") && !cmd.IsSet("completion") {
 				defer checkAndNoticeUpdate()
 			}
 
-			if pkg.HasAnyFlag("init", "server", "daemon", "stop", "restart", "update", "generate-config", "edit-config", "status") {
+			if cmd.IsSet("completion") || pkg.HasAnyFlag("init", "server", "daemon", "stop", "restart", "update", "generate-config", "edit-config", "status") {
 				return nil
 			}
 

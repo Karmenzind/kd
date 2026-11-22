@@ -148,13 +148,17 @@ func TestCLIHelpVersionAndActionErrorsBaseline(t *testing.T) {
 		if err != nil || got.rootCalls != 0 || stderr != "" {
 			t.Fatalf("help: calls=%d stdout=%q stderr=%q err=%v", got.rootCalls, stdout, stderr, err)
 		}
-		for _, want := range []string{"NAME:", "kd", "GLOBAL OPTIONS:", "--version", "--brief", "--theme string"} {
+		for _, want := range []string{"NAME:", "kd", "GLOBAL OPTIONS:", "--version", "--brief", "--theme string", "--completion string"} {
 			if !strings.Contains(stdout, want) {
 				t.Fatalf("help output missing %q: %q", want, stdout)
 			}
 		}
-		if strings.Contains(stdout, "completion") || strings.Contains(stdout, "--server") {
-			t.Fatalf("help exposes unsupported or hidden behavior: %q", stdout)
+		// The completion scripts are reached through --completion; urfave/cli's
+		// hidden completion command must not show up as a subcommand.
+		for _, hidden := range []string{completionCommandName, "COMMANDS:", "--server"} {
+			if strings.Contains(stdout, hidden) {
+				t.Fatalf("help exposes hidden behavior %q: %q", hidden, stdout)
+			}
 		}
 	})
 
