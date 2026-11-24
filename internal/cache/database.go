@@ -35,8 +35,13 @@ CREATE TABLE IF NOT EXISTS meta (
     update_time datetime NOT NULL) WITHOUT ROWID;
 `
 
+// busyTimeoutDSN makes every pooled connection wait up to 5 seconds for a lock
+// held by another process (usually the daemon saving a result) instead of
+// failing at once with SQLITE_BUSY.
+const busyTimeoutDSN = "?_pragma=busy_timeout(5000)"
+
 func initDBAtPath(dbPath string) (*sql.DB, error) {
-	db, err := sql.Open(sqliteDriverName, dbPath)
+	db, err := sql.Open(sqliteDriverName, dbPath+busyTimeoutDSN)
 	if err != nil {
 		zap.S().Errorf("Failed to open litedb: %s", err)
 		return nil, err

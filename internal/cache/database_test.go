@@ -181,6 +181,34 @@ func TestDatabaseSupportsMultipleOpenHandles(t *testing.T) {
 	}
 }
 
+// The daemon writes query results while CLI processes open the same file; a
+// connection without a busy timeout fails at once with SQLITE_BUSY instead of
+// waiting for that short write to finish.
+func TestDatabaseConnectionsWaitForLocks(t *testing.T) {
+	useTestDB(t)
+	ctx := t.Context()
+
+	// Hold two connections at once so the pool cannot hand back the same one.
+	var conns []*sql.Conn
+	for range 2 {
+		conn, err := LiteDB.Conn(ctx)
+		if err != nil {
+			t.Fatalf("Conn() error = %v", err)
+		}
+		t.Cleanup(func() { conn.Close() })
+		conns = append(conns, conn)
+	}
+	for i, conn := range conns {
+		var timeout int
+		if err := conn.QueryRowContext(ctx, "PRAGMA busy_timeout").Scan(&timeout); err != nil {
+			t.Fatalf("connection %d: PRAGMA busy_timeout error = %v", i, err)
+		}
+		if timeout != 5000 {
+			t.Fatalf("connection %d: busy_timeout = %d, want 5000", i, timeout)
+		}
+	}
+}
+
 func TestDatabaseSupportsConcurrentReads(t *testing.T) {
 	useTestDB(t)
 

@@ -548,7 +548,7 @@ func fishTab(sh *shell, lines []string) string {
 	b.WriteString("kd --completion fish | source\n")
 	for _, line := range lines {
 		q := sh.quote(line)
-		b.WriteString(`printf 'TAB\t%s\t%s\n' ` + q + ` (string join ' ' (complete -C ` + q + ` | string replace -r '\t.*$' ''))` + "\n")
+		b.WriteString(`printf 'TAB\t%s\t%s\n' ` + q + ` (string join -- ' ' (complete -C ` + q + ` | string replace -r '\t.*$' ''))` + "\n")
 	}
 	return b.String()
 }
