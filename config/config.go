@@ -7,14 +7,16 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 
+	"github.com/BurntSushi/toml"
 	"github.com/Karmenzind/kd/internal/run"
 	"github.com/Karmenzind/kd/pkg"
-	"github.com/jinzhu/configor"
 )
 
 var CONFIG_PATH string
@@ -124,14 +126,63 @@ func getConfigPath() string {
 // func getDaemonCreatetime() int64 {
 // }
 
+func applyDefaults(v any) error {
+	value := reflect.ValueOf(v)
+	if value.Kind() != reflect.Pointer || value.IsNil() || value.Elem().Kind() != reflect.Struct {
+		return errors.New("applyDefaults: expected a non-nil pointer to a struct")
+	}
+	value = value.Elem()
+	for i := 0; i < value.NumField(); i++ {
+		fieldType := value.Type().Field(i)
+		if !fieldType.IsExported() {
+			continue
+		}
+		field := value.Field(i)
+		if tag, ok := fieldType.Tag.Lookup("default"); ok {
+			switch field.Kind() {
+			case reflect.Bool:
+				parsed, err := strconv.ParseBool(tag)
+				if err != nil {
+					return fmt.Errorf("default for %s: %w", fieldType.Name, err)
+				}
+				if field.IsZero() {
+					field.SetBool(parsed)
+				}
+			case reflect.String:
+				if field.IsZero() {
+					field.SetString(tag)
+				}
+			case reflect.Uint64:
+				parsed, err := strconv.ParseUint(tag, 10, 64)
+				if err != nil {
+					return fmt.Errorf("default for %s: %w", fieldType.Name, err)
+				}
+				if field.IsZero() {
+					field.SetUint(parsed)
+				}
+			default:
+				return fmt.Errorf("default for %s: unsupported type %s", fieldType.Name, field.Type())
+			}
+		}
+		if field.Kind() == reflect.Struct {
+			if err := applyDefaults(field.Addr().Interface()); err != nil {
+				return fmt.Errorf("%s: %w", fieldType.Name, err)
+			}
+		}
+	}
+	return nil
+}
+
 func parseConfig() (err error) {
+	if err := applyDefaults(&Cfg); err != nil {
+		return err
+	}
 	p := CONFIG_PATH
 	if fileinfo, fileErr := os.Stat(p); fileErr == nil {
 		Cfg.FileExists = true
 		Cfg.ModTime = fileinfo.ModTime().Unix()
-		err = configor.New(&configor.Config{ErrorOnUnmatchedKeys: false}).Load(&Cfg, p)
+		_, err = toml.DecodeFile(p, &Cfg)
 	} else {
-		err = configor.New(&configor.Config{ErrorOnUnmatchedKeys: false}).Load(&Cfg)
 		switch runtime.GOOS {
 		// case "darwin": // MacOS
 		//     Cfg.Paging = false

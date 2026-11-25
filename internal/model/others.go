@@ -62,13 +62,3 @@ func (r *RunInfo) GetTermSize() (int, int, error) {
 	r.termWidth = w
 	return w, h, nil
 }
-
-func (r *RunInfo) SaveToFile(path string) (err error) {
-	err = pkg.SaveJson(path, r)
-	if err == nil {
-		zap.S().Infof("Recorded running information of daemon %+v", r)
-	} else {
-		zap.S().Warnf("Failed to record running info of daemon %+v", err)
-	}
-	return
-}

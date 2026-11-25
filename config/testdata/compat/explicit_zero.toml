@@ -1,0 +1,18 @@
+enable_emoji = false
+paging = false
+theme = ""
+audio_cache_max_size_mb = 0
+
+[display]
+title = false
+pronunciation = false
+paraphrase = false
+star = false
+rank = false
+pattern = false
+collins = false
+examples = false
+
+[logging]
+enable = false
+level = ""

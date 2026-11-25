@@ -1,0 +1,12 @@
+theme = "wudao"
+brief = true
+pager_command = "less -RF"
+audio_cache_max_size_mb = 512
+
+[display]
+rank = false
+examples = false
+
+[logging]
+level = "info"
+stderr = true

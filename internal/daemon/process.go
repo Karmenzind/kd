@@ -20,25 +20,6 @@ import (
 
 var SYSTEMD_UNIT_NAME = "kd-server"
 
-func getKdPIDs() {
-	var cmd *exec.Cmd
-
-	switch runtime.GOOS {
-	case "windows":
-		cmd = exec.Command("taskkill", "/NH", "/FO", "csv")
-	}
-	output, err := cmd.Output()
-	if err != nil {
-		_ = err
-	}
-	strings.Split(string(output), "\n")
-}
-
-func ServerIsRunning() bool {
-	_, err := PingDaemon(DefaultAddress())
-	return err == nil
-}
-
 func processNameMatched(n string) bool {
 	return n == "kd" || (runtime.GOOS == "windows" && n == "kd.exe")
 }
@@ -237,11 +218,6 @@ func requestShutdown(addr string) error {
 	if response.Error != "" {
 		return errors.New(response.Error)
 	}
-	return nil
-}
-
-// TODO (k): <2024-05-05 15:56>
-func SendHUP2Daemon() error {
 	return nil
 }
 

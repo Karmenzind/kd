@@ -1,0 +1,31 @@
+{
+  "AudioCacheMaxSizeMB": 512,
+  "Brief": true,
+  "ClearScreen": false,
+  "Debug": false,
+  "Display": {
+    "Title": true,
+    "Pronunciation": true,
+    "Paraphrase": true,
+    "Star": true,
+    "Rank": false,
+    "Pattern": true,
+    "Collins": true,
+    "Examples": false
+  },
+  "EnableEmoji": true,
+  "EnglishOnly": false,
+  "FreqAlert": false,
+  "HTTPProxy": "",
+  "Logging": {
+    "Enable": true,
+    "Path": "",
+    "Level": "info",
+    "Stderr": true,
+    "RedirectToStream": false
+  },
+  "PagerCommand": "less -RF",
+  "Paging": true,
+  "SplitCamelcaseAndSnakecase": false,
+  "Theme": "wudao"
+}

@@ -170,10 +170,6 @@ func (s *daemonServer) Serve(ctx context.Context) error {
 	}
 }
 
-func handleClient(conn net.Conn) {
-	handleClientConnection(conn, run.Info, query.FetchOnline, func() {})
-}
-
 func handleClientWithFetcher(conn net.Conn, fetch func(*model.Result) error) {
 	handleClientConnection(conn, run.Info, fetch, func() {})
 }

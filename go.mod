@@ -6,8 +6,6 @@ require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/anaskhan96/soup v1.2.5
 	github.com/fatih/color v1.19.0
-	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
-	github.com/jinzhu/configor v1.2.2
 	github.com/shirou/gopsutil/v4 v4.26.10
 	github.com/urfave/cli/v3 v3.14.0
 	go.uber.org/zap v1.28.0
@@ -33,7 +31,6 @@ require (
 	golang.org/x/net v0.63.0 // indirect
 	golang.org/x/sys v0.50.0 // indirect
 	golang.org/x/text v0.44.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/libc v1.82.13 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.13.0 // indirect

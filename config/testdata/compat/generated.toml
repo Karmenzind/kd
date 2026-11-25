@@ -1,0 +1,27 @@
+paging = true
+pager_command = ""
+english_only = false
+theme = "temp"
+http_proxy = ""
+clear_screen = false
+freq_alert = false
+brief = false
+audio_cache_max_size_mb = 2048
+split_camelcase_and_snakecase = false
+
+[display]
+  title = true
+  pronunciation = true
+  paraphrase = true
+  star = true
+  rank = true
+  pattern = true
+  collins = true
+  examples = true
+
+[logging]
+  enable = true
+  path = ""
+  level = "warn"
+  stderr = false
+  redirect_to_stream = false

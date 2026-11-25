@@ -13,27 +13,6 @@ type OSInfo struct {
 	IsDebianBased bool
 }
 
-// Deprecated: use GetOSInfo
-func GetLinuxDistro() string {
-	if runtime.GOOS != "linux" {
-		return ""
-	}
-	file, err := os.Open("/etc/os-release")
-	if err != nil {
-		return ""
-	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "ID=") {
-			splited := strings.SplitN(line, "=", 2)
-			return splited[1]
-		}
-	}
-	return ""
-}
-
 func GetOSInfo() (*OSInfo, error) {
 	var ret = &OSInfo{OS: runtime.GOOS}
 	if ret.OS != "linux" {

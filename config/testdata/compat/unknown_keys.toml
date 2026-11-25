@@ -1,0 +1,13 @@
+unknown = "ignored"
+paging = false
+
+[display]
+title = false
+unknown = true
+
+[logging]
+enable = false
+unknown = 42
+
+[unknown_table]
+value = "ignored"

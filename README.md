@@ -293,6 +293,8 @@ freq_alert = false
   level = "WARN"
 ```
 
+配置仅读取上述路径中的 TOML 文件，不再支持 `CONFIGOR_*` 环境变量覆盖、`CONFIGOR_ENV_PREFIX` 自定义前缀、`CONFIGOR_ENV` 额外加载 `kd.<环境名>.toml`、缺少配置文件时回退到 `kd.example.toml`，以及 `CONFIGOR_DEBUG_MODE`、`CONFIGOR_VERBOSE_MODE`、`CONFIGOR_SILENT_MODE`。配置路径存在但不是普通文件（如目录）时会返回读取错误。`pager_command` 拆分失败时会打印警告并直接输出结果；Windows 用户请给命令中的路径加引号，或改用正斜杠。
+
 ### 更多特性
 
 #### Shell补全

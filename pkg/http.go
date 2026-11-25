@@ -33,11 +33,6 @@ func GetRandomUA() string {
 	return userAgents[idx]
 }
 
-func CreateHTTPClient(timeoutsec time.Duration) *http.Client {
-	c := http.Client{Timeout: timeoutsec * time.Second}
-	return &c
-}
-
 // func BuildYoudaoRequest(q string) (*http.Request, error) {
 // 	// r, err := http.NewRequest("GET", fmt.Sprintf("http://dict.youdao.com/search?q=%s", q), nil)
 // 	r, err := http.NewRequest("GET", fmt.Sprintf("http://dict.youdao.com/w/%s/#keyfrom=dict2.top", q), nil)

@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	d "github.com/Karmenzind/kd/pkg/decorate"
-	"github.com/google/shlex"
+	"github.com/Karmenzind/kd/pkg/str"
 	"go.uber.org/zap"
 	"golang.org/x/term"
 )
@@ -71,11 +71,13 @@ func OutputResult(out string, paging bool, pagerCmd string) error {
 			var pager *exec.Cmd
 			var program string
 			if strings.Contains(pagerCmd, " ") {
-				args, serr := shlex.Split(pagerCmd)
-				program = args[0]
-				if serr != nil {
-					return err
+				args, serr := str.SplitCommand(pagerCmd)
+				if serr != nil || len(args) == 0 {
+					d.EchoWarn("pager command `%s` is invalid: %v", pagerCmd, serr)
+					fmt.Println(out)
+					return nil
 				}
+				program = args[0]
 				pager = exec.Command(args[0], args[1:]...)
 			} else {
 				program = pagerCmd
@@ -94,13 +96,6 @@ func OutputResult(out string, paging bool, pagerCmd string) error {
 	}
 	fmt.Println(out)
 	return nil
-}
-
-func Output2PagerVer1(pager *exec.Cmd, output string) (err error) {
-	pager.Stdin = strings.NewReader(output)
-	err = pager.Run()
-
-	return err
 }
 
 func Output2PagerVer2(pager *exec.Cmd, output string) (err error) {

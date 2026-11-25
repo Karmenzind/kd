@@ -1,0 +1,31 @@
+{
+  "AudioCacheMaxSizeMB": 2048,
+  "Brief": false,
+  "ClearScreen": false,
+  "Debug": false,
+  "Display": {
+    "Title": true,
+    "Pronunciation": true,
+    "Paraphrase": true,
+    "Star": true,
+    "Rank": true,
+    "Pattern": true,
+    "Collins": true,
+    "Examples": true
+  },
+  "EnableEmoji": true,
+  "EnglishOnly": false,
+  "FreqAlert": false,
+  "HTTPProxy": "",
+  "Logging": {
+    "Enable": true,
+    "Path": "",
+    "Level": "WARN",
+    "Stderr": false,
+    "RedirectToStream": false
+  },
+  "PagerCommand": "less -RF",
+  "Paging": true,
+  "SplitCamelcaseAndSnakecase": false,
+  "Theme": "temp"
+}

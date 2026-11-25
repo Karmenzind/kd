@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/Karmenzind/kd/internal/model"
-	"github.com/Karmenzind/kd/pkg"
 	"go.uber.org/zap"
 )
 
@@ -189,47 +188,4 @@ func UpdateLongTextCache(r *model.Result) (err error) {
 	now := time.Now().Unix()
 	m[r.Query] = LongTextData{Result: r.MachineTrans, AccessTS: now, CreateTS: now}
 	return saveLongTextCache(LONG_TEXT_CACHE_FILE, m)
-}
-
-//  -----------------------------------------------------------------------------
-// deprecated
-//  JSON version
-//  -----------------------------------------------------------------------------
-
-func GetCachedQueryFromJson(r *model.Result) (err error) {
-	fpath := getQueryCacheFilePath(r.Query)
-	if _, err = os.Stat(fpath); errors.Is(err, os.ErrNotExist) {
-		zap.S().Debugf("Cache file for '%s' doesn't exist.", r.Query)
-		return err
-	}
-	j, err := os.ReadFile(fpath)
-	if err != nil {
-		zap.S().Debugf("Failed to read file for %s: %s", r.Query, err)
-		return err
-	}
-	if len(j) > 0 {
-		err = json.Unmarshal(j, r)
-		if err != nil {
-			zap.S().Debugf("Failed to unmarshal for %s: %s", r.Query, err)
-			return err
-		}
-	}
-	zap.S().Debugf("Got cached %s. (len: %d)", r.Query, len(j))
-	return
-}
-
-func UpdateQueryCacheJson(r *model.Result) (err error) {
-	if !r.Found {
-		return
-	}
-	err = pkg.SaveJson(getQueryCacheFilePath(r.Query), r)
-	if err != nil {
-		zap.S().Errorf("Failed to update cache for '%s'. Error: %s", r.Query, err)
-	}
-	return
-}
-
-func getQueryCacheFilePath(query string) string {
-	fpath := filepath.Join(CACHE_WORDS_PATH, query)
-	return fpath
 }

@@ -3,7 +3,6 @@ package daemon
 import (
 	"archive/zip"
 	"context"
-	"database/sql"
 	"fmt"
 	"io"
 	"os"
@@ -18,7 +17,6 @@ import (
 	d "github.com/Karmenzind/kd/pkg/decorate"
 	"github.com/Karmenzind/kd/pkg/ip"
 	"go.uber.org/zap"
-	_ "modernc.org/sqlite"
 )
 
 const (
@@ -192,13 +190,6 @@ func cronUpdateDataZip(ctx context.Context, shutdown func()) {
 		}
 		zap.S().Infof("Decompressed DB zip file -> %s", tempDBPath)
 
-		// err = parseDBAndInsertOffsetVersion(tempDBPath)
-		// os.Remove(tempDBPath)
-		// if err != nil {
-		// 	zap.S().Warnf("[parseDBAndInsert] Failed: %s", err)
-		// 	continue
-		// }
-
 		err = applyTempDB(dbPath, tempDBPath)
 		if err != nil {
 			zap.S().Warnf("Failed: %s", err)
@@ -295,130 +286,6 @@ func applyTempDB(dbPath, tempDBPath string) error {
 		return err
 	}
 	return err
-}
-
-func parseDBAndInsert(tempDBPath string) (err error) {
-	now := time.Now()
-	var tempDB *sql.DB
-	tempDB, err = sql.Open("sqlite", tempDBPath)
-	if err != nil {
-		zap.S().Errorf("Failed to open db %s: %s", tempDBPath, err)
-		return
-	}
-	defer tempDB.Close()
-	for _, table := range []string{"en", "ch"} {
-		success := 0
-		total := 0
-		sql := fmt.Sprintf("SELECT query, detail FROM %s", table)
-		rows, err := tempDB.Query(sql)
-		if err != nil {
-			zap.S().Warnf("Failed to query %s", table, err)
-			return err
-		}
-		defer rows.Close()
-		// insertSQL := fmt.Sprintf("INSERT OR IGNORE INTO %s (query, detail, update_time) VALUES (?, ?, ?)", table)
-		// stmt, err := cache.LiteDB.Prepare(insertSQL)
-		if err != nil {
-			zap.S().Warnf("Failed to invoke db.Prepare for %s: %s", table, err)
-			continue
-		}
-		for rows.Next() {
-			total++
-			var query []byte
-			var detail []byte
-			scanErr := rows.Scan(&query, &detail)
-			if scanErr != nil {
-				zap.S().Warnf("Failed to scan row for %s: %s", table, scanErr)
-				continue
-			}
-			// _, insertErr := cache.LiteDB.Exec(insertSQL, query, detail, now)
-			// _, insertErr := stmt.Exec(query, detail, now)
-			// if insertErr != nil {
-			// 	zap.S().Warnf("Failed to insert for %s: %s", table, insertErr)
-			// 	continue
-			// }
-			_ = now
-			fmt.Println(string(query))
-			time.Sleep(100 * time.Microsecond)
-			success++
-			// zap.S().Debugf("Inserted into %s: %s", table, success)
-		}
-		// stmt.Close()
-		// TODO (k): <2023-12-14> 计算成功多少，判定
-		fmt.Printf("Table %s total %d success %d", table, total, success)
-	}
-
-	return
-}
-
-func parseDBAndInsertOffsetVersion(tempDBPath string) (err error) {
-	now := time.Now()
-	var tempDB *sql.DB
-	tempDB, err = sql.Open("sqlite", tempDBPath)
-	if err != nil {
-		zap.S().Errorf("Failed to open db %s: %s", tempDBPath, err)
-		return
-	}
-	defer tempDB.Close()
-	for _, table := range []string{"en", "ch"} {
-		success := 0
-		total := 0
-		offset := 0
-		batch := 100
-		for {
-			sql := fmt.Sprintf("SELECT query, detail FROM %s LIMIT %d, %d", table, offset, batch)
-			rows, err := tempDB.Query(sql)
-
-			if err != nil {
-				zap.S().Warnf("Failed to query %s", table, err)
-				return err
-			}
-			defer rows.Close()
-			insertSQL := fmt.Sprintf("INSERT OR IGNORE INTO %s (query, detail, update_time) VALUES (?, ?, ?)", table)
-			stmt, err := cache.LiteDB.Prepare(insertSQL)
-			if err != nil {
-				zap.S().Warnf("Failed to invoke db.Prepare for %s: %s", table, err)
-				continue
-			}
-			params := make([][][]byte, 0, 100)
-			fetched := 0
-			for rows.Next() {
-				total++
-				var query []byte
-				var detail []byte
-				scanErr := rows.Scan(&query, &detail)
-				if scanErr != nil {
-					zap.S().Warnf("Failed to scan row for %s: %s", table, scanErr)
-					continue
-				}
-				params = append(params, [][]byte{query, detail})
-
-				_ = now
-				// fmt.Println(query)
-				// time.Sleep(100 * time.Microsecond)
-				fetched += 1
-				// zap.S().Debugf("Inserted into %s: %s", table, success)
-			}
-			// insertSQL := fmt.Sprintf("INSERT OR IGNORE INTO %s (query, detail, update_time) VALUES (?, ?, ?)", table)
-
-			for _, row := range params {
-				_, insertErr := stmt.Exec(row[0], row[1], now)
-				if insertErr == nil {
-					success++
-				}
-			}
-			stmt.Close()
-			if len(params) == 0 {
-				break
-			}
-
-			time.Sleep(time.Duration(batch*10) * time.Millisecond)
-			// TODO (k): <2023-12-14> 计算成功多少，判定
-			fmt.Printf("Table %s total %d success %d \n", table, total, success)
-			offset += batch
-		}
-	}
-	return
 }
 
 // cronSanitizeCache 清洗词库中残留的未规整文本。任务由meta表中的版本号把关，
