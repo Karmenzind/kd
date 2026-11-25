@@ -13,6 +13,7 @@ kd 专注于简洁、高效、丝滑的查询功能，不会发展成集成式�
 [![GitHub Release](https://img.shields.io/github/v/release/karmenzind/kd)](https://github.com/Karmenzind/kd/releases)
 [![CI](https://github.com/Karmenzind/kd/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Karmenzind/kd/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Karmenzind/kd/badges/coverage.json)](https://github.com/Karmenzind/kd/actions/workflows/ci.yml)
+[![AUR Version](https://img.shields.io/aur/version/kd-bin)](https://aur.archlinux.org/packages/kd-bin)
 
 <!-- <img src="https://raw.githubusercontent.com/Karmenzind/i/master/kd/kd_demo.gif" width="700" align="center"> -->
 
@@ -157,6 +158,8 @@ Windows PowerShell：
 $env:CGO_ENABLED = "0"
 go build -mod=readonly -o kd.exe ./cmd/kd
 ```
+
+自行编译的kd，版本号取自git（例如`v0.0.15-0.20261125052350-5d1009b610d1`，表示v0.0.14之后的某次提交），无法取得时显示`dev`。`dev`版本无法判断是否有新版本，`kd --update`会提示改用`kd --update --force`安装最新发布版。
 
 ### 卸载
 

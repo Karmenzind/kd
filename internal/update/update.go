@@ -31,9 +31,13 @@ type GithubTag struct {
 	// tarball_url
 }
 
+// CompareVersions compares two vX.Y.Z versions. A pre-release suffix such as
+// -rc.1, or the Go pseudo-version suffix of a development build, ranks below
+// the plain X.Y.Z release; build metadata after + is ignored. It returns 0
+// when either version cannot be parsed.
 func CompareVersions(v1, v2 string) int {
-	version1, ok1 := parseVersion(v1)
-	version2, ok2 := parseVersion(v2)
+	version1, pre1, ok1 := parseVersion(v1)
+	version2, pre2, ok2 := parseVersion(v2)
 	if !ok1 || !ok2 {
 		return 0
 	}
@@ -45,27 +49,35 @@ func CompareVersions(v1, v2 string) int {
 			return -1
 		}
 	}
+	switch {
+	case pre1 && !pre2:
+		return -1
+	case !pre1 && pre2:
+		return 1
+	}
 	return 0
 }
 
-var versionPattern = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$`)
+var versionPattern = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)(-[^+]*)?(?:\+.*)?$`)
 
-func parseVersion(value string) ([3]int, bool) {
+// parseVersion returns the X.Y.Z numbers of value and whether it carries a
+// pre-release suffix.
+func parseVersion(value string) ([3]int, bool, bool) {
 	value = strings.TrimPrefix(strings.TrimSpace(value), "v")
 	matches := versionPattern.FindStringSubmatch(value)
-	if len(matches) != 4 {
-		return [3]int{}, false
+	if len(matches) != 5 {
+		return [3]int{}, false, false
 	}
 
 	var version [3]int
 	for i := range version {
 		part, err := strconv.Atoi(matches[i+1])
 		if err != nil {
-			return [3]int{}, false
+			return [3]int{}, false, false
 		}
 		version[i] = part
 	}
-	return version, true
+	return version, matches[4] != "", true
 }
 
 var LATEST_TAG_FILE = filepath.Join(cache.CACHE_ROOT_PATH, "latest_tag")
@@ -141,6 +153,9 @@ func getBinaryURL() string {
 }
 
 func GetNewerVersion(currentTag string) (tag string, err error) {
+	if _, _, ok := parseVersion(currentTag); !ok {
+		return "", fmt.Errorf("当前是开发版本（%s），无法判断是否有新版本。如需安装最新发布版，请执行`kd --update --force`", currentTag)
+	}
 	latestTag, err := GetLatestTag()
 	if err != nil {
 		return
@@ -177,6 +192,8 @@ func updateBinaryAt(exePath, url, tmpPath string) (err error) {
 	err = pkg.DownloadFileWithProgress(tmpPath, url)
 	if err != nil {
 		zap.S().Errorf("Failed to download binary file: %s", err)
+		_ = os.Remove(tmpPath)
+		return fmt.Errorf("下载新版本失败，未做任何替换：%w", err)
 	}
 	d.EchoOkay("已下载完成")
 

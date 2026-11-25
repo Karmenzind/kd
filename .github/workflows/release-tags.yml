@@ -11,11 +11,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build changelog
         id: build_changelog
-        uses: mikepenz/release-changelog-builder-action@v5
+        uses: mikepenz/release-changelog-builder-action@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -23,16 +23,27 @@ jobs:
           failOnError: true
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: '1.27.x'
           check-latest: true
 
+      # kd compares versions as vX.Y.Z (older clients included), and the tag
+      # becomes the version every release binary reports.
+      - name: Check the tag
+        run: |
+          [[ $GITHUB_REF_NAME =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "::error::tag $GITHUB_REF_NAME is not vX.Y.Z"
+            exit 1
+          }
+
       - name: Build all targets
+        env:
+          KD_VERSION: ${{ github.ref_name }}
         run: bash scripts/build.sh --all
 
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           body: ${{ steps.build_changelog.outputs.changelog }}
           fail_on_unmatched_files: true

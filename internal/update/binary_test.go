@@ -95,24 +95,27 @@ func TestUpdateBinaryAtMoveFailure(t *testing.T) {
 }
 
 func TestUpdateBinaryAtDownloadFailure(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("Windows rename fallback moves the old file to a backup; that behavior is tested in TestReplaceExecutable")
-	}
 	argsPath := installFakeSudo(t)
 	root := t.TempDir()
 	exePath := filepath.Join(root, "kd")
-	// A nonexistent parent prevents both download creation and the rename.
-	tmpPath := filepath.Join(root, "missing", "kd.temp")
+	tmpPath := filepath.Join(root, "kd.temp")
 	writeTestFile(t, exePath, "old binary")
+	// The body is shorter than the announced length, so the download fails
+	// after the temporary file has been created.
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusServiceUnavailable)
+		w.Header().Set("Content-Length", "100")
+		fmt.Fprint(w, "partial")
 	}))
 	defer server.Close()
 
-	// Preserve the current behavior: a download error is logged, then moveFile
-	// is still attempted and its error becomes the returned error.
+	// A download error stops the update before moveFile, so sudo never runs.
 	err := updateBinaryAt(exePath, server.URL, tmpPath)
-	assertFakeSudoFailure(t, err, argsPath, tmpPath, exePath)
+	if err == nil || !strings.Contains(err.Error(), "下载新版本失败") {
+		t.Fatalf("updateBinaryAt() error = %v, want download failure", err)
+	}
+	if _, statErr := os.Stat(argsPath); !os.IsNotExist(statErr) {
+		t.Fatalf("fake sudo ran after a failed download: %v", statErr)
+	}
 	assertTestFile(t, exePath, "old binary")
 	assertTestMissing(t, tmpPath)
 }

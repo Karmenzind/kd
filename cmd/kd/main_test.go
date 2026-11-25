@@ -24,7 +24,7 @@ func TestCLISmoke(t *testing.T) {
 		binaryName += ".exe"
 	}
 	binaryPath := filepath.Join(tempDir, binaryName)
-	build := exec.Command("go", "build", "-mod=mod", "-o", binaryPath, ".")
+	build := exec.Command("go", "build", "-mod=mod", "-ldflags", "-X main.VERSION="+VERSION, "-o", binaryPath, ".")
 	if output, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build CLI: %v\n%s", err, output)
 	}

@@ -132,7 +132,8 @@ func TestGetNewerVersion(t *testing.T) {
 		{name: "newer", current: "v1.9.9", body: `[{"name":"v2.0.0"}]`, want: "v2.0.0"},
 		{name: "equal", current: "2.0.0", body: `[{"name":"v2.0.0"}]`},
 		{name: "older", current: "v3.0.0", body: `[{"name":"v2.0.0"}]`},
-		{name: "invalid current", current: "development", body: `[{"name":"v2.0.0"}]`},
+		{name: "development build", current: "dev", body: `[{"name":"v2.0.0"}]`, wantErr: true},
+		{name: "pseudo-version", current: "v0.1.1-0.20261125021722-dbbf2553b64f", body: `[{"name":"v0.1.1"}]`, want: "v0.1.1"},
 		{name: "invalid latest", current: "v1.0.0", body: `[{"name":"latest"}]`},
 		{name: "fetch failure", current: "v1.0.0", body: `[]`, wantErr: true},
 	} {

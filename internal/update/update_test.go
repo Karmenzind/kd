@@ -13,7 +13,12 @@ func TestCompareVersions(t *testing.T) {
 		{name: "newer major", v1: "2.0.0", v2: "v1.99.99", want: 1},
 		{name: "newer minor", v1: "1.10.0", v2: "1.9.9", want: 1},
 		{name: "older patch", v1: "1.2.2", v2: "1.2.3", want: -1},
-		{name: "prerelease suffix", v1: "v1.2.3-beta.1", v2: "1.2.3", want: 0},
+		{name: "prerelease below release", v1: "v1.2.3-beta.1", v2: "1.2.3", want: -1},
+		{name: "release above prerelease", v1: "v1.2.3", v2: "v1.2.3-rc.1", want: 1},
+		{name: "two prereleases", v1: "v1.2.3-rc.2", v2: "v1.2.3-rc.1", want: 0},
+		{name: "pseudo-version after a tag", v1: "v0.1.1-0.20261125021722-dbbf2553b64f", v2: "v0.1.0", want: 1},
+		{name: "pseudo-version before the next tag", v1: "v0.1.1-0.20261125021722-dbbf2553b64f+dirty", v2: "v0.1.1", want: -1},
+		{name: "build metadata ignored", v1: "v1.2.3+dirty", v2: "1.2.3", want: 0},
 		{name: "invalid first version", v1: "latest", v2: "1.2.3", want: 0},
 		{name: "invalid second version", v1: "1.2.3", v2: "", want: 0},
 	} {

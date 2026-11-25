@@ -26,11 +26,16 @@ do_build() {
 		[[ $os == "windows" ]] && targetfile=${targetfile}.exe
 	fi
 
+	# KD_VERSION (the release tag) becomes kd's version; without it kd takes
+	# the version Go records from git, or "dev".
+	local ldflags="-s -w"
+	if [[ -n $KD_VERSION ]]; then ldflags+=" -X main.VERSION=${KD_VERSION}"; fi
+
 	set -x
 	GOOS=$os GOARCH=$arch CGO_ENABLED=0 go build -mod=readonly \
         ${buildopts} \
         -o ${targetfile} \
-        -ldflags="-s -w" \
+        -ldflags="${ldflags}" \
         -tags urfave_cli_no_docs \
         ./cmd/kd
 	local ret=$?
