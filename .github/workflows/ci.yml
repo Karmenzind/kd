@@ -12,12 +12,75 @@ permissions:
   contents: read
 
 jobs:
+  # Unit tests with the race detector and the coverage figure for the README
+  # badge. The race detector needs cgo on Linux; release builds stay pure Go.
+  ubuntu:
+    runs-on: ubuntu-latest
+    outputs:
+      pct: ${{ steps.cover.outputs.pct }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.x'
+          check-latest: true
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test with race detector and coverage
+        env:
+          CGO_ENABLED: "1"
+        run: go test -race -count=1 -coverpkg=./... -coverprofile=coverage.out ./...
+
+      - name: Compute coverage
+        id: cover
+        run: |
+          # cmd/ttstest is a manual TTS helper that is not shipped.
+          grep -v '/cmd/ttstest/' coverage.out > coverage.filtered.out
+          pct=$(go tool cover -func=coverage.filtered.out | awk '/^total:/ {sub("%", "", $3); printf "%.1f", $3}')
+          [ -n "$pct" ] || { echo "::error::no total coverage found"; exit 1; }
+          echo "Total coverage: $pct%"
+          echo "pct=$pct" >> "$GITHUB_OUTPUT"
+
+  # Publishes the coverage badge data to the orphan `badges` branch. Coverage is
+  # informational, so a failure here must not fail CI.
+  badge:
+    if: github.event_name == 'push' && github.repository == 'Karmenzind/kd'
+    needs: ubuntu
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    concurrency:
+      group: coverage-badge
+      cancel-in-progress: true
+    permissions:
+      contents: write
+    steps:
+      - name: Publish badge data
+        env:
+          PCT: ${{ needs.ubuntu.outputs.pct }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -n "$PCT" ] || { echo "::error::coverage percentage is empty"; exit 1; }
+          color=$(awk -v p="$PCT" 'BEGIN { if (p >= 80) print "brightgreen"; else if (p >= 60) print "yellowgreen"; else if (p >= 40) print "yellow"; else print "red" }')
+          dir=$(mktemp -d)
+          cd "$dir"
+          git init -q -b badges
+          printf '{"schemaVersion":1,"label":"coverage","message":"%s%%","color":"%s"}\n' "$PCT" "$color" > coverage.json
+          cat coverage.json
+          git add coverage.json
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "coverage: $PCT%"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" badges
+
   test:
     strategy:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-latest
           - macos-latest
           - windows-latest
     runs-on: ${{ matrix.os }}
@@ -25,18 +88,48 @@ jobs:
       CGO_ENABLED: "0"
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
+          go-version: '1.27.x'
           check-latest: true
-          go-version-file: go.mod
+
+      - name: Vet
+        run: go vet ./...
 
       - name: Test
         run: go test -count=1 ./...
 
-      - name: Vet
-        run: go vet ./...
+      - name: Start and stop the real daemon
+        shell: bash
+        run: |
+          root=$RUNNER_TEMP/kd-smoke
+          kd=$root/bin/kd
+          if [ "$(go env GOOS)" = windows ]; then
+            root=$(cygpath -m "$root")
+            kd=$root/bin/kd.exe
+          fi
+          mkdir -p "$root/bin" "$root/home"
+          bash scripts/build.sh "$(go env GOOS)" "$(go env GOARCH)" "$kd"
+
+          export HOME=$root/home USERPROFILE=$root/home
+          case "$(go env GOOS)" in
+            darwin) cache=$HOME/Library/Caches/kdcache ;;
+            *) cache=$HOME/.cache/kdcache ;;
+          esac
+          # The marker makes the daemon skip downloading the word database.
+          mkdir -p "$cache/run"
+          : > "$cache/run/last_fetch_db"
+
+          "$kd" --daemon
+          "$kd" --status | tee "$root/status.txt"
+          grep -q 'Daemon状态：运行中' "$root/status.txt"
+          "$kd" --stop
+          "$kd" --status | tee "$root/status.txt"
+          grep -q 'Daemon状态：未运行' "$root/status.txt"
 
   cross-build:
     runs-on: ubuntu-latest
@@ -44,12 +137,153 @@ jobs:
       CGO_ENABLED: "0"
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
+          go-version: '1.27.x'
           check-latest: true
-          go-version-file: go.mod
 
       - name: Build all targets
         run: bash scripts/build.sh --all
+
+  # Builds, tests and smoke-tests kd as a normal user on Arch Linux, then
+  # checks that the AUR kd-bin package still builds and installs with it.
+  archlinux:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    defaults:
+      run:
+        shell: bash
+    env:
+      CGO_ENABLED: "0"
+      GOFLAGS: -buildvcs=false
+      GOCACHE: /home/builder/.cache/go-build
+      GOMODCACHE: /home/builder/go/pkg/mod
+      KD_BIN: /home/builder/bin/kd
+    steps:
+      - name: Install packages
+        run: pacman -Syu --noconfirm git bash-completion fish namcap
+
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.x'
+          check-latest: true
+
+      - name: Prepare builder user
+        run: |
+          useradd -m builder
+          cp -a "$GITHUB_WORKSPACE" /home/builder/kd
+          (cd /home/builder/kd && go mod download)
+          mkdir -p "$(dirname "$KD_BIN")"
+          chown -R builder:builder /home/builder
+          # sudo resets PATH and the Go variables, so pass them through.
+          cat > /usr/local/bin/as-builder <<'EOF'
+          #!/bin/bash
+          exec sudo -u builder env "PATH=$PATH" "CGO_ENABLED=$CGO_ENABLED" "GOFLAGS=$GOFLAGS" "GOCACHE=$GOCACHE" "GOMODCACHE=$GOMODCACHE" "$@"
+          EOF
+          chmod +x /usr/local/bin/as-builder
+
+      - name: Test
+        working-directory: /home/builder/kd
+        run: as-builder go test -count=1 ./...
+
+      - name: Build kd
+        working-directory: /home/builder/kd
+        run: as-builder bash scripts/build.sh "$(go env GOOS)" "$(go env GOARCH)" "$KD_BIN"
+
+      - name: Smoke test config generation
+        run: |
+          home=$(as-builder mktemp -d)
+          as-builder env HOME="$home" "$KD_BIN" --generate-config </dev/null
+          test -f "$home/.config/kd.toml"
+          as-builder env HOME="$home" "$KD_BIN" --status
+
+      - name: Start and stop the real daemon
+        run: |
+          home=$(as-builder mktemp -d)
+          # The marker makes the daemon skip downloading the word database.
+          as-builder mkdir -p "$home/.cache/kdcache/run"
+          as-builder touch "$home/.cache/kdcache/run/last_fetch_db"
+          kd() { as-builder env HOME="$home" "$KD_BIN" "$@"; }
+
+          kd --daemon
+          kd --status | tee "$RUNNER_TEMP/status.txt"
+          grep -q 'Daemon状态：运行中' "$RUNNER_TEMP/status.txt"
+          kd --stop
+          kd --status | tee "$RUNNER_TEMP/status.txt"
+          grep -q 'Daemon状态：未运行' "$RUNNER_TEMP/status.txt"
+
+      - name: Smoke test tab completion
+        working-directory: /home/builder/kd
+        run: as-builder env KD_E2E_SHELLS=bash,fish go test -tags e2e -count=1 -run 'TestShells/.*/tab_completion' ./e2e
+
+      - name: Clone kd-bin from AUR
+        id: aur
+        continue-on-error: true
+        working-directory: /home/builder
+        run: as-builder git clone https://aur.archlinux.org/kd-bin.git
+
+      - name: Build kd-bin with this kd
+        if: steps.aur.outcome == 'success'
+        working-directory: /home/builder/kd-bin
+        run: |
+          pkgver=$(sed -n 's/^pkgver=//p' PKGBUILD)
+          [ -n "$pkgver" ] || { echo "::error::pkgver not found in PKGBUILD"; exit 1; }
+          as-builder cp "$KD_BIN" "kd-${pkgver}"
+          as-builder sed -i "s|^source_x86_64=.*|source_x86_64=(\"kd-${pkgver}\")|" PKGBUILD
+          grep -Fx "source_x86_64=(\"kd-${pkgver}\")" PKGBUILD
+          as-builder makepkg -f
+          pkg=$(ls "kd-bin-${pkgver}"-*.pkg.tar.*)
+          echo "KD_PKG=$PWD/$pkg" >> "$GITHUB_ENV"
+
+      - name: Check kd-bin with namcap
+        if: steps.aur.outcome == 'success'
+        working-directory: /home/builder/kd-bin
+        run: |
+          # namcap exits 0 even on errors or an unreadable file, so judge its
+          # output: errors (and namcap's own failures) fail, warnings do not.
+          test -f "$KD_PKG"
+          namcap PKGBUILD 2>&1 | tee "$RUNNER_TEMP/namcap.txt"
+          namcap "$KD_PKG" 2>&1 | tee -a "$RUNNER_TEMP/namcap.txt"
+          if grep -qE ' E: |^Error: ' "$RUNNER_TEMP/namcap.txt"; then
+            echo "::error::namcap reported errors"
+            exit 1
+          fi
+
+      - name: Install kd-bin
+        if: steps.aur.outcome == 'success'
+        run: |
+          pacman -U --noconfirm "$KD_PKG"
+          as-builder /usr/bin/kd --version
+          test -f /usr/share/licenses/kd-bin/LICENSE
+          test -f /usr/lib/systemd/user/kd-server.service
+
+      - name: Compare kd-bin checksums with the repository
+        if: steps.aur.outcome == 'success'
+        continue-on-error: true
+        working-directory: /home/builder/kd-bin
+        run: |
+          # kd-bin ships its own copies of these files with fixed checksums.
+          # shellcheck disable=SC2016
+          as-builder bash -c 'source PKGBUILD && for i in "${!source[@]}"; do echo "${sha256sums[$i]} ${source[$i]}"; done' > "$RUNNER_TEMP/aur.sha256"
+          while read -r want name; do
+            case "$name" in
+              LICENSE) file=LICENSE ;;
+              kd-server.service) file=scripts/kd-server.service ;;
+              *) continue ;;
+            esac
+            got=$(sha256sum "$GITHUB_WORKSPACE/$file" | cut -d' ' -f1)
+            if [ "$got" = "$want" ]; then
+              echo "$file matches kd-bin"
+            else
+              echo "::warning::$file sha256 $got differs from kd-bin PKGBUILD ($want); update the AUR package"
+            fi
+          done < "$RUNNER_TEMP/aur.sha256"

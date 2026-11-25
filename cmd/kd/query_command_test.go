@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -109,6 +110,7 @@ func queryCommandDaemon(t *testing.T) string {
 		t.Fatal(err)
 	}
 	done := make(chan struct{})
+	serveErrors := make(chan error, 16)
 	var connections sync.WaitGroup
 	go func() {
 		defer close(done)
@@ -120,41 +122,8 @@ func queryCommandDaemon(t *testing.T) string {
 			connections.Add(1)
 			go func() {
 				defer connections.Done()
-				defer conn.Close()
-				_ = conn.SetDeadline(time.Now().Add(5 * time.Second))
-				var request model.TCPQuery
-				if err := model.NewProtocolReader(conn).Read(&request); err != nil {
-					// A cached lookup can exit while its readiness probe is connecting.
-					if !errors.Is(err, io.EOF) {
-						t.Errorf("read query command request: %v", err)
-					}
-					return
-				}
-				var response *model.DaemonResponse
-				if request.Action == "ping" {
-					response = &model.DaemonResponse{Ping: &model.DaemonPing{
-						Available: true, PID: os.Getpid(), Version: VERSION,
-						ProtocolVersion: model.DaemonProtocolVersion,
-						StartTime:       time.Now().Unix(),
-					}}
-				} else if request.B != nil {
-					result := request.GetResult()
-					result.Found = result.Query == "hello" || result.IsLongText
-					if result.IsLongText {
-						result.MachineTrans = "早上好。"
-					} else if result.Found {
-						result.Keyword, result.Paraphrase = "hello", []string{"你好"}
-					}
-					response = result.ToDaemonResponse()
-					if result.Query == "unavailable" {
-						response = &model.DaemonResponse{Error: "在线查询失败"}
-					}
-				} else {
-					t.Error("query command request has no body")
-					return
-				}
-				if err := model.WriteProtocolMessage(conn, response); err != nil {
-					t.Errorf("write query command response: %v", err)
+				if err := serveQueryCommand(conn); err != nil {
+					serveErrors <- err
 				}
 			}()
 		}
@@ -162,13 +131,79 @@ func queryCommandDaemon(t *testing.T) string {
 	t.Cleanup(func() {
 		listener.Close()
 		<-done
-		connections.Wait()
+		go func() {
+			connections.Wait()
+			close(serveErrors)
+		}()
+		for err := range serveErrors {
+			t.Error(err)
+		}
 	})
 	_, port, err := net.SplitHostPort(listener.Addr().String())
 	if err != nil {
 		t.Fatal(err)
 	}
 	return port
+}
+
+type queryCommandReadCounter struct {
+	io.Reader
+	n int
+}
+
+func (r *queryCommandReadCounter) Read(p []byte) (int, error) {
+	n, err := r.Reader.Read(p)
+	r.n += n
+	return n, err
+}
+
+func isEmptyQueryCommandProbe(n int, err error) bool {
+	return n == 0 && (errors.Is(err, io.EOF) || isPeerReset(err))
+}
+
+func serveQueryCommand(conn net.Conn) error {
+	defer conn.Close()
+	if err := conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
+		return fmt.Errorf("set query command deadline: %w", err)
+	}
+	reader := &queryCommandReadCounter{Reader: conn}
+	var request model.TCPQuery
+	if err := model.NewProtocolReader(reader).Read(&request); err != nil {
+		// A cached lookup can exit while its readiness probe is connecting.
+		if isEmptyQueryCommandProbe(reader.n, err) {
+			return nil
+		}
+		return fmt.Errorf("read query command request: %w", err)
+	}
+	var response *model.DaemonResponse
+	if request.Action == "ping" {
+		response = &model.DaemonResponse{Ping: &model.DaemonPing{
+			Available: true, PID: os.Getpid(), Version: VERSION,
+			ProtocolVersion: model.DaemonProtocolVersion,
+			StartTime:       time.Now().Unix(),
+		}}
+	} else if request.B != nil {
+		result := request.GetResult()
+		result.Found = result.Query == "hello" || result.IsLongText
+		if result.IsLongText {
+			result.MachineTrans = "早上好。"
+		} else if result.Found {
+			result.Keyword, result.Paraphrase = "hello", []string{"你好"}
+		}
+		response = result.ToDaemonResponse()
+		if result.Query == "unavailable" {
+			response = &model.DaemonResponse{Error: "在线查询失败"}
+		}
+	} else {
+		return errors.New("query command request has no body")
+	}
+	if err := model.WriteProtocolMessage(conn, response); err != nil {
+		if request.Action == "ping" && isPeerGoneOnWrite(err) {
+			return nil
+		}
+		return fmt.Errorf("write query command response: %w", err)
+	}
+	return nil
 }
 
 func TestQueryCommands(t *testing.T) {

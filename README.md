@@ -11,6 +11,8 @@ kd 专注于简洁、高效、丝滑的查询功能，不会发展成集成式�
 保持清晰的边界，把有限的精力持续投入到命令行体验本身，是 kd 的长期设计原则。
 
 [![GitHub Release](https://img.shields.io/github/v/release/karmenzind/kd)](https://github.com/Karmenzind/kd/releases)
+[![CI](https://github.com/Karmenzind/kd/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Karmenzind/kd/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Karmenzind/kd/badges/coverage.json)](https://github.com/Karmenzind/kd/actions/workflows/ci.yml)
 
 <!-- <img src="https://raw.githubusercontent.com/Karmenzind/i/master/kd/kd_demo.gif" width="700" align="center"> -->
 
@@ -84,6 +86,7 @@ kd 专注于简洁、高效、丝滑的查询功能，不会发展成集成式�
 
 - 这里下载位置为示例，可以下载到任何地方，然后将路径加入PATH环境变量
 - 其他架构需求请提交issue
+- 系统要求：Linux内核3.2及以上（不支持WSL 1）、macOS 13 Ventura及以上、Windows 10/Windows Server 2016及以上
 
 ### Linux/MacOS
 
@@ -401,6 +404,14 @@ alias kd=__kdwithpager
 
 ```
 sudo xattr -r -d com.apple.quarantine <kd文件所在路径>
+```
+
+### 以root用户运行时报“不支持Root用户”
+
+在Linux和MacOS上，kd默认拒绝以root用户运行。Docker容器等只有root用户的环境中，如确认需要，可设置环境变量`KD_ALLOW_ROOT=1`：
+
+```bash
+KD_ALLOW_ROOT=1 kd hello
 ```
 
 ## 🤝 参与开发
