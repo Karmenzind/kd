@@ -22,6 +22,7 @@ import (
 	"github.com/Karmenzind/kd/internal/cache"
 	"github.com/Karmenzind/kd/internal/model"
 	"github.com/Karmenzind/kd/internal/run"
+	"github.com/Karmenzind/kd/internal/update"
 )
 
 // Run the real entry point in a child so main's exit status and stderr are tested.
@@ -34,6 +35,12 @@ func TestQueryCommandProcess(t *testing.T) {
 		t.Fatal(err)
 	}
 	run.SERVER_PORT = port
+	// --update tests point the tag lookup at a local server and keep the cached
+	// tag inside the temporary home.
+	if u := os.Getenv("KD_TEST_TAGLIST_URL"); u != "" {
+		update.TAGLIST_URL = u
+		update.LATEST_TAG_FILE = os.Getenv("KD_TEST_LATEST_TAG_FILE")
+	}
 	for i, arg := range os.Args {
 		if arg == "--" {
 			os.Args = append([]string{"kd"}, os.Args[i+1:]...)
@@ -184,7 +191,10 @@ func serveQueryCommand(conn net.Conn) error {
 		}}
 	} else if request.B != nil {
 		result := request.GetResult()
-		result.Found = result.Query == "hello" || result.IsLongText
+		// "foo bar" (the rewrite of fooBar) and "nothing" are the long texts the
+		// stub cannot translate.
+		result.Found = result.Query == "hello" ||
+			(result.IsLongText && result.Query != "foo bar" && result.Query != "nothing")
 		if result.IsLongText {
 			result.MachineTrans = "早上好。"
 		} else if result.Found {

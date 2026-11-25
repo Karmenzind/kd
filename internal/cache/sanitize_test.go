@@ -293,6 +293,34 @@ func TestSanitizeLegacyRowsPurgesMisescapedQueries(t *testing.T) {
 	assertRows(t, "en", []string{"take"})
 }
 
+func TestSanitizeDoneTreatsBadVersionAsIncomplete(t *testing.T) {
+	useTestDB(t)
+
+	if err := setMetaValue(sanitizeVersionKey, "not-a-number"); err != nil {
+		t.Fatalf("setMetaValue() error = %v", err)
+	}
+	done, err := sanitizeDone()
+	if err != nil {
+		t.Fatalf("sanitizeDone() error = %v", err)
+	}
+	if done {
+		t.Fatal("sanitizeDone() = true for an unrecognized version, want false")
+	}
+}
+
+func TestSanitizeDetailSkipsCorruptRows(t *testing.T) {
+	if _, changed := sanitizeDetail("en", []byte("not-zlib")); changed {
+		t.Fatal("sanitizeDetail() reported change for corrupt zlib")
+	}
+	detail, err := compressDetail([]byte("not-json"))
+	if err != nil {
+		t.Fatalf("compressDetail() error = %v", err)
+	}
+	if _, changed := sanitizeDetail("en", detail); changed {
+		t.Fatal("sanitizeDetail() reported change for invalid JSON")
+	}
+}
+
 // 版本号已是4时不做任何删除。
 func TestSanitizeLegacyRowsSkipsPurgeWhenVersionRecorded(t *testing.T) {
 	useTestDB(t)

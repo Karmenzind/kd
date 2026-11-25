@@ -3,12 +3,15 @@ package tts
 import (
 	"context"
 	"errors"
+	"fmt"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -16,6 +19,8 @@ import (
 	"time"
 
 	"github.com/Karmenzind/kd/internal/run"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 )
 
 var testAudio = []byte{0xff, 0xfb, 0x90, 0x64, 0x00, 0x01}
@@ -23,6 +28,10 @@ var testAudio = []byte{0xff, 0xfb, 0x90, 0x64, 0x00, 0x01}
 func TestBuildAudioURL(t *testing.T) {
 	word := "hello 世界"
 	got := buildAudioUrl(word)
+	want := fmt.Sprintf(googleTTSURLFormat, url.QueryEscape(word))
+	if got != want {
+		t.Fatalf("buildAudioUrl() = %q, want %q", got, want)
+	}
 	parsed, err := url.Parse(got)
 	if err != nil {
 		t.Fatalf("Parse(%q) error = %v", got, err)
@@ -258,6 +267,181 @@ func TestFindSpeakerAndPlayerCommand(t *testing.T) {
 	}
 }
 
+func TestValidAudioFile(t *testing.T) {
+	dir := t.TempDir()
+	missing := filepath.Join(dir, "missing.mp3")
+	if valid, err := validAudioFile(missing); err != nil || valid {
+		t.Fatalf("missing file valid = %v, err = %v", valid, err)
+	}
+
+	validPath := filepath.Join(dir, "valid.mp3")
+	if err := os.WriteFile(validPath, testAudio, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if valid, err := validAudioFile(validPath); err != nil || !valid {
+		t.Fatalf("valid audio valid = %v, err = %v", valid, err)
+	}
+
+	emptyPath := filepath.Join(dir, "empty.mp3")
+	if err := os.WriteFile(emptyPath, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if valid, err := validAudioFile(emptyPath); err != nil || valid {
+		t.Fatalf("empty file valid = %v, err = %v", valid, err)
+	}
+
+	htmlPath := filepath.Join(dir, "html.mp3")
+	if err := os.WriteFile(htmlPath, []byte("<html>blocked</html>"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if valid, err := validAudioFile(htmlPath); err != nil || valid {
+		t.Fatalf("html payload valid = %v, err = %v", valid, err)
+	}
+	if _, err := os.Stat(htmlPath); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("invalid html cache was not removed: %v", err)
+	}
+}
+
+func TestResolveCachedAudioUncachedAndUnsafeLegacy(t *testing.T) {
+	withAudioCacheDirs(t)
+	target, cached, err := resolveCachedAudio("fresh-query")
+	if err != nil || cached || target != buildTargetPath("fresh-query") {
+		t.Fatalf("uncached resolve = %q, %v, %v", target, cached, err)
+	}
+
+	unsafeLegacy := filepath.Join(run.CACHE_AUDIO_DIR_PATH, "../escape.mp3")
+	if err := os.WriteFile(unsafeLegacy, testAudio, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	target, cached, err = resolveCachedAudio("../escape")
+	if err != nil || cached || target != buildTargetPath("../escape") {
+		t.Fatalf("unsafe legacy resolve = %q, %v, %v", target, cached, err)
+	}
+}
+
+func TestPlayAudioUsesFakePlayer(t *testing.T) {
+	t.Cleanup(zap.ReplaceGlobals(zaptest.NewLogger(t)))
+	audioPath := filepath.Join(t.TempDir(), "audio.mp3")
+	if err := os.WriteFile(audioPath, testAudio, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	marker := installFakePlayer(t, 0)
+	ctx := context.Background()
+	if err := playAudio(ctx, runtime.GOOS, fakePlayerName(), audioPath); err != nil {
+		t.Fatalf("playAudio() error = %v", err)
+	}
+	got, err := os.ReadFile(marker)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(got), audioPath) {
+		t.Fatalf("fake player output = %q, want path %q", got, audioPath)
+	}
+}
+
+func TestPlayAudioFailureAndCancellation(t *testing.T) {
+	t.Cleanup(zap.ReplaceGlobals(zaptest.NewLogger(t)))
+	binDir := t.TempDir()
+	name := fakePlayerName()
+	installFakeProgram(t, binDir, name, fakePlayerExit(1))
+	t.Setenv("PATH", binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	audioPath := filepath.Join(t.TempDir(), "audio.mp3")
+	if err := os.WriteFile(audioPath, testAudio, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := playAudio(context.Background(), runtime.GOOS, name, audioPath); err == nil {
+		t.Fatal("playAudio() error = nil, want failure")
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := playAudio(ctx, runtime.GOOS, name, audioPath); err == nil {
+		t.Fatal("playAudio() error = nil, want cancellation")
+	}
+}
+
+func TestSpeak(t *testing.T) {
+	t.Cleanup(zap.ReplaceGlobals(zaptest.NewLogger(t)))
+
+	t.Run("validation", func(t *testing.T) {
+		if err := Speak(context.Background(), "  ", 1); err == nil {
+			t.Fatal("Speak() empty query error = nil")
+		}
+		limitMB := uint64(math.MaxInt64)/(1<<20) + 1
+		if _, err := cacheLimitBytes(limitMB); err == nil {
+			t.Fatal("cacheLimitBytes() oversized error = nil")
+		}
+	})
+
+	t.Run("no player", func(t *testing.T) {
+		withAudioCacheDirs(t)
+		t.Setenv("PATH", t.TempDir())
+		err := Speak(context.Background(), "word", 1)
+		if runtime.GOOS == "windows" {
+			if err == nil {
+				t.Fatal("Speak() on Windows without players error = nil")
+			}
+		} else if !errors.Is(err, ErrNoSpeaker) {
+			t.Fatalf("Speak() error = %v, want ErrNoSpeaker", err)
+		}
+	})
+
+	t.Run("cached audio", func(t *testing.T) {
+		withAudioCacheDirs(t)
+		installFakePlayer(t, 0)
+		word := "cached-word"
+		target := buildTargetPath(word)
+		if err := os.WriteFile(target, testAudio, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := Speak(context.Background(), word, 64); err != nil {
+			t.Fatalf("Speak() cached error = %v", err)
+		}
+	})
+
+	t.Run("download", func(t *testing.T) {
+		withAudioCacheDirs(t)
+		installFakePlayer(t, 0)
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "audio/mpeg")
+			_, _ = w.Write(testAudio)
+		}))
+		defer server.Close()
+		oldFormat := googleTTSURLFormat
+		googleTTSURLFormat = server.URL + "?q=%s"
+		t.Cleanup(func() { googleTTSURLFormat = oldFormat })
+
+		word := "download-word"
+		if err := Speak(context.Background(), word, 64); err != nil {
+			t.Fatalf("Speak() download error = %v", err)
+		}
+		if valid, err := validAudioFile(buildTargetPath(word)); err != nil || !valid {
+			t.Fatalf("cached download valid = %v, err = %v", valid, err)
+		}
+	})
+
+	t.Run("uncached limit", func(t *testing.T) {
+		withAudioCacheDirs(t)
+		installFakePlayer(t, 0)
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "audio/mpeg")
+			_, _ = w.Write(testAudio)
+		}))
+		defer server.Close()
+		oldFormat := googleTTSURLFormat
+		googleTTSURLFormat = server.URL + "?q=%s"
+		t.Cleanup(func() { googleTTSURLFormat = oldFormat })
+
+		word := "ephemeral-word"
+		if err := Speak(context.Background(), word, 0); err != nil {
+			t.Fatalf("Speak() uncached error = %v", err)
+		}
+		if _, err := os.Stat(buildTargetPath(word)); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("uncached Speak left persistent cache file: %v", err)
+		}
+	})
+}
+
 func TestLimitedBuffer(t *testing.T) {
 	var buffer limitedBuffer
 	input := strings.Repeat("x", playerOutputLimit+100)
@@ -294,4 +478,51 @@ func assertNoAudioArtifacts(t *testing.T, directory string) {
 	if len(entries) != 0 {
 		t.Fatalf("download left artifacts: %v", entries)
 	}
+}
+
+func fakePlayerName() string {
+	if runtime.GOOS == "darwin" {
+		return "afplay"
+	}
+	return "ffplay"
+}
+
+func installFakePlayer(t *testing.T, exitCode int) string {
+	t.Helper()
+	binDir := t.TempDir()
+	name := fakePlayerName()
+	marker := filepath.Join(t.TempDir(), "played.txt")
+	body := fakePlayerRecord(marker, exitCode)
+	installFakeProgram(t, binDir, name, body)
+	t.Setenv("PATH", binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	return marker
+}
+
+func installFakeProgram(t *testing.T, binDir, name, body string) {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		path := filepath.Join(binDir, name+".bat")
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return
+	}
+	path := filepath.Join(binDir, name)
+	if err := os.WriteFile(path, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func fakePlayerRecord(marker string, exitCode int) string {
+	if runtime.GOOS == "windows" {
+		return fmt.Sprintf("@echo off\r\nfor %%%%A in (%%*) do set \"LAST=%%%%A\"\r\necho %%LAST%%> %q\r\nexit /b %d\r\n", marker, exitCode)
+	}
+	return fmt.Sprintf("#!/bin/sh\nprintf '%%s\\n' \"$@\" > %q\nexit %d\n", marker, exitCode)
+}
+
+func fakePlayerExit(code int) string {
+	if runtime.GOOS == "windows" {
+		return fmt.Sprintf("@echo off\r\nexit /b %d\r\n", code)
+	}
+	return fmt.Sprintf("#!/bin/sh\nexit %d\n", code)
 }

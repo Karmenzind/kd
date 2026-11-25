@@ -337,3 +337,122 @@ func TestServerInitializationFailureLeavesNoRuntime(t *testing.T) {
 		t.Fatalf("runtime file exists after init failure: %v", statErr)
 	}
 }
+
+type acceptTestError struct{}
+
+func (acceptTestError) Error() string   { return "temporary test accept failure" }
+func (acceptTestError) Timeout() bool   { return false }
+func (acceptTestError) Temporary() bool { return true }
+
+type failingAcceptListener struct {
+	net.Listener
+	errors []error // Only Serve's goroutine reads or modifies this slice.
+	failed chan struct{}
+}
+
+func (l *failingAcceptListener) Accept() (net.Conn, error) {
+	if len(l.errors) != 0 {
+		err := l.errors[0]
+		l.errors = l.errors[1:]
+		if l.failed != nil {
+			close(l.failed)
+			l.failed = nil
+		}
+		return nil, err
+	}
+	return l.Listener.Accept()
+}
+
+func TestServeAcceptFailures(t *testing.T) {
+	for _, scenario := range []string{"permanent", "temporary recovers", "cancel during retry"} {
+		t.Run(scenario, func(t *testing.T) {
+			listener, err := net.Listen("tcp", "127.0.0.1:0")
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { listener.Close() })
+			ctx, cancel := context.WithCancel(context.Background())
+			t.Cleanup(cancel)
+			permanent := errors.New("permanent test accept failure")
+			failed := make(chan struct{})
+			wrapped := &failingAcceptListener{Listener: listener, failed: failed, errors: []error{acceptTestError{}, acceptTestError{}}}
+			if scenario == "permanent" {
+				wrapped.errors = []error{permanent}
+			}
+			server := &daemonServer{
+				listener: wrapped, cancel: cancel, connectionTimeout: time.Second,
+				info:  &model.RunInfo{PID: 42, Version: "v-test"},
+				fetch: func(*model.Result) error { t.Error("fetch called for ping/shutdown"); return nil },
+			}
+			done := make(chan struct{})
+			var serveErr error
+			go func() {
+				serveErr = server.Serve(ctx)
+				close(done)
+			}()
+			t.Cleanup(func() {
+				server.Shutdown()
+				select {
+				case <-done:
+				case <-time.After(time.Second):
+					t.Error("Serve did not stop")
+				}
+				server.waitRequests(time.Second)
+			})
+			select {
+			case <-failed:
+			case <-time.After(time.Second):
+				t.Fatal("Serve did not call Accept")
+			}
+			switch scenario {
+			case "cancel during retry":
+				cancel()
+			case "temporary recovers":
+				ping, err := PingDaemon(listener.Addr().String())
+				if err != nil || ping.PID != 42 {
+					t.Fatalf("Serve did not recover from temporary accept errors: ping=%+v err=%v", ping, err)
+				}
+				if err := requestShutdown(listener.Addr().String()); err != nil {
+					t.Fatal(err)
+				}
+			}
+			select {
+			case <-done:
+				err := serveErr
+				if scenario == "permanent" {
+					if !errors.Is(err, permanent) || !strings.Contains(err.Error(), "daemon accept failed") {
+						t.Fatalf("Serve() = %v, want wrapped permanent error", err)
+					}
+				} else if err != nil {
+					t.Fatalf("Serve() = %v", err)
+				}
+			case <-time.After(time.Second):
+				t.Fatal("Serve did not return after cancellation/failure")
+			}
+		})
+	}
+}
+
+type invalidAddressListener struct{ net.Listener }
+
+func (invalidAddressListener) Addr() net.Addr { return &net.UnixAddr{Name: "invalid", Net: "unix"} }
+
+func TestServeListenerInvalidAddressClosesListener(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	runtimePath := filepath.Join(t.TempDir(), "daemon.json")
+	err = serveListener(context.Background(), invalidAddressListener{listener}, &model.RunInfo{PID: 1}, nil, false, runtimePath)
+	if !errors.Is(err, ErrDaemonInit) {
+		t.Fatalf("serveListener() = %v, want ErrDaemonInit", err)
+	}
+	_ = listener.(*net.TCPListener).SetDeadline(time.Now().Add(time.Second))
+	if _, err := listener.Accept(); !errors.Is(err, net.ErrClosed) {
+		t.Fatalf("listener not closed after invalid address: %v", err)
+	}
+	if _, err := os.Stat(runtimePath); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("invalid listener created runtime: %v", err)
+	}
+}

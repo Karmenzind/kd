@@ -21,6 +21,25 @@ func setLongTextCachePath(t *testing.T) string {
 	return LONG_TEXT_CACHE_FILE
 }
 
+func TestGetLongTextCacheMiss(t *testing.T) {
+	setLongTextCachePath(t)
+
+	got := &model.Result{BaseResult: &model.BaseResult{Query: "absent", IsLongText: true}}
+	if err := GetLongTextCache(got); err == nil {
+		t.Fatal("GetLongTextCache() on empty cache returned nil error")
+	}
+}
+
+func TestLoadLongTextCacheRejectsInvalidJSON(t *testing.T) {
+	path := setLongTextCachePath(t)
+	if err := os.WriteFile(path, []byte("{broken"), 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+	if _, err := loadLongTextCache(path); err == nil {
+		t.Fatal("loadLongTextCache() with invalid JSON returned nil error")
+	}
+}
+
 func TestLongTextCacheRoundTrip(t *testing.T) {
 	setLongTextCachePath(t)
 

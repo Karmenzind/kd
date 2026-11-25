@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"sync"
@@ -60,6 +61,25 @@ func TestInitDBAtPathRejectsDirectory(t *testing.T) {
 	if err == nil {
 		db.Close()
 		t.Fatal("initDBAtPath() with a directory path returned nil error")
+	}
+}
+
+func TestInitDBOpensDatabaseUnderCacheRoot(t *testing.T) {
+	originalRoot, originalDB := CACHE_ROOT_PATH, LiteDB
+	CACHE_ROOT_PATH = t.TempDir()
+	t.Cleanup(func() {
+		if LiteDB != nil && LiteDB != originalDB {
+			LiteDB.Close()
+		}
+		CACHE_ROOT_PATH, LiteDB = originalRoot, originalDB
+	})
+
+	if err := InitDB(); err != nil {
+		t.Fatalf("InitDB() error = %v", err)
+	}
+	wantPath := filepath.Join(CACHE_ROOT_PATH, DB_FILENAME)
+	if _, err := os.Stat(wantPath); err != nil {
+		t.Fatalf("InitDB() did not create %q: %v", wantPath, err)
 	}
 }
 
@@ -349,5 +369,45 @@ func TestQueryCacheSkipsNotFoundResult(t *testing.T) {
 	}
 	if _, err := getCachedRow(r.Query, r.IsEN); !errors.Is(err, sql.ErrNoRows) {
 		t.Fatalf("getCachedRow() error = %v, want sql.ErrNoRows", err)
+	}
+}
+
+func TestGetCachedQueryRejectsCorruptDetail(t *testing.T) {
+	useTestDB(t)
+
+	if err := saveCachedRow("broken", true, []byte("not-zlib")); err != nil {
+		t.Fatalf("saveCachedRow() error = %v", err)
+	}
+	got := &model.Result{BaseResult: &model.BaseResult{Query: "broken", IsEN: true}}
+	if err := GetCachedQuery(got); err == nil {
+		t.Fatal("GetCachedQuery() with corrupt zlib returned nil error")
+	}
+}
+
+func TestGetCachedQueryRejectsInvalidJSON(t *testing.T) {
+	useTestDB(t)
+
+	detail, err := compressDetail([]byte("not-json"))
+	if err != nil {
+		t.Fatalf("compressDetail() error = %v", err)
+	}
+	if err := saveCachedRow("bad-json", true, detail); err != nil {
+		t.Fatalf("saveCachedRow() error = %v", err)
+	}
+	got := &model.Result{BaseResult: &model.BaseResult{Query: "bad-json", IsEN: true}}
+	if err := GetCachedQuery(got); err == nil {
+		t.Fatal("GetCachedQuery() with invalid JSON returned nil error")
+	}
+}
+
+func TestParseDatabaseTimeRejectsUnsupportedValues(t *testing.T) {
+	if _, err := parseDatabaseTime(nil); err == nil {
+		t.Fatal("parseDatabaseTime(nil) returned nil error")
+	}
+	if _, err := parseDatabaseTime(42); err == nil {
+		t.Fatal("parseDatabaseTime(int) returned nil error")
+	}
+	if _, err := parseDatabaseTime("not-a-timestamp"); err == nil {
+		t.Fatal("parseDatabaseTime(garbage) returned nil error")
 	}
 }

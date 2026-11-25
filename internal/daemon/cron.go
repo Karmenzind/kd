@@ -22,6 +22,14 @@ import (
 const (
 	DATA_ZIP_URL_CN     = "https://gitee.com/void_kmz/kd/releases/download/v0.0.1/kd_data.zip"
 	DATA_ZIP_URL_GLOBAL = "https://raw.githubusercontent.com/Karmenzind/static/main/kd/kd_data.zip"
+)
+
+var (
+	dataZipCheckInterval    = 3 * time.Second
+	daemonJSONCheckInterval = 5 * time.Minute
+	spamCleanupInterval     = 600 * time.Second
+	updateCheckInterval     = 12 * time.Hour
+	updateCheckRetryDelay   = 5 * time.Second
 
 	// 清洗任务的启动延迟与失败重试间隔
 	sanitizeStartDelay    = 30 * time.Second
@@ -37,7 +45,7 @@ func InitCron(ctx context.Context, shutdown func()) {
 }
 
 func cronEnsureDaemonJsonFile(ctx context.Context) {
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(daemonJSONCheckInterval)
 	defer ticker.Stop()
 	for {
 		select {
@@ -66,7 +74,7 @@ func cronEnsureDaemonJsonFile(ctx context.Context) {
 }
 
 func cronDeleteSpam(ctx context.Context) {
-	ticker := time.NewTicker(600 * time.Second)
+	ticker := time.NewTicker(spamCleanupInterval)
 	defer ticker.Stop()
 	for {
 		select {
@@ -89,7 +97,7 @@ func cronDeleteSpam(ctx context.Context) {
 }
 
 func cronCheckUpdate(ctx context.Context) {
-	ticker := time.NewTicker(3600 * 12 * time.Second)
+	ticker := time.NewTicker(updateCheckInterval)
 	defer ticker.Stop()
 	for {
 		// TODO (k): <2024-01-01> 改成检查文件Stat来判断时长
@@ -109,7 +117,7 @@ func cronCheckUpdate(ctx context.Context) {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(5 * time.Second):
+			case <-time.After(updateCheckRetryDelay):
 			}
 		}
 
@@ -127,7 +135,7 @@ func getZipDownloadUrl() string {
 }
 
 func cronUpdateDataZip(ctx context.Context, shutdown func()) {
-	ticker := time.NewTicker(3 * time.Second)
+	ticker := time.NewTicker(dataZipCheckInterval)
 	defer ticker.Stop()
 	for {
 		select {

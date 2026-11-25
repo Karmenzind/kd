@@ -22,8 +22,8 @@ import (
 	"go.uber.org/zap"
 )
 
-const LATEST_RELEASE_URL = "https://github.com/Karmenzind/kd/releases/latest/download/"
-const TAGLIST_URL = "https://api.github.com/repos/Karmenzind/kd/tags"
+var LATEST_RELEASE_URL = "https://github.com/Karmenzind/kd/releases/latest/download/"
+var TAGLIST_URL = "https://api.github.com/repos/Karmenzind/kd/tags"
 
 type GithubTag struct {
 	Name string
@@ -168,6 +168,10 @@ func UpdateBinary(currentTag string) (err error) {
 		return nil
 	}
 
+	return updateBinaryAt(exepath, url, tmpPath)
+}
+
+func updateBinaryAt(exePath, url, tmpPath string) (err error) {
 	d.EchoRun("Start downloading: %s", url)
 	// TODO (k): <2023-12-31> 调用curl
 	err = pkg.DownloadFileWithProgress(tmpPath, url)
@@ -176,16 +180,16 @@ func UpdateBinary(currentTag string) (err error) {
 	}
 	d.EchoOkay("已下载完成")
 
-	err = moveFile(tmpPath, exepath)
+	err = moveFile(tmpPath, exePath)
 	if err != nil {
 		return
 	} else {
 		d.EchoOkay("已成功替换旧版本，更新完成")
 	}
 	if runtime.GOOS != "windows" {
-		err = pkg.AddExecutablePermission(exepath)
+		err = pkg.AddExecutablePermission(exePath)
 		if err != nil {
-			d.EchoWrong("修改权限失败，请手动执行`chmod +x %s`", exepath)
+			d.EchoWrong("修改权限失败，请手动执行`chmod +x %s`", exePath)
 		}
 	}
 	return

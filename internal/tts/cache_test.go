@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/Karmenzind/kd/internal/run"
 )
 
 func TestAudioCleanupDue(t *testing.T) {
@@ -125,6 +127,33 @@ func TestTrimAudioCacheIgnoresDirectoriesAndSymlinks(t *testing.T) {
 		if _, err := os.Lstat(path); err != nil {
 			t.Fatalf("ignored path %q was removed: %v", path, err)
 		}
+	}
+}
+
+func TestCleanupAudioCacheAndLog(t *testing.T) {
+	originalAudio := run.CACHE_AUDIO_DIR_PATH
+	originalRun := run.CACHE_RUN_PATH
+	root := t.TempDir()
+	run.CACHE_AUDIO_DIR_PATH = filepath.Join(root, "audio")
+	run.CACHE_RUN_PATH = filepath.Join(root, "run")
+	if err := os.MkdirAll(run.CACHE_AUDIO_DIR_PATH, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		run.CACHE_AUDIO_DIR_PATH = originalAudio
+		run.CACHE_RUN_PATH = originalRun
+	})
+
+	now := time.Date(2026, time.July, 18, 12, 0, 0, 0, time.UTC)
+	writeSizedAudio(t, run.CACHE_AUDIO_DIR_PATH, "old.mp3", 8, now.Add(-3*time.Hour))
+	writeSizedAudio(t, run.CACHE_AUDIO_DIR_PATH, "new.mp3", 8, now.Add(-time.Hour))
+	cleanupAudioCacheAndLog(10, now)
+	if _, err := os.Stat(filepath.Join(run.CACHE_AUDIO_DIR_PATH, "old.mp3")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("cleanup did not trim cache: %v", err)
+	}
+	marker := filepath.Join(run.CACHE_RUN_PATH, cleanupMarkerName)
+	if _, err := os.Stat(marker); err != nil {
+		t.Fatalf("cleanup marker missing: %v", err)
 	}
 }
 
